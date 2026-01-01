@@ -52,8 +52,6 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
 
   // Get page title from path
   const pathSegments = location.pathname.split('/').filter(Boolean);
-  const basePath = '/' + (pathSegments[0] || '');
-  const _pageTitle = pageTitles[basePath] || 'Page';
 
   // Build breadcrumbs
   const breadcrumbs = pathSegments.map((segment, index) => {
