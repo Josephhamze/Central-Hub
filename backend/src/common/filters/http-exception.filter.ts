@@ -52,13 +52,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
       error: {
         code,
         message,
-        ...(details && { details }),
+        details: details !== undefined ? details : undefined,
       },
       meta: {
         timestamp: new Date().toISOString(),
         path: request.url,
       },
     };
+
+    // Remove undefined details
+    if (errorResponse.error.details === undefined) {
+      delete errorResponse.error.details;
+    }
 
     response.status(status).json(errorResponse);
   }
