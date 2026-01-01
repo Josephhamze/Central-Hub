@@ -129,7 +129,7 @@
 
   /* Selection */
   ::selection {
-    @apply bg-accent-primary/20;
+    background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent);
   }
 
   /* Scrollbar styling */
