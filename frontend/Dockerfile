@@ -27,18 +27,22 @@ RUN pnpm build
 # Production stage
 FROM nginx:alpine AS production
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config template
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port
+# Railway sets PORT env var - nginx:alpine auto-substitutes ${PORT} in templates
+ENV PORT=80
+
+# Expose port (Railway will override)
 EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/ || exit 1
 
-# Start nginx
+# nginx:alpine image automatically runs envsubst on /etc/nginx/templates/*.template
+# and outputs to /etc/nginx/conf.d/ before starting
 CMD ["nginx", "-g", "daemon off;"]
