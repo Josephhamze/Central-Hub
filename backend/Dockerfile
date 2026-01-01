@@ -7,11 +7,11 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (without frozen lockfile since we don't have one)
+RUN pnpm install
 
 # Generate Prisma client
 RUN pnpm prisma generate
@@ -31,11 +31,11 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 COPY prisma ./prisma/
 
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod
 
 # Generate Prisma client
 RUN pnpm prisma generate

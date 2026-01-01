@@ -13,10 +13,10 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (without frozen lockfile since we don't have one)
+RUN pnpm install
 
 # Copy source code
 COPY . .
