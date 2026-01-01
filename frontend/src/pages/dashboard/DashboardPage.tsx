@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard,
   TrendingUp,
   TrendingDown,
   Activity,
@@ -13,7 +11,6 @@ import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { EmptyState } from '@components/ui/EmptyState';
-import { api } from '@services/api';
 
 interface StatCardProps {
   title: string;
@@ -63,14 +60,6 @@ function StatCard({ title, value, change, trend, icon: Icon }: StatCardProps) {
 }
 
 export function DashboardPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: async () => {
-      const response = await api.get('/dashboard');
-      return response.data.data;
-    },
-  });
-
   // Placeholder stats for demonstration
   const stats: StatCardProps[] = [
     {
