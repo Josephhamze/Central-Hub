@@ -116,15 +116,16 @@
   }
 
   body {
-    @apply bg-background-primary text-content-primary;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   /* Focus styles */
   *:focus-visible {
     @apply outline-none ring-2 ring-offset-2;
-    ring-color: var(--focus-ring);
-    ring-offset-color: var(--bg-primary);
+    --tw-ring-color: var(--focus-ring);
+    --tw-ring-offset-color: var(--bg-primary);
   }
 
   /* Selection */
@@ -142,11 +143,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border-strong rounded-full;
+    background-color: var(--border-strong);
+    @apply rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-content-muted;
+    background-color: var(--text-muted);
   }
 
   /* Firefox scrollbar */
@@ -168,40 +170,69 @@
   }
 
   .btn-primary {
-    @apply bg-accent-primary text-white hover:bg-accent-primary-hover;
-    @apply focus-visible:ring-accent-primary;
+    background-color: var(--accent-primary);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--accent-primary-hover);
   }
 
   .btn-secondary {
-    @apply bg-background-tertiary text-content-primary hover:bg-background-active;
-    @apply border border-border-default;
-    @apply focus-visible:ring-border-strong;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+  }
+  .btn-secondary:hover {
+    background-color: var(--bg-active);
   }
 
   .btn-ghost {
-    @apply bg-transparent text-content-secondary hover:bg-background-hover hover:text-content-primary;
-    @apply focus-visible:ring-border-default;
+    background-color: transparent;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
   }
 
   .btn-danger {
-    @apply bg-status-error text-white hover:bg-red-700;
-    @apply focus-visible:ring-status-error;
+    background-color: var(--status-error);
+    color: white;
+  }
+  .btn-danger:hover {
+    background-color: #b91c1c;
   }
 
   /* Input base */
   .input {
-    @apply w-full px-3 py-2 text-sm bg-background-primary text-content-primary;
-    @apply border border-border-default rounded-lg;
-    @apply placeholder:text-content-muted;
-    @apply focus:outline-none focus:ring-2 focus:ring-accent-primary/40 focus:border-accent-primary;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply transition-colors duration-200;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Card */
   .card {
-    @apply bg-background-elevated border border-border-default rounded-xl;
-    @apply shadow-elevation-1;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
 
   /* Badge */
@@ -210,23 +241,28 @@
   }
 
   .badge-success {
-    @apply bg-status-success-bg text-status-success;
+    background-color: var(--status-success-bg);
+    color: var(--status-success);
   }
 
   .badge-warning {
-    @apply bg-status-warning-bg text-status-warning;
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning);
   }
 
   .badge-error {
-    @apply bg-status-error-bg text-status-error;
+    background-color: var(--status-error-bg);
+    color: var(--status-error);
   }
 
   .badge-info {
-    @apply bg-status-info-bg text-status-info;
+    background-color: var(--status-info-bg);
+    color: var(--status-info);
   }
 
   .badge-neutral {
-    @apply bg-background-tertiary text-content-secondary;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
   }
 }
 
