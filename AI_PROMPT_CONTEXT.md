@@ -1,0 +1,697 @@
+# AI Prompt Context — Operations Control Panel
+
+> **Purpose**: This file documents the architecture, design system, and conventions of the Operations Control Panel. Feed this file to AI assistants (Cursor, Claude, ChatGPT) when developing new modules or features to ensure consistency.
+
+---
+
+## 1. Project Overview
+
+### Purpose
+The Operations Control Panel (OCP) is a **production-grade, standalone web application** designed as a foundational platform for comprehensive operations management systems. It provides:
+
+- Premium, Apple-grade UI/UX
+- Authentication with JWT + refresh tokens
+- Role-based access control (RBAC)
+- Theme system (Light / Dark / System)
+- Modular, extensible architecture
+
+### Current State
+The platform is in **core skeleton state** — all infrastructure, authentication, RBAC, and UI shell are implemented. Module pages are placeholders ready for business logic implementation.
+
+### Architectural Philosophy
+- **Separation of concerns**: Clear boundaries between frontend, backend, and database layers
+- **No business logic in skeleton**: All modules are structural placeholders
+- **No mock data**: Only system entities (users, roles, permissions) exist
+- **Premium UI as requirement**: Design quality is non-negotiable
+- **Extensibility first**: Architecture supports modular feature additions
+
+---
+
+## 2. Technology Stack
+
+### Frontend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 18+ | UI framework |
+| TypeScript | 5.x | Type safety |
+| Vite | 6.x | Build tool |
+| React Router | 7.x | Routing |
+| TailwindCSS | 3.x | Styling with custom tokens |
+| TanStack Query | 5.x | Server state management |
+| Axios | 1.x | HTTP client |
+| Lucide React | Latest | Icon system |
+
+### Backend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Node.js | 20+ | Runtime |
+| NestJS | 10.x | Framework |
+| TypeScript | 5.x | Type safety |
+| Prisma | 6.x | ORM |
+| PostgreSQL | 16+ | Database |
+| Passport JWT | 4.x | Authentication |
+| Swagger | 8.x | API documentation |
+
+### Authentication Model
+- **JWT Access Tokens**: Short-lived (15 minutes default)
+- **Refresh Tokens**: Long-lived (7 days default), stored in database
+- **Token rotation**: New refresh token issued on each refresh
+- **Automatic refresh**: Frontend handles 401 responses automatically
+
+### Theme System
+- **CSS Variables**: All colors defined as CSS custom properties
+- **Three modes**: `light`, `dark`, `system`
+- **Persisted preference**: Stored in `localStorage` and synced to user profile
+- **Smooth transitions**: 200ms transition on theme changes
+- **System detection**: Responds to `prefers-color-scheme` media query
+
+---
+
+## 3. Global Design System
+
+### Design Philosophy
+The UI follows an **Apple-grade design philosophy**:
+- **Minimal**: Remove everything unnecessary
+- **Precise**: Exact spacing, consistent alignment
+- **Calm**: Soft colors, subtle shadows, no visual noise
+- **Premium**: Every element feels intentional and polished
+- **Consistent**: Same patterns everywhere
+
+### Layout Rules
+```
+┌─────────────────────────────────────────────────────┐
+│ Header (h-16, sticky, blur backdrop)                │
+├──────────┬──────────────────────────────────────────┤
+│ Sidebar  │ Main Content                             │
+│ w-64     │ p-6, max-w-7xl                           │
+│ (or 72px │                                          │
+│ collapsed)│                                         │
+│          │                                          │
+│          │                                          │
+└──────────┴──────────────────────────────────────────┘
+```
+
+- **Sidebar**: 256px expanded, 72px collapsed
+- **Header**: 64px height, sticky, backdrop-blur
+- **Content**: 24px padding, max-width 1280px (7xl)
+- **Content area**: Scrollable independently
+
+### Typography Scale
+```css
+text-2xs:  0.625rem (10px)  /* Smallest labels */
+text-xs:   0.75rem  (12px)  /* Badges, hints */
+text-sm:   0.8125rem (13px) /* Secondary text */
+text-base: 0.875rem (14px)  /* Body text */
+text-lg:   1rem     (16px)  /* Section headers */
+text-xl:   1.125rem (18px)  /* Card titles */
+text-2xl:  1.25rem  (20px)  /* Page titles */
+text-3xl:  1.5rem   (24px)  /* Hero text */
+```
+
+**Font Family**: SF Pro Display/Text (Apple), with Segoe UI, Roboto fallbacks
+
+### Spacing System
+Base unit: 4px (0.25rem)
+
+| Class | Value | Use Case |
+|-------|-------|----------|
+| `p-1` | 4px | Tight icon buttons |
+| `p-2` | 8px | Small buttons, badges |
+| `p-3` | 12px | Medium elements |
+| `p-4` | 16px | Cards padding (small) |
+| `p-6` | 24px | Cards padding (standard) |
+| `p-8` | 32px | Cards padding (large) |
+| `gap-2` | 8px | Tight element groups |
+| `gap-4` | 16px | Standard gaps |
+| `gap-6` | 24px | Section gaps |
+
+### Color Token Strategy
+
+All colors use CSS variables for theme switching:
+
+```css
+/* Backgrounds */
+--bg-primary      /* Main app background */
+--bg-secondary    /* Page background */
+--bg-tertiary     /* Card backgrounds, inputs */
+--bg-elevated     /* Floating elements */
+--bg-hover        /* Hover states */
+--bg-active       /* Active/pressed states */
+
+/* Text */
+--text-primary    /* Main text */
+--text-secondary  /* Supporting text */
+--text-tertiary   /* Muted text */
+--text-muted      /* Disabled/placeholder */
+--text-inverse    /* Text on dark backgrounds */
+
+/* Borders */
+--border-default  /* Standard borders */
+--border-subtle   /* Barely visible borders */
+--border-strong   /* Emphasized borders */
+
+/* Accents */
+--accent-primary       /* Primary action color */
+--accent-primary-hover /* Primary hover state */
+--accent-secondary     /* Secondary action color */
+
+/* Status */
+--status-success    /* Success state */
+--status-success-bg /* Success background */
+--status-warning    /* Warning state */
+--status-warning-bg /* Warning background */
+--status-error      /* Error state */
+--status-error-bg   /* Error background */
+--status-info       /* Info state */
+--status-info-bg    /* Info background */
+```
+
+### Light/Dark Mode Behavior
+- **Light**: Whites and grays, subtle shadows
+- **Dark**: True blacks (#0a0a0a base), elevated surfaces slightly lighter
+- **Transitions**: 200ms ease on background and text color changes
+- **Dark mode is designed**, not just inverted colors
+
+---
+
+## 4. Reusable UI Components
+
+### Component Library Location
+`frontend/src/components/`
+
+### Core Components
+
+#### `Button`
+```tsx
+import { Button } from '@components/ui/Button';
+
+// Variants: primary, secondary, ghost, danger
+// Sizes: sm, md, lg
+<Button variant="primary" size="md" isLoading={false}>
+  Save
+</Button>
+<Button leftIcon={<Plus />} rightIcon={<ArrowRight />}>
+  Add Item
+</Button>
+```
+
+#### `Input`
+```tsx
+import { Input } from '@components/ui/Input';
+
+<Input
+  label="Email"
+  type="email"
+  placeholder="user@example.com"
+  error="Invalid email"
+  hint="We'll never share your email"
+  leftIcon={<Mail />}
+  rightIcon={<Check />}
+/>
+```
+
+#### `Card`
+```tsx
+import { Card, CardHeader } from '@components/ui/Card';
+
+// Variants: default, elevated, outlined
+// Padding: none, sm, md, lg
+<Card variant="default" padding="md">
+  <CardHeader
+    title="Section Title"
+    description="Optional description"
+    action={<Button size="sm">Action</Button>}
+  />
+  {/* Content */}
+</Card>
+```
+
+#### `Badge`
+```tsx
+import { Badge } from '@components/ui/Badge';
+
+// Variants: default, success, warning, error, info
+// Sizes: sm, md
+<Badge variant="success">Active</Badge>
+```
+
+#### `EmptyState`
+```tsx
+import { EmptyState } from '@components/ui/EmptyState';
+
+<EmptyState
+  icon={<Inbox className="w-8 h-8" />}
+  title="No items found"
+  description="Create your first item to get started"
+  action={<Button>Create Item</Button>}
+/>
+```
+
+#### `Modal`
+```tsx
+import { Modal, ModalFooter } from '@components/ui/Modal';
+
+<Modal
+  isOpen={isOpen}
+  onClose={() => setIsOpen(false)}
+  title="Confirm Action"
+  description="Are you sure?"
+  size="md" // sm, md, lg, xl
+>
+  {/* Content */}
+  <ModalFooter>
+    <Button variant="secondary" onClick={onClose}>Cancel</Button>
+    <Button onClick={onConfirm}>Confirm</Button>
+  </ModalFooter>
+</Modal>
+```
+
+#### `Toast` (via useToast hook)
+```tsx
+import { useToast } from '@contexts/ToastContext';
+
+const { success, error, warning, info } = useToast();
+
+success('Item saved successfully');
+error('Failed to save item');
+warning('This action cannot be undone');
+info('Processing your request');
+```
+
+#### `ThemeToggle`
+```tsx
+import { ThemeToggle } from '@components/ui/ThemeToggle';
+
+<ThemeToggle /> // Dropdown with Light/Dark/System options
+```
+
+### Layout Components
+
+#### `AppLayout`
+Main application shell with sidebar and header. Used as route element wrapper.
+
+#### `Sidebar`
+Collapsible navigation with icons and labels. Controlled by `AppLayout`.
+
+#### `Header`
+Sticky header with breadcrumbs, theme toggle, notifications, and user menu.
+
+#### `PageContainer`
+Standard page wrapper with optional title, description, and actions.
+```tsx
+<PageContainer
+  title="Inventory"
+  description="Manage your stock items"
+  actions={<Button>Add Item</Button>}
+>
+  {/* Page content */}
+</PageContainer>
+```
+
+#### `ProtectedRoute`
+Route wrapper that checks authentication and optionally permissions/roles.
+```tsx
+<ProtectedRoute requiredPermissions={['inventory:create']}>
+  <CreateItemPage />
+</ProtectedRoute>
+```
+
+---
+
+## 5. Routing Conventions
+
+### Module-Based Pattern
+```
+/                       → Redirects to /dashboard
+/login                  → Public - Login page
+/register               → Public - Registration page
+/dashboard              → Dashboard module
+/administration/*       → Administration module
+/operations/*           → Operations module
+/production/*           → Production tracking module
+/costing/*              → Costing module
+/inventory/*            → Inventory & warehousing module
+/assets/*               → Assets & maintenance module
+/logistics/*            → Logistics & transport module
+/customers/*            → Customers & sales module
+/reporting/*            → Reporting & analytics module
+/profile                → User profile
+```
+
+### Adding Module Subroutes
+Use nested routes within each module:
+```
+/inventory              → Overview / list
+/inventory/items        → Items list
+/inventory/items/:id    → Item detail
+/inventory/items/new    → Create item
+/inventory/warehouses   → Warehouses list
+```
+
+### URL Naming Conventions
+- Lowercase, hyphenated: `/production-lines`, not `/productionLines`
+- Plural for collections: `/items`, `/warehouses`
+- Singular for actions: `/item/new`, `/warehouse/:id/edit`
+- ID parameters: `:id` (CUID format)
+
+---
+
+## 6. API Conventions
+
+### Endpoint Naming
+```
+Base: /api/v1
+
+GET    /api/v1/{module}              → List all
+GET    /api/v1/{module}/:id          → Get one
+POST   /api/v1/{module}              → Create
+PUT    /api/v1/{module}/:id          → Full update
+PATCH  /api/v1/{module}/:id          → Partial update
+DELETE /api/v1/{module}/:id          → Delete
+```
+
+### Response Shape
+```typescript
+// Success
+{
+  "success": true,
+  "data": { /* response payload */ },
+  "meta": {
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "path": "/api/v1/users"
+  }
+}
+
+// Paginated Success
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "totalPages": 8
+    }
+  },
+  "meta": { ... }
+}
+
+// Error
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "User not found",
+    "details": { /* optional validation errors */ }
+  },
+  "meta": {
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "path": "/api/v1/users/123"
+  }
+}
+```
+
+### Error Codes
+| Code | HTTP Status | Meaning |
+|------|-------------|---------|
+| `BAD_REQUEST` | 400 | Invalid input |
+| `UNAUTHORIZED` | 401 | Not authenticated |
+| `FORBIDDEN` | 403 | Not permitted |
+| `NOT_FOUND` | 404 | Resource not found |
+| `CONFLICT` | 409 | Resource conflict |
+| `UNPROCESSABLE_ENTITY` | 422 | Validation failed |
+| `INTERNAL_ERROR` | 500 | Server error |
+| `NOT_IMPLEMENTED` | 501 | Feature not ready |
+
+### Versioning
+- URL-based: `/api/v1/...`
+- No version in request body
+- Version bump = breaking changes only
+
+---
+
+## 7. RBAC Model
+
+### Role Structure
+Predefined system roles:
+| Role | Description |
+|------|-------------|
+| `Administrator` | Full system access |
+| `Manager` | View + update permissions |
+| `Operator` | Operational module access |
+| `Viewer` | Read-only access |
+
+### Permission Format
+```
+{module}:{action}
+
+Examples:
+- inventory:view
+- inventory:create
+- inventory:update
+- inventory:delete
+- system:manage_users
+- system:manage_roles
+```
+
+### Adding New Permissions
+1. Add to seed file: `backend/prisma/seed.ts`
+2. Define module and action in permission data
+3. Run `pnpm prisma db seed`
+4. Assign to roles as needed
+
+### Permission Checking
+
+**Backend** (NestJS):
+```typescript
+import { Permissions } from '@common/decorators/permissions.decorator';
+import { RbacGuard } from '@common/guards/rbac.guard';
+
+@UseGuards(RbacGuard)
+@Permissions('inventory:create')
+@Post()
+create(@Body() dto: CreateItemDto) { ... }
+```
+
+**Frontend** (React):
+```tsx
+import { useAuth } from '@contexts/AuthContext';
+
+const { hasPermission, hasRole } = useAuth();
+
+if (hasPermission('inventory:create')) {
+  // Show create button
+}
+
+// Or in routes:
+<ProtectedRoute requiredPermissions={['inventory:create']}>
+  <CreatePage />
+</ProtectedRoute>
+```
+
+---
+
+## 8. How to Extend the System
+
+### Adding a New Module
+
+#### Step 1: Backend Module
+```bash
+# Create module folder structure
+backend/src/modules/{module-name}/
+├── {module-name}.module.ts
+├── {module-name}.controller.ts
+├── {module-name}.service.ts
+└── dto/
+    ├── create-{entity}.dto.ts
+    └── update-{entity}.dto.ts
+```
+
+#### Step 2: Database Schema
+```prisma
+// backend/prisma/schema.prisma
+
+model {EntityName} {
+  id        String   @id @default(cuid())
+  // ... fields
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("{table_name}")
+}
+```
+
+Run: `pnpm prisma migrate dev --name add_{entity}`
+
+#### Step 3: Register Module
+```typescript
+// backend/src/app.module.ts
+import { {ModuleName}Module } from './modules/{module-name}/{module-name}.module';
+
+@Module({
+  imports: [
+    // ... existing modules
+    {ModuleName}Module,
+  ],
+})
+export class AppModule {}
+```
+
+#### Step 4: Frontend Pages
+```
+frontend/src/pages/{module-name}/
+├── {ModuleName}Page.tsx      // Overview/list
+├── {Entity}ListPage.tsx      // Entity list
+├── {Entity}DetailPage.tsx    // Entity detail
+└── {Entity}FormPage.tsx      // Create/edit form
+```
+
+#### Step 5: Add Routes
+```tsx
+// frontend/src/App.tsx
+<Route path="{module-name}/*" element={<{ModuleName}Page />}>
+  <Route index element={<{Entity}ListPage />} />
+  <Route path=":id" element={<{Entity}DetailPage />} />
+  <Route path="new" element={<{Entity}FormPage />} />
+  <Route path=":id/edit" element={<{Entity}FormPage />} />
+</Route>
+```
+
+#### Step 6: Add Navigation
+```tsx
+// frontend/src/components/layout/Sidebar.tsx
+const navigation: NavItem[] = [
+  // ... existing items
+  { name: '{Module Name}', path: '/{module-name}', icon: {Icon} },
+];
+```
+
+### Converting Placeholder to Real Feature
+
+1. **Replace empty state** with actual data fetching
+2. **Implement service methods** in backend
+3. **Create proper DTOs** for validation
+4. **Add database queries** using Prisma
+5. **Build form components** for CRUD operations
+6. **Wire up API calls** using TanStack Query
+7. **Add proper error handling** and loading states
+
+### Where Business Logic Lives
+
+| Location | What Goes There |
+|----------|-----------------|
+| `backend/src/modules/{module}/service.ts` | Business rules, validation, complex operations |
+| `backend/src/modules/{module}/controller.ts` | HTTP handling, input validation, response formatting |
+| `frontend/src/hooks/` | Complex state logic, data fetching hooks |
+| `frontend/src/services/` | API client functions |
+| `frontend/src/pages/` | Page-specific UI logic |
+| `frontend/src/components/` | Reusable UI components (no business logic) |
+
+---
+
+## 9. Prompt Usage Instructions
+
+### How to Use This File
+
+When prompting an AI assistant to build a new feature:
+
+1. **Include this entire file** in your context
+2. **Reference specific sections** relevant to your task
+3. **Follow the conventions** documented here
+4. **Use existing patterns** from the codebase
+
+### Example Prompts
+
+#### Adding a New CRUD Module
+```
+Using the existing design system and architecture defined in 
+AI_PROMPT_CONTEXT.md, build out the Inventory module with:
+
+- Stock Items entity (name, SKU, description, quantity, unit, reorder level)
+- Full CRUD operations
+- List page with search and pagination
+- Detail page with stock movements history
+- Create/Edit form with validation
+
+Follow the established patterns for:
+- API response format
+- Component usage
+- Permission checks
+- Error handling
+```
+
+#### Adding a Feature to Existing Module
+```
+Using AI_PROMPT_CONTEXT.md as reference, add a "Stock Transfer" 
+feature to the Inventory module:
+
+- Transfer stock between warehouses
+- Validation for available quantity
+- Audit trail of transfers
+- Form with source/destination warehouse selection
+
+Use the existing Card, Button, Input components and follow 
+the API conventions documented.
+```
+
+#### Creating a Dashboard Widget
+```
+Based on the design system in AI_PROMPT_CONTEXT.md, create a 
+"Low Stock Alert" dashboard widget that:
+
+- Shows items below reorder level
+- Uses the Card component with CardHeader
+- Displays Badge for severity (warning/error)
+- Links to item detail pages
+- Follows the established color and spacing system
+```
+
+### Key Points for Effective Prompts
+
+1. **Always reference this file** to maintain consistency
+2. **Be specific** about which module/feature you're building
+3. **List required fields/entities** explicitly
+4. **Mention which components** to use from the design system
+5. **Include permission requirements** if the feature needs RBAC
+6. **Specify any integrations** with other modules
+
+---
+
+## Quick Reference Card
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ OPERATIONS CONTROL PANEL - QUICK REFERENCE                  │
+├─────────────────────────────────────────────────────────────┤
+│ API Base:        /api/v1                                    │
+│ Auth Header:     Authorization: Bearer {token}              │
+│ Theme Storage:   localStorage key: 'theme'                  │
+│ Token Storage:   localStorage key: 'auth_tokens'            │
+├─────────────────────────────────────────────────────────────┤
+│ COMPONENT IMPORTS                                           │
+│ @components/ui/Button     - Button, variants                │
+│ @components/ui/Input      - Input with icons                │
+│ @components/ui/Card       - Card, CardHeader                │
+│ @components/ui/Badge      - Status badges                   │
+│ @components/ui/Modal      - Modal, ModalFooter              │
+│ @components/ui/EmptyState - Empty states                    │
+│ @components/ui/Toast      - Via useToast hook               │
+│ @components/layout/*      - Layout components               │
+├─────────────────────────────────────────────────────────────┤
+│ CONTEXT HOOKS                                               │
+│ useAuth()    - { user, login, logout, hasPermission }       │
+│ useTheme()   - { theme, resolvedTheme, setTheme }           │
+│ useToast()   - { success, error, warning, info }            │
+├─────────────────────────────────────────────────────────────┤
+│ DECORATORS (Backend)                                        │
+│ @Public()              - Skip auth                          │
+│ @Permissions('...')    - Require permissions                │
+│ @CurrentUser()         - Get current user                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+*Last updated: Initial skeleton release*
+*Version: 1.0.0*
