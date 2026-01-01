@@ -15,6 +15,9 @@ RUN pnpm install
 # Generate Prisma client
 RUN pnpm prisma generate
 
+# Copy startup script
+COPY start.sh ./start.sh
+
 # Copy source code
 COPY . .
 
@@ -25,6 +28,9 @@ RUN pnpm build
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
+# Make script executable
+RUN chmod +x ./start.sh
+
 # Change ownership
 RUN chown -R nestjs:nodejs /app
 
@@ -34,4 +40,4 @@ USER nestjs
 EXPOSE 3000
 
 # Start application
-CMD ["node", "dist/main.js"]
+CMD ["./start.sh"]
