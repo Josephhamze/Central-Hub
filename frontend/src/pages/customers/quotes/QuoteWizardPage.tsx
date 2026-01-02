@@ -129,12 +129,20 @@ export function QuoteWizardPage() {
       unitPrice: item.unitPrice,
       discount: item.discount,
     }));
+    // Construct DTO with only allowed fields (exclude UI-only fields like warehouseId)
     const dto: CreateQuoteDto = {
-      ...quoteData,
       companyId: quoteData.companyId!,
       projectId: quoteData.projectId!,
       customerId: quoteData.customerId!,
+      contactId: quoteData.contactId,
       deliveryMethod: quoteData.deliveryMethod!,
+      deliveryAddressLine1: quoteData.deliveryAddressLine1,
+      deliveryAddressLine2: quoteData.deliveryAddressLine2,
+      deliveryCity: quoteData.deliveryCity,
+      deliveryState: quoteData.deliveryState,
+      deliveryPostalCode: quoteData.deliveryPostalCode,
+      deliveryCountry: quoteData.deliveryCountry,
+      routeId: quoteData.routeId,
       items: dtoItems,
     };
     createQuoteMutation.mutate(dto);
