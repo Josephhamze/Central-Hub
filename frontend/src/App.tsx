@@ -23,6 +23,7 @@ import { NotFoundPage } from '@pages/NotFoundPage';
 import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
 import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
 import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
+import { CompaniesPage } from '@pages/administration/CompaniesPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -65,6 +66,7 @@ function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="administration/*" element={<AdministrationPage />} />
+        <Route path="administration/companies" element={<CompaniesPage />} />
         <Route path="operations/*" element={<OperationsPage />} />
         <Route path="production/*" element={<ProductionPage />} />
         <Route path="costing/*" element={<CostingPage />} />
