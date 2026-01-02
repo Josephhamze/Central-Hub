@@ -184,6 +184,8 @@ function Step3ProjectDelivery({ quoteData, onUpdate }: { quoteData: Partial<Crea
 }
 
 // Step 4: Products (simplified)
+const { error: showError } = useToast();
+
 function Step4Products() {
   return (
     <div className="space-y-4">
