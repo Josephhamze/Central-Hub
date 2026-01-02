@@ -113,7 +113,7 @@ export function QuotesAdminPage() {
                     <p className="text-sm text-content-secondary">
                       {quote.company?.name} • {quote.customer?.companyName || `${quote.customer?.firstName} ${quote.customer?.lastName}`}
                     </p>
-                    <p className="text-sm text-content-tertiary">Total: ${quote.grandTotal.toFixed(2)}</p>
+                    <p className="text-sm text-content-tertiary">Total: ${Number(quote.grandTotal).toFixed(2)}</p>
                   </div>
                   <div className="flex gap-2">
                     {quote.status === 'PENDING_APPROVAL' && hasPermission('quotes:approve') && (
