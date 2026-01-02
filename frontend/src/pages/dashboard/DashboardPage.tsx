@@ -17,7 +17,6 @@ import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { EmptyState } from '@components/ui/EmptyState';
-import { Button } from '@components/ui/Button';
 
 interface StatCardProps {
   title: string;
