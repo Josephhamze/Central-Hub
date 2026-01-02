@@ -10,6 +10,25 @@ import { useToast } from '@contexts/ToastContext';
 import { customersApi, type Customer, type CreateCustomerDto, type CustomerType } from '@services/sales/customers';
 import { useAuth } from '@contexts/AuthContext';
 
+
+// Form data type with frontend-friendly field names
+interface CustomerFormData {
+  type: CustomerType;
+  companyName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  taxId: string;
+  notes: string;
+}
+
 export function CustomersManagementPage() {
   const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
@@ -19,7 +38,7 @@ export function CustomersManagementPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [formData, setFormData] = useState<CreateCustomerDto>({
+  const [formData, setFormData] = useState<CustomerFormData>({
     type: 'COMPANY',
     companyName: '',
     firstName: '',
@@ -285,11 +304,11 @@ export function CustomersManagementPage() {
                     <span className="font-medium">Phone:</span> {customer.phone}
                   </p>
                 )}
-                {customer.city && (
+                {customer.billingCity && (
                   <p className="text-content-secondary">
-                    <span className="font-medium">Location:</span> {customer.city}
-                    {customer.state && `, ${customer.state}`}
-                    {customer.country && `, ${customer.country}`}
+                    <span className="font-medium">Location:</span> {customer.billingCity}
+                    {customer.billingState && `, ${customer.billingState}`}
+                    {customer.billingCountry && `, ${customer.billingCountry}`}
                   </p>
                 )}
               </div>
