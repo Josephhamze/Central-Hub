@@ -23,6 +23,7 @@ export interface Quote {
   projectId: string;
   customerId: string;
   contactId?: string;
+  warehouseId?: string;
   deliveryMethod: DeliveryMethod;
   deliveryAddressLine1?: string;
   deliveryAddressLine2?: string;
@@ -69,6 +70,7 @@ export interface CreateQuoteDto {
   projectId: string;
   customerId: string;
   contactId?: string;
+  warehouseId?: string;
   deliveryMethod: DeliveryMethod;
   routeId?: string;
   deliveryAddressLine1?: string;

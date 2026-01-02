@@ -131,12 +131,13 @@ export function QuoteWizardPage() {
       unitPrice: item.unitPrice,
       discount: item.discount,
     }));
-    // Construct DTO with only allowed fields (exclude UI-only fields like warehouseId)
+    // Construct DTO with only allowed fields
     const dto: CreateQuoteDto = {
       companyId: quoteData.companyId!,
       projectId: quoteData.projectId!,
       customerId: quoteData.customerId!,
       contactId: quoteData.contactId,
+      warehouseId: quoteData.warehouseId, // Include warehouseId for route calculation
       deliveryMethod: quoteData.deliveryMethod!,
       deliveryAddressLine1: quoteData.deliveryAddressLine1,
       deliveryAddressLine2: quoteData.deliveryAddressLine2,

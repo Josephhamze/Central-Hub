@@ -9,6 +9,7 @@ export class CreateQuoteDto {
   @ApiProperty() @IsString() projectId: string;
   @ApiProperty() @IsString() customerId: string;
   @ApiPropertyOptional() @IsString() @IsOptional() contactId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() warehouseId?: string;
   @ApiProperty({ enum: DeliveryMethod }) @IsEnum(DeliveryMethod) deliveryMethod: DeliveryMethod;
   @ApiPropertyOptional() @IsString() @IsOptional() routeId?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryAddressLine1?: string;

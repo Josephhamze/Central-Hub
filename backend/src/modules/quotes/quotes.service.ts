@@ -239,32 +239,51 @@ export class QuotesService {
       throw new BadRequestException('Delivery address (including city) is required for delivered quotes');
     }
 
-    // Auto-match route based on company city (departure) and delivery city (destination)
+    // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery city (destination)
     let routeId = dto.routeId;
+    let departureCity: string | null = null;
+    
     if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
       if (!dto.deliveryCity) {
         throw new BadRequestException('Delivery city is required for route calculation');
       }
-      if (!company.city) {
-        throw new BadRequestException(`Company "${company.name}" does not have a city set. Please set the company city to enable automatic route matching.`);
+      
+      // Try to get departure city from warehouse first, then fall back to company city
+      if (dto.warehouseId) {
+        const warehouse = await this.prisma.warehouse.findUnique({
+          where: { id: dto.warehouseId },
+        });
+        if (warehouse?.locationCity) {
+          departureCity = warehouse.locationCity;
+        }
+      }
+      
+      // Fall back to company city if warehouse doesn't have a city
+      if (!departureCity && company.city) {
+        departureCity = company.city;
+      }
+      
+      if (!departureCity) {
+        const locationHint = dto.warehouseId ? 'warehouse' : 'company';
+        throw new BadRequestException(`The selected ${locationHint} does not have a city set. Please set the ${locationHint} city to enable automatic route matching.`);
       }
       
       const matchedRoute = await this.prisma.route.findFirst({
         where: {
-          fromCity: company.city,
+          fromCity: departureCity,
           toCity: dto.deliveryCity,
         },
       });
       if (matchedRoute) {
         routeId = matchedRoute.id;
       } else {
-        throw new BadRequestException(`No route found from ${company.city} to ${dto.deliveryCity}. Please ensure the route exists in the system.`);
+        throw new BadRequestException(`No route found from ${departureCity} to ${dto.deliveryCity}. Please ensure the route exists in the system.`);
       }
     }
     
     // Validate that DELIVERED quotes have a route
     if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
-      throw new BadRequestException('Route is required for delivered quotes. Please ensure a route exists or the company has a city set for automatic matching.');
+      throw new BadRequestException('Route is required for delivered quotes. Please ensure a route exists or the warehouse/company has a city set for automatic matching.');
     }
 
     // Calculate transport
@@ -427,18 +446,37 @@ export class QuotesService {
       // Recalculate transport if route changed
       // Auto-match route if delivery method is DELIVERED and city is provided
       let routeId = dto.routeId ?? quote.routeId;
+      let departureCity: string | null = null;
+      
       if (dto.deliveryMethod === DeliveryMethod.DELIVERED || (!dto.deliveryMethod && quote.deliveryMethod === DeliveryMethod.DELIVERED)) {
         const deliveryCity = dto.deliveryCity ?? quote.deliveryCity;
         if (deliveryCity && !routeId) {
-          // Get company city from project
-          const project = await this.prisma.project.findUnique({
-            where: { id: quote.projectId },
-            include: { company: true },
-          });
-          if (project?.company?.city) {
+          // Try to get departure city from warehouse first, then fall back to company city
+          const warehouseId = dto.warehouseId ?? (quote as any).warehouseId;
+          if (warehouseId) {
+            const warehouse = await this.prisma.warehouse.findUnique({
+              where: { id: warehouseId },
+            });
+            if (warehouse?.locationCity) {
+              departureCity = warehouse.locationCity;
+            }
+          }
+          
+          // Fall back to company city if warehouse doesn't have a city
+          if (!departureCity) {
+            const project = await this.prisma.project.findUnique({
+              where: { id: quote.projectId },
+              include: { company: true },
+            });
+            if (project?.company?.city) {
+              departureCity = project.company.city;
+            }
+          }
+          
+          if (departureCity) {
             const matchedRoute = await this.prisma.route.findFirst({
               where: {
-                fromCity: project.company.city,
+                fromCity: departureCity,
                 toCity: deliveryCity,
               },
             });
