@@ -220,8 +220,8 @@ export function RoutesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <p className="text-content-secondary"><span className="font-medium">Distance:</span> {route.distanceKm} km</p>
-                    <p className="text-content-secondary"><span className="font-medium">Cost per km:</span> ${route.costPerKm.toFixed(2)}</p>
-                    <p className="text-content-secondary"><span className="font-medium">Base Cost:</span> ${(route.distanceKm * route.costPerKm).toFixed(2)}</p>
+                    <p className="text-content-secondary"><span className="font-medium">Cost per km:</span> ${Number(route.costPerKm).toFixed(2)}</p>
+                    <p className="text-content-secondary"><span className="font-medium">Base Cost:</span> ${(Number(route.distanceKm) * Number(route.costPerKm)).toFixed(2)}</p>
                     {route.tolls && route.tolls.length > 0 && (
                       <p className="text-content-secondary"><span className="font-medium">Tolls:</span> {route.tolls.length} toll(s)</p>
                     )}
@@ -234,7 +234,7 @@ export function RoutesPage() {
                           <div key={toll.id} className="flex justify-between items-center bg-background-secondary p-2 rounded">
                             <span className="text-sm text-content-secondary">{toll.name}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-content-primary">${toll.cost.toFixed(2)}</span>
+                              <span className="text-sm font-medium text-content-primary">${Number(toll.cost).toFixed(2)}</span>
                               {canDelete && (
                                 <Button size="sm" variant="ghost" onClick={() => handleRemoveToll(toll.id)}>
                                   <X className="w-4 h-4" />
@@ -245,7 +245,7 @@ export function RoutesPage() {
                         ))}
                       </div>
                       <p className="text-sm text-content-secondary mt-2">
-                        Total Tolls: ${route.tolls.reduce((sum, toll) => sum + toll.cost, 0).toFixed(2)}
+                        Total Tolls: ${route.tolls.reduce((sum, toll) => sum + Number(toll.cost), 0).toFixed(2)}
                       </p>
                     </div>
                   )}
