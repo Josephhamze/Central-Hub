@@ -26,6 +26,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -122,4 +123,14 @@ export class UsersController {
   async assignRoles(@Param('id') id: string, @Body() dto: AssignRolesDto) {
     return this.usersService.assignRoles(id, dto.roleIds);
   }
+
+  @Post('assign-admin/:email')
+  @Public()
+  @ApiOperation({ summary: 'Assign Administrator role to user by email (one-time setup endpoint)' })
+  @ApiResponse({ status: 200, description: 'Administrator role assigned successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async assignAdminByEmail(@Param('email') email: string) {
+    return this.usersService.assignAdminByEmail(email);
+  }
+
 }
