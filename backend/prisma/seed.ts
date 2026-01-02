@@ -262,6 +262,36 @@ async function main() {
 
   console.log('✅ Created admin user (admin@example.com / Admin123!)');
 
+  // Assign Administrator role to jj@efertongroup.com if user exists
+  const additionalAdmin = await prisma.user.findUnique({
+    where: { email: 'jj@efertongroup.com' },
+  });
+
+  if (additionalAdmin) {
+    const hasAdminRole = await prisma.userRole.findUnique({
+      where: {
+        userId_roleId: {
+          userId: additionalAdmin.id,
+          roleId: adminRole.id,
+        },
+      },
+    });
+
+    if (!hasAdminRole) {
+      await prisma.userRole.create({
+        data: {
+          userId: additionalAdmin.id,
+          roleId: adminRole.id,
+        },
+      });
+      console.log('✅ Assigned Administrator role to jj@efertongroup.com');
+    } else {
+      console.log('ℹ️  jj@efertongroup.com already has Administrator role');
+    }
+  } else {
+    console.log('ℹ️  User jj@efertongroup.com not found (will be assigned on next seed if user exists)');
+  }
+
   // Create default system settings
   console.log('⚙️ Creating system settings...');
   const defaultSettings = [
