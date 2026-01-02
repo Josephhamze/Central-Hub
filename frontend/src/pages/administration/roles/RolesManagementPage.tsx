@@ -205,7 +205,7 @@ export function RolesManagementPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-content-primary">{role.name}</h3>
                     {role.isSystem && (
-                      <Badge variant="default">System Role</Badge>
+                      <Badge variant="secondary">System Role</Badge>
                     )}
                     {role.userCount !== undefined && role.userCount > 0 && (
                       <Badge variant="info">{role.userCount} user{role.userCount !== 1 ? 's' : ''}</Badge>
@@ -216,12 +216,12 @@ export function RolesManagementPage() {
                   )}
                   <div className="flex flex-wrap gap-2">
                     {role.permissions?.slice(0, 5).map((perm) => (
-                      <Badge key={perm.id} variant="default" size="sm">
+                      <Badge key={perm.id} variant="secondary" size="sm">
                         {perm.code}
                       </Badge>
                     ))}
                     {role.permissions && role.permissions.length > 5 && (
-                      <Badge variant="default" size="sm">
+                      <Badge variant="secondary" size="sm">
                         +{role.permissions.length - 5} more
                       </Badge>
                     )}
@@ -338,7 +338,7 @@ export function RolesManagementPage() {
         </div>
         <ModalFooter>
           <Button
-            variant="default"
+            variant="secondary"
             onClick={() => {
               setIsCreateModalOpen(false);
               setIsEditModalOpen(false);
