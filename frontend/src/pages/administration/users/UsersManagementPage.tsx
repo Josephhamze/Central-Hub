@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
 import { Plus, Search, UserCheck, UserX, Users, Shield } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -273,7 +272,7 @@ export function UsersManagementPage() {
                       Roles
                     </Button>
                   )}
-                  {user.isActive ? (
+                  {user.accountStatus === 'ACTIVE' ? (
                     <Button
                       size="sm"
                       variant="ghost"
