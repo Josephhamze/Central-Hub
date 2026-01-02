@@ -366,8 +366,8 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
   };
 
   const filtered = stockItemsData?.items.filter(si => 
-    si.name.toLowerCase().includes(search.toLowerCase()) ||
-    si.sku.toLowerCase().includes(search.toLowerCase())
+    si.name?.toLowerCase().includes(search.toLowerCase()) ||
+    si.sku?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
   if (!companyId || !projectId) {

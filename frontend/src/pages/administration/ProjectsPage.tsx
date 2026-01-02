@@ -124,7 +124,7 @@ export function ProjectsPage() {
   const canDelete = hasPermission('projects:delete');
 
   const filteredProjects = data?.items?.filter(project => 
-    !search || project.name.toLowerCase().includes(search.toLowerCase()) ||
+    !search || project.name?.toLowerCase().includes(search.toLowerCase()) ||
     project.description?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 

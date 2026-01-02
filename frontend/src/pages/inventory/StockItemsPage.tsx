@@ -168,7 +168,7 @@ export function StockItemsPage() {
   const canDelete = hasPermission('stock:delete');
 
   const filteredItems = data?.items?.filter(item => 
-    !search || item.name.toLowerCase().includes(search.toLowerCase()) ||
+    !search || item.name?.toLowerCase().includes(search.toLowerCase()) ||
     item.sku?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
