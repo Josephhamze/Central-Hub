@@ -8,6 +8,10 @@ import {
   LogOut,
   Settings,
   Bell,
+  Building2,
+  FolderKanban,
+  Users as UsersIcon,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { notificationsApi, type Notification } from '@services/notifications/notifications';
