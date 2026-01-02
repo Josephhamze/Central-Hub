@@ -67,9 +67,6 @@ export function QuoteWizardPage() {
     items: [],
   });
 
-  // Generate quote number (in real app, this would come from backend)
-  const quoteNumber = existingQuote?.quoteNumber || `EE-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000)}`;
-
   // Fetch companies for step 1
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
@@ -88,6 +85,9 @@ export function QuoteWizardPage() {
     },
     enabled: !!quoteId,
   });
+
+  // Generate quote number (in real app, this would come from backend)
+  const quoteNumber = existingQuote?.quoteNumber || `EE-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000)}`;
 
   // Populate form with existing quote data when editing
   useEffect(() => {

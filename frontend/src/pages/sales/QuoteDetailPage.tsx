@@ -8,7 +8,6 @@ import {
   X,
   CheckCircle2,
   XCircle,
-  FileText,
   Building2,
   User,
   Package,
@@ -24,14 +23,14 @@ import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
-import { quotesApi, type Quote } from '@services/sales/quotes';
+import { quotesApi } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
 
 export function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
