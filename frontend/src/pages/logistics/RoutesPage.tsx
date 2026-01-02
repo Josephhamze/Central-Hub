@@ -158,10 +158,10 @@ export function RoutesPage() {
   const canUpdate = hasPermission('routes:update');
   const canDelete = hasPermission('routes:delete');
 
-  const filteredRoutes = data?.items?.filter(route => 
+  const filteredRoutes = (data?.items || []).filter(route => 
     !search || route.fromCity?.toLowerCase().includes(search.toLowerCase()) ||
     route.toCity?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  );
 
   return (
     <PageContainer

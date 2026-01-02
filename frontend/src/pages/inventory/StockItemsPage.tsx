@@ -167,10 +167,10 @@ export function StockItemsPage() {
   const canUpdate = hasPermission('stock:update');
   const canDelete = hasPermission('stock:delete');
 
-  const filteredItems = data?.items?.filter(item => 
+  const filteredItems = (data?.items || []).filter(item => 
     !search || item.name?.toLowerCase().includes(search.toLowerCase()) ||
     item.sku?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  );
 
   return (
     <PageContainer

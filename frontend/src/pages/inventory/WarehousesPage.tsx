@@ -132,10 +132,10 @@ export function WarehousesPage() {
   const canUpdate = hasPermission('warehouses:update');
   const canDelete = hasPermission('warehouses:delete');
 
-  const filteredWarehouses = data?.items?.filter(warehouse => 
+  const filteredWarehouses = (data?.items || []).filter(warehouse => 
     !search || warehouse.name?.toLowerCase().includes(search.toLowerCase()) ||
     warehouse.locationCity?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  );
 
   return (
     <PageContainer

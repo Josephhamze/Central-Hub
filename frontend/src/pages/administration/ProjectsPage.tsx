@@ -123,10 +123,10 @@ export function ProjectsPage() {
   const canUpdate = hasPermission('projects:update');
   const canDelete = hasPermission('projects:delete');
 
-  const filteredProjects = data?.items?.filter(project => 
+  const filteredProjects = (data?.items || []).filter(project => 
     !search || project.name?.toLowerCase().includes(search.toLowerCase()) ||
     project.description?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  );
 
   return (
     <PageContainer
