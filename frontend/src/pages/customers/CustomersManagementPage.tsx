@@ -377,7 +377,7 @@ export function CustomersManagementPage() {
             />
           </div>
           <Input
-            label="Address Line 1"
+            label="Billing Address Line 1 *"
             value={formData.addressLine1 || ''}
             onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
             placeholder="Street address"
@@ -390,7 +390,7 @@ export function CustomersManagementPage() {
           />
           <div className="grid grid-cols-3 gap-4">
             <Input
-              label="City"
+              label="Billing City *"
               value={formData.city || ''}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               placeholder="City"
@@ -402,7 +402,7 @@ export function CustomersManagementPage() {
               placeholder="State"
             />
             <Input
-              label="Postal Code"
+              label="Billing Postal Code *"
               value={formData.postalCode || ''}
               onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
               placeholder="Postal code"
@@ -517,7 +517,7 @@ export function CustomersManagementPage() {
             />
           </div>
           <Input
-            label="Address Line 1"
+            label="Billing Address Line 1 *"
             value={formData.addressLine1 || ''}
             onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
             placeholder="Street address"
@@ -530,7 +530,7 @@ export function CustomersManagementPage() {
           />
           <div className="grid grid-cols-3 gap-4">
             <Input
-              label="City"
+              label="Billing City *"
               value={formData.city || ''}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               placeholder="City"
@@ -542,7 +542,7 @@ export function CustomersManagementPage() {
               placeholder="State"
             />
             <Input
-              label="Postal Code"
+              label="Billing Postal Code *"
               value={formData.postalCode || ''}
               onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
               placeholder="Postal code"
