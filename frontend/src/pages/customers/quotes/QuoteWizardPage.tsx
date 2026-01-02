@@ -100,8 +100,8 @@ export function QuoteWizardPage() {
             {currentStep === 1 && <Step1CompanySelection companies={companiesData?.items || []} selected={quoteData.companyId} onSelect={(id) => setQuoteData({ ...quoteData, companyId: id })} />}
             {currentStep === 2 && <Step2ClientSelection quoteData={quoteData} onUpdate={setQuoteData} />}
             {currentStep === 3 && <Step3ProjectDelivery quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 4 && <Step4Products quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 5 && <Step5Review quoteData={quoteData as CreateQuoteDto} />}
+            {currentStep === 4 && <Step4Products />}
+            {currentStep === 5 && <Step5Review />}
           </div>
         </Card>
 
@@ -184,7 +184,7 @@ function Step3ProjectDelivery({ quoteData, onUpdate }: { quoteData: Partial<Crea
 }
 
 // Step 4: Products (simplified)
-function Step4Products({ quoteData, onUpdate }: { quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+function Step4Products() {
   return (
     <div className="space-y-4">
       <p className="text-content-secondary">Product selection UI would go here with validation</p>
@@ -193,7 +193,7 @@ function Step4Products({ quoteData, onUpdate }: { quoteData: Partial<CreateQuote
 }
 
 // Step 5: Review
-function Step5Review({ quoteData }: { quoteData: CreateQuoteDto }) {
+function Step5Review() {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Review Quote</h3>
