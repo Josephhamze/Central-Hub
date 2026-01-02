@@ -75,8 +75,6 @@ async function main() {
     { code: 'quotes:approve', name: 'Approve Quotes', module: 'quotes' },
     { code: 'quotes:reject', name: 'Reject Quotes', module: 'quotes' },
     { code: 'reporting:view_sales_kpis', name: 'View Sales KPIs', module: 'reporting' },
-  ,
-
     { code: 'assets:view', name: 'View Assets', module: 'assets' },
     { code: 'assets:create', name: 'Create Assets', module: 'assets' },
     { code: 'assets:update', name: 'Update Assets', module: 'assets' },
