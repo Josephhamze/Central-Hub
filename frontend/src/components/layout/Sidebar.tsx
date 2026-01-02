@@ -38,7 +38,7 @@ const navigation: NavItem[] = [
   { name: 'Logistics', path: '/logistics', icon: Truck },
   { name: 'Customers', path: '/customers', icon: Users },
   { name: 'Reporting', path: '/reporting', icon: BarChart3 },
-  { name: 'Sales Quotes', path: '/sales/quotes', icon: FileText },
+  { name: 'Quotes', path: '/sales/quotes', icon: FileText },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {

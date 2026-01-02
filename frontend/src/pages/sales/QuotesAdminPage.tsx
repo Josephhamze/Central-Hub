@@ -148,34 +148,46 @@ export function QuotesAdminPage() {
       </Card>
 
       {/* Approve Modal */}
-      <Modal isOpen={approveModalOpen} onClose={() => setApproveModalOpen(false)} title="Approve Quote" size="md">
-        <Input label="Notes (optional)" />
+      <Modal isOpen={approveModalOpen} onClose={() => { setApproveModalOpen(false); setApproveNotes(''); }} title="Approve Quote" size="md">
+        <Input label="Notes (optional)" value={approveNotes} onChange={(e) => setApproveNotes(e.target.value)} placeholder="Add any notes..." />
         <ModalFooter>
-          <Button variant="secondary" onClick={() => setApproveModalOpen(false)}>Cancel</Button>
-          <Button variant="primary" onClick={() => selectedQuote && approveMutation.mutate({ id: selectedQuote.id })}>
+          <Button variant="secondary" onClick={() => { setApproveModalOpen(false); setApproveNotes(''); }}>Cancel</Button>
+          <Button variant="primary" onClick={() => selectedQuote && approveMutation.mutate({ id: selectedQuote.id, notes: approveNotes })}>
             Approve
           </Button>
         </ModalFooter>
       </Modal>
 
       {/* Reject Modal */}
-      <Modal isOpen={rejectModalOpen} onClose={() => setRejectModalOpen(false)} title="Reject Quote" size="md">
-        <Input label="Reason" required />
+      <Modal isOpen={rejectModalOpen} onClose={() => { setRejectModalOpen(false); setRejectReason(''); }} title="Reject Quote" size="md">
+        <Input label="Reason" required value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Enter rejection reason..." />
         <ModalFooter>
-          <Button variant="secondary" onClick={() => setRejectModalOpen(false)}>Cancel</Button>
-          <Button variant="danger" onClick={() => selectedQuote && rejectMutation.mutate({ id: selectedQuote.id, reason: 'Reason required' })}>
+          <Button variant="secondary" onClick={() => { setRejectModalOpen(false); setRejectReason(''); }}>Cancel</Button>
+          <Button variant="danger" onClick={() => {
+            if (!rejectReason.trim()) {
+              showError('Reason is required');
+              return;
+            }
+            selectedQuote && rejectMutation.mutate({ id: selectedQuote.id, reason: rejectReason });
+          }}>
             Reject
           </Button>
         </ModalFooter>
       </Modal>
 
       {/* Outcome Modal */}
-      <Modal isOpen={outcomeModalOpen} onClose={() => setOutcomeModalOpen(false)} title={`Mark Quote as ${outcomeType}`} size="md">
-        <Input label="Reason Category" required />
-        <Input label="Notes (optional)" />
+      <Modal isOpen={outcomeModalOpen} onClose={() => { setOutcomeModalOpen(false); setOutcomeCategory(''); setOutcomeNotes(''); }} title={`Mark Quote as ${outcomeType}`} size="md">
+        <Input label="Reason Category" required value={outcomeCategory} onChange={(e) => setOutcomeCategory(e.target.value)} placeholder="e.g., Price, Timing, Competition, etc." />
+        <Input label="Notes (optional)" value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Add any additional notes..." />
         <ModalFooter>
-          <Button variant="secondary" onClick={() => setOutcomeModalOpen(false)}>Cancel</Button>
-          <Button variant="primary" onClick={() => selectedQuote && outcomeMutation.mutate({ id: selectedQuote.id, outcome: outcomeType, reasonCategory: 'Category required' })}>
+          <Button variant="secondary" onClick={() => { setOutcomeModalOpen(false); setOutcomeCategory(''); setOutcomeNotes(''); }}>Cancel</Button>
+          <Button variant="primary" onClick={() => {
+            if (!outcomeCategory.trim()) {
+              showError('Reason category is required');
+              return;
+            }
+            selectedQuote && outcomeMutation.mutate({ id: selectedQuote.id, outcome: outcomeType, reasonCategory: outcomeCategory, reasonNotes: outcomeNotes || undefined });
+          }}>
             Mark {outcomeType}
           </Button>
         </ModalFooter>
