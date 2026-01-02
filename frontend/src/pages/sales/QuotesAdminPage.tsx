@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -10,7 +10,9 @@ import { Input } from '@components/ui/Input';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes';
+import { companiesApi, type Company } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
+import { cn } from '@utils/cn';
 
 export function QuotesAdminPage() {
   const navigate = useNavigate();
@@ -22,12 +24,20 @@ export function QuotesAdminPage() {
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'quotes' | 'kpis'>('quotes');
   const [outcomeType, setOutcomeType] = useState<'WON' | 'LOST'>('WON');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [outcomeCategory, setOutcomeCategory] = useState('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
+
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const res = await companiesApi.findAll(1, 100);
+      return res.data.data;
+    },
+  });
 
   const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['quotes-kpis', filters],
@@ -100,6 +110,12 @@ export function QuotesAdminPage() {
     return false;
   };
 
+  const handleCompanySelect = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+    // Navigate to quote wizard with company pre-selected
+    navigate(`/sales/quotes/new?companyId=${companyId}`);
+  };
+
   const getStatusBadge = (status: QuoteStatus) => {
     const variants: Record<QuoteStatus, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
       DRAFT: 'default',
@@ -114,68 +130,38 @@ export function QuotesAdminPage() {
 
   return (
     <PageContainer title="Quotes" description="Manage quotes and view sales KPIs" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
-      {/* Tabs */}
-      <div className="mb-6 border-b border-border-default">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab('quotes')}
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'quotes'
-                ? 'text-accent-primary border-b-2 border-accent-primary'
-                : 'text-content-secondary hover:text-content-primary'
-            }`}
-          >
-            Quotes
-          </button>
-          <button
-            onClick={() => setActiveTab('kpis')}
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'kpis'
-                ? 'text-accent-primary border-b-2 border-accent-primary'
-                : 'text-content-secondary hover:text-content-primary'
-            }`}
-          >
-            KPIs
-          </button>
+      {/* KPIs Section */}
+      <Card className="mb-6">
+        <CardHeader title="Sales KPIs" />
+        <div className="p-6">
+          {isLoadingKPIs ? (
+            <div className="text-center py-8 text-content-secondary">Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'Total Quotes', value: kpiData?.totalQuotes || 0, icon: FileText, color: 'text-blue-500' },
+                { label: 'Wins', value: kpiData?.wins || 0, icon: CheckCircle2, color: 'text-green-500' },
+                { label: 'Losses', value: kpiData?.losses || 0, icon: XCircle, color: 'text-red-500' },
+                { label: 'Win Rate', value: `${kpiData?.winRate || 0}%`, icon: TrendingUp, color: 'text-purple-500' },
+                { label: 'Avg Quote Value', value: `$${Number(kpiData?.avgQuoteValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-yellow-500' },
+                { label: 'Pipeline Value', value: `$${Number(kpiData?.pipelineValue || 0).toFixed(2)}`, icon: Target, color: 'text-indigo-500' },
+                { label: 'Won Value', value: `$${Number(kpiData?.wonValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-green-500' },
+                { label: 'Avg Approval Time', value: `${Number(kpiData?.avgApprovalTimeHours || 0).toFixed(1)}h`, icon: Clock, color: 'text-orange-500' },
+              ].map((kpi) => (
+                <Card key={kpi.label} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-content-secondary">{kpi.label}</span>
+                    <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                  </div>
+                  <div className="text-2xl font-bold text-content-primary">{kpi.value}</div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </Card>
 
-      {/* KPIs Tab */}
-      {activeTab === 'kpis' && (
-        <Card>
-          <CardHeader title="Sales KPIs" />
-          <div className="p-6">
-            {isLoadingKPIs ? (
-              <div className="text-center py-8 text-content-secondary">Loading...</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: 'Total Quotes', value: kpiData?.totalQuotes || 0, icon: FileText, color: 'text-blue-500' },
-                  { label: 'Wins', value: kpiData?.wins || 0, icon: CheckCircle2, color: 'text-green-500' },
-                  { label: 'Losses', value: kpiData?.losses || 0, icon: XCircle, color: 'text-red-500' },
-                  { label: 'Win Rate', value: `${kpiData?.winRate || 0}%`, icon: TrendingUp, color: 'text-purple-500' },
-                  { label: 'Avg Quote Value', value: `$${Number(kpiData?.avgQuoteValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-yellow-500' },
-                  { label: 'Pipeline Value', value: `$${Number(kpiData?.pipelineValue || 0).toFixed(2)}`, icon: Target, color: 'text-indigo-500' },
-                  { label: 'Won Value', value: `$${Number(kpiData?.wonValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-green-500' },
-                  { label: 'Avg Approval Time', value: `${Number(kpiData?.avgApprovalTimeHours || 0).toFixed(1)}h`, icon: Clock, color: 'text-orange-500' },
-                ].map((kpi) => (
-                  <Card key={kpi.label} className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-content-secondary">{kpi.label}</span>
-                      <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
-                    </div>
-                    <div className="text-2xl font-bold text-content-primary">{kpi.value}</div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* Quotes Tab */}
-      {activeTab === 'quotes' && (
-        <>
+      {/* Quotes List */}
           <Card className="mb-6">
             <CardHeader title="Filters" />
         <div className="p-6 flex gap-4">
@@ -244,9 +230,54 @@ export function QuotesAdminPage() {
             </div>
           )}
         </div>
-          </Card>
-        </>
-      )}
+      </Card>
+
+      {/* Quick Quote Creation - Step 1 */}
+      <Card>
+        <CardHeader title="Quick Create Quote" />
+        <div className="p-6">
+          <p className="text-sm text-content-secondary mb-4">Select a company to start creating a new quote</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {companiesData?.items.map((company) => (
+              <Card
+                key={company.id}
+                className={cn(
+                  'cursor-pointer transition-all hover:shadow-lg border-2',
+                  selectedCompanyId === company.id
+                    ? 'border-status-success bg-status-success-bg ring-2 ring-status-success ring-opacity-50'
+                    : 'border-border-default hover:border-accent-primary'
+                )}
+                onClick={() => handleCompanySelect(company.id)}
+              >
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
+                      selectedCompanyId === company.id ? 'bg-status-success text-white' : 'bg-accent-primary/10 text-accent-primary'
+                    )}>
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold text-content-primary mb-1">{company.name}</h3>
+                        {selectedCompanyId === company.id && (
+                          <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0" />
+                        )}
+                      </div>
+                      {company.legalName && (
+                        <p className="text-xs text-content-secondary mb-1">{company.legalName}</p>
+                      )}
+                      {company.email && (
+                        <p className="text-xs text-content-tertiary">{company.email}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </Card>
 
       {/* Approve Modal */}
       <Modal isOpen={approveModalOpen} onClose={() => { setApproveModalOpen(false); setApproveNotes(''); }} title="Approve Quote" size="md">
