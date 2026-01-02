@@ -181,14 +181,14 @@ export function CustomersManagementPage() {
     if (!selectedCustomer) return;
     // Map frontend field names to backend field names
     const { addressLine1, addressLine2, city, state, postalCode, country, taxId, notes, ...rest } = formData;
-    const apiData = {
+    const apiData: Partial<CreateCustomerDto> = {
       ...rest,
-      billingAddressLine1: addressLine1 || '',
-      billingAddressLine2: addressLine2,
-      billingCity: city || '',
-      billingState: state,
-      billingPostalCode: postalCode || '',
-      billingCountry: country,
+      billingAddressLine1: addressLine1.trim(),
+      billingAddressLine2: addressLine2?.trim() || undefined,
+      billingCity: city.trim(),
+      billingState: state?.trim() || undefined,
+      billingPostalCode: postalCode.trim(),
+      billingCountry: country?.trim() || undefined,
     };
     updateMutation.mutate({ id: selectedCustomer.id, data: apiData });
   };
