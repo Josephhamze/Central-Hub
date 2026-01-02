@@ -83,6 +83,11 @@ export const usersApi = {
     const res = await api.get(`/users/${id}`);
     return res.data.data;
   },
+  create: async (dto: CreateUserDto): Promise<User> => {
+    const res = await api.post('/users', dto);
+    return res.data.data;
+  },
+
 
   activate: async (id: string): Promise<void> => {
     await api.patch(`/users/${id}/activate`);
