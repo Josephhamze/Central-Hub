@@ -29,14 +29,18 @@ export interface CreateCustomerDto {
   lastName?: string;
   email?: string;
   phone?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  taxId?: string;
-  notes?: string;
+  billingAddressLine1: string; // Required
+  billingAddressLine2?: string;
+  billingCity: string; // Required
+  billingState?: string;
+  billingPostalCode: string; // Required
+  billingCountry?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
 }
 
 export const customersApi = {

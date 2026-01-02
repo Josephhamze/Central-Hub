@@ -110,7 +110,19 @@ export function CustomersManagementPage() {
       showError('First name and last name are required');
       return;
     }
-    createMutation.mutate(formData);
+    // Map frontend field names to backend field names
+    const { addressLine1, addressLine2, city, state, postalCode, country, taxId, notes, ...rest } = formData;
+    const apiData = {
+      ...rest,
+      billingAddressLine1: addressLine1 || '',
+      billingAddressLine2: addressLine2,
+      billingCity: city || '',
+      billingState: state,
+      billingPostalCode: postalCode || '',
+      billingCountry: country,
+      // taxId and notes are not in the backend schema, so we filter them out
+    };
+    createMutation.mutate(apiData);
   };
 
   const handleEdit = (customer: Customer) => {
@@ -144,7 +156,18 @@ export function CustomersManagementPage() {
       return;
     }
     if (!selectedCustomer) return;
-    updateMutation.mutate({ id: selectedCustomer.id, data: formData });
+    // Map frontend field names to backend field names
+    const { addressLine1, addressLine2, city, state, postalCode, country, taxId, notes, ...rest } = formData;
+    const apiData = {
+      ...rest,
+      billingAddressLine1: addressLine1 || '',
+      billingAddressLine2: addressLine2,
+      billingCity: city || '',
+      billingState: state,
+      billingPostalCode: postalCode || '',
+      billingCountry: country,
+    };
+    updateMutation.mutate({ id: selectedCustomer.id, data: apiData });
   };
 
   const handleDelete = (id: string) => {
