@@ -1,6 +1,6 @@
-import { FileText,  NavLink } from 'react-router-dom';
-import { FileText,  clsx } from 'clsx';
-import { FileText, 
+import { NavLink } from 'react-router-dom';
+import { clsx } from 'clsx';
+import {
   LayoutDashboard,
   Settings,
   Cog,
@@ -11,6 +11,7 @@ import { FileText,
   Truck,
   Users,
   BarChart3,
+  FileText,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';

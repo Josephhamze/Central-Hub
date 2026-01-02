@@ -19,6 +19,11 @@ import { ReportingPage } from '@pages/reporting/ReportingPage';
 import { ProfilePage } from '@pages/profile/ProfilePage';
 import { NotFoundPage } from '@pages/NotFoundPage';
 
+// Sales Quote System pages
+import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
+import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
+import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
+
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -68,6 +73,9 @@ function App() {
         <Route path="logistics/*" element={<LogisticsPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
         <Route path="reporting/*" element={<ReportingPage />} />
+        <Route path="reporting/sales-kpis" element={<SalesKPIsPage />} />
+        <Route path="sales/quotes/new" element={<QuoteWizardPage />} />
+        <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
@@ -78,8 +86,3 @@ function App() {
 }
 
 export default App;
-
-// Sales Quote System pages
-import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
-import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
-import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
