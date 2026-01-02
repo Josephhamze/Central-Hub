@@ -50,6 +50,15 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     LogisticsModule,
     CustomersModule,
     ReportingModule,
+
+    // Sales Quote System modules
+    CompaniesModule,
+    ProjectsModule,
+    WarehousesModule,
+    ContactsModule,
+    StockItemsModule,
+    RoutesModule,
+    QuotesModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default
@@ -60,3 +69,12 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
   ],
 })
 export class AppModule {}
+
+// Sales Quote System modules
+import { CompaniesModule } from './modules/companies/companies.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { WarehousesModule } from './modules/warehouses/warehouses.module';
+import { ContactsModule } from './modules/contacts/contacts.module';
+import { StockItemsModule } from './modules/stock-items/stockitems.module';
+import { RoutesModule } from './modules/routes/routes.module';
+import { QuotesModule } from './modules/quotes/quotes.module';

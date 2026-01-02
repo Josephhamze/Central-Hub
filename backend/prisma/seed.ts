@@ -36,6 +36,46 @@ async function main() {
   }
 
   // Add system-level permissions
+
+  // Add sales quote system permissions
+  permissions.push(
+    { code: 'companies:view', name: 'View Companies', module: 'companies' },
+    { code: 'companies:create', name: 'Create Companies', module: 'companies' },
+    { code: 'companies:update', name: 'Update Companies', module: 'companies' },
+    { code: 'companies:delete', name: 'Delete Companies', module: 'companies' },
+    { code: 'customers:view', name: 'View Customers', module: 'customers' },
+    { code: 'customers:create', name: 'Create Customers', module: 'customers' },
+    { code: 'customers:update', name: 'Update Customers', module: 'customers' },
+    { code: 'customers:delete', name: 'Delete Customers', module: 'customers' },
+    { code: 'contacts:view', name: 'View Contacts', module: 'contacts' },
+    { code: 'contacts:create', name: 'Create Contacts', module: 'contacts' },
+    { code: 'contacts:update', name: 'Update Contacts', module: 'contacts' },
+    { code: 'contacts:delete', name: 'Delete Contacts', module: 'contacts' },
+    { code: 'projects:view', name: 'View Projects', module: 'projects' },
+    { code: 'projects:create', name: 'Create Projects', module: 'projects' },
+    { code: 'projects:update', name: 'Update Projects', module: 'projects' },
+    { code: 'projects:delete', name: 'Delete Projects', module: 'projects' },
+    { code: 'warehouses:view', name: 'View Warehouses', module: 'warehouses' },
+    { code: 'warehouses:create', name: 'Create Warehouses', module: 'warehouses' },
+    { code: 'warehouses:update', name: 'Update Warehouses', module: 'warehouses' },
+    { code: 'warehouses:delete', name: 'Delete Warehouses', module: 'warehouses' },
+    { code: 'stock:view', name: 'View Stock Items', module: 'stock' },
+    { code: 'stock:create', name: 'Create Stock Items', module: 'stock' },
+    { code: 'stock:update', name: 'Update Stock Items', module: 'stock' },
+    { code: 'stock:delete', name: 'Delete Stock Items', module: 'stock' },
+    { code: 'routes:view', name: 'View Routes', module: 'routes' },
+    { code: 'routes:create', name: 'Create Routes', module: 'routes' },
+    { code: 'routes:update', name: 'Update Routes', module: 'routes' },
+    { code: 'routes:delete', name: 'Delete Routes', module: 'routes' },
+    { code: 'quotes:view', name: 'View Quotes', module: 'quotes' },
+    { code: 'quotes:create', name: 'Create Quotes', module: 'quotes' },
+    { code: 'quotes:update', name: 'Update Quotes', module: 'quotes' },
+    { code: 'quotes:delete', name: 'Delete Quotes', module: 'quotes' },
+    { code: 'quotes:submit', name: 'Submit Quotes', module: 'quotes' },
+    { code: 'quotes:approve', name: 'Approve Quotes', module: 'quotes' },
+    { code: 'quotes:reject', name: 'Reject Quotes', module: 'quotes' },
+    { code: 'reporting:view_sales_kpis', name: 'View Sales KPIs', module: 'reporting' },
+  );
   permissions.push(
     { code: 'system:manage_users', name: 'Manage Users', module: 'system' },
     { code: 'system:manage_roles', name: 'Manage Roles', module: 'system' },
@@ -167,7 +207,7 @@ async function main() {
       (p.code.endsWith(':view') ||
         p.code.endsWith(':create') ||
         p.code.endsWith(':update')) &&
-      ['operations', 'production', 'inventory', 'logistics'].includes(p.module),
+      ['operations', 'production', 'inventory', 'logistics', 'quotes'].includes(p.module),
   );
   for (const perm of operatorPermissions) {
     await prisma.rolePermission.upsert({
@@ -278,3 +318,8 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+    });
+  }
+
+  console.log('✅ Updated role permissions for sales quote system');

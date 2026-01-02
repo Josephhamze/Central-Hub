@@ -78,3 +78,8 @@ function App() {
 }
 
 export default App;
+
+// Sales Quote System pages
+import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
+import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
+import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';

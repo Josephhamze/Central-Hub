@@ -1,6 +1,6 @@
-import { NavLink } from 'react-router-dom';
-import { clsx } from 'clsx';
-import {
+import { FileText,  NavLink } from 'react-router-dom';
+import { FileText,  clsx } from 'clsx';
+import { FileText, 
   LayoutDashboard,
   Settings,
   Cog,
@@ -37,6 +37,7 @@ const navigation: NavItem[] = [
   { name: 'Logistics', path: '/logistics', icon: Truck },
   { name: 'Customers', path: '/customers', icon: Users },
   { name: 'Reporting', path: '/reporting', icon: BarChart3 },
+  { name: 'Sales Quotes', path: '/sales/quotes', icon: FileText },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {

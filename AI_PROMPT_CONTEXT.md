@@ -695,3 +695,243 @@ Based on the design system in AI_PROMPT_CONTEXT.md, create a
 
 *Last updated: Initial skeleton release*
 *Version: 1.0.0*
+
+---
+
+## 10. Sales Quote System Implementation
+
+### Summary
+A complete Sales Quote Generator system has been implemented end-to-end, including:
+- Multi-step quote wizard
+- Company, Project, Warehouse, Customer, Contact, StockItem, Route management
+- Quote approval workflow
+- Sales KPI dashboard
+- Full RBAC integration
+
+### Database Schema
+
+**Migration**: `20260102000000_add_sales_quote_system`
+
+**New Models**:
+- `Company` - Selling company directory
+- `Project` - Projects within companies
+- `Warehouse` - Warehouses linked to companies/projects
+- `Customer` - Customers (INDIVIDUAL or COMPANY type)
+- `Contact` - Customer contacts
+- `StockItem` - Products with pricing rules
+- `Route` - Delivery routes (admin-only)
+- `Toll` - Tolls on routes
+- `Quote` - Sales quotes with snapshots
+- `QuoteItem` - Quote line items with snapshots
+- `QuoteApprovalAudit` - Approval history
+
+**Enums**:
+- `CustomerType`: INDIVIDUAL, COMPANY
+- `DeliveryMethod`: DELIVERED, COLLECTED
+- `QuoteStatus`: DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, WON, LOST
+- `ApprovalAction`: SUBMIT, APPROVE, REJECT, MARK_WON, MARK_LOST
+
+### Backend Modules
+
+**Location**: `backend/src/modules/`
+
+1. **Companies Module** (`companies/`)
+   - CRUD operations
+   - Search functionality
+   - Validation for deletion (checks for associated data)
+
+2. **Projects Module** (`projects/`)
+   - Filtered by company
+   - Includes warehouse and stock item counts
+
+3. **Warehouses Module** (`warehouses/`)
+   - Filtered by company/project
+   - Validation for deletion
+
+4. **Customers Module** (`customers/`)
+   - Type-specific validation (INDIVIDUAL vs COMPANY)
+   - Search and filtering
+
+5. **Contacts Module** (`contacts/`)
+   - Primary contact management
+   - Linked to customers
+
+6. **StockItems Module** (`stock-items/`)
+   - Project/warehouse allocation
+   - Pricing validation (minUnitPrice, defaultUnitPrice)
+   - Min order quantity enforcement
+   - Truckload-only validation
+
+7. **Routes Module** (`routes/`)
+   - Admin-only (routes:view/create/update/delete permissions)
+   - Toll management
+
+8. **Quotes Module** (`quotes/`)
+   - Quote number generation: `Q-YYYYMM-####` (transactional, unique)
+   - Multi-step validation:
+     - Company/project/customer validation
+     - Stock item validation (min price, min qty, truckload multiples)
+     - Transport calculation (distance × costPerKm + tolls)
+   - Snapshots on submission (route, delivery address, item details)
+   - Approval workflow:
+     - DRAFT → PENDING_APPROVAL (submit)
+     - PENDING_APPROVAL → APPROVED (approve)
+     - PENDING_APPROVAL → REJECTED (reject)
+     - APPROVED → WON/LOST (mark outcome)
+   - Edit rules:
+     - DRAFT: editable by owner
+     - REJECTED: editable, resubmittable
+     - PENDING_APPROVAL: read-only
+     - APPROVED/WON/LOST: locked
+   - Sales rep filtering (users see only their quotes unless elevated permission)
+   - KPI calculations (total quotes, wins, losses, win rate, avg quote value, pipeline value, won value, avg approval time)
+
+### Permissions
+
+**New Permissions** (seeded in `backend/prisma/seed.ts`):
+- `companies:view/create/update/delete`
+- `customers:view/create/update/delete`
+- `contacts:view/create/update/delete`
+- `projects:view/create/update/delete`
+- `warehouses:view/create/update/delete`
+- `stock:view/create/update/delete`
+- `routes:view/create/update/delete` (admin-only)
+- `quotes:view/create/update/delete`
+- `quotes:submit`
+- `quotes:approve`
+- `quotes:reject`
+- `reporting:view_sales_kpis`
+
+**Role Assignments**:
+- Administrator: All permissions
+- Manager: View + update permissions
+- Operator: View + create + update for quotes (sales reps)
+- Viewer: View permissions only
+
+### API Endpoints
+
+**Base Path**: `/api/v1`
+
+**Companies**: `GET/POST/PUT/DELETE /companies`, `GET /companies/:id`
+**Projects**: `GET/POST/PUT/DELETE /projects`, `GET /projects/:id`
+**Warehouses**: `GET/POST/PUT/DELETE /warehouses`, `GET /warehouses/:id`
+**Customers**: `GET/POST/PUT/DELETE /customers`, `GET /customers/:id`
+**Contacts**: `GET/POST/PUT/DELETE /contacts`, `GET /contacts/:id`
+**Stock Items**: `GET/POST/PUT/DELETE /stock-items`, `GET /stock-items/:id`
+**Routes**: `GET/POST/PUT/DELETE /routes`, `GET /routes/:id`, `POST /routes/tolls`, `DELETE /routes/tolls/:id`
+**Quotes**:
+- `GET /quotes` - List with filters (status, company, project, sales rep, date range)
+- `GET /quotes/:id` - Get quote details
+- `POST /quotes` - Create quote
+- `PUT /quotes/:id` - Update quote (DRAFT/REJECTED only)
+- `POST /quotes/:id/submit` - Submit for approval
+- `POST /quotes/:id/approve` - Approve quote
+- `POST /quotes/:id/reject` - Reject quote
+- `POST /quotes/:id/outcome?outcome=WON|LOST` - Mark outcome
+- `DELETE /quotes/:id` - Delete quote (DRAFT only)
+- `GET /quotes/kpis` - Get sales KPIs
+
+### Frontend Routes
+
+**Location**: `frontend/src/pages/`
+
+- `/sales/quotes/new` - Quote Wizard (multi-step)
+- `/sales/quotes` - Quotes Admin Dashboard
+- `/reporting/sales-kpis` - Sales KPI Dashboard
+
+**Navigation**: Added "Sales Quotes" to sidebar navigation
+
+### Quote Calculation Formulas
+
+**Transport Calculation**:
+```
+transportBase = distanceKm × costPerKm
+tollTotal = sum(toll.cost for all tolls on route)
+transportTotal = transportBase + tollTotal
+```
+
+**Quote Totals**:
+```
+subtotal = sum(item.qty × item.unitPrice for all items)
+discountTotal = sum(item.qty × item.discount for all items)
+grandTotal = subtotal - discountTotal + transportTotal
+```
+
+**Line Item Calculation**:
+```
+lineTotal = qty × (unitPrice - discount)
+```
+
+### Quote Validation Rules
+
+1. **Stock Item Validation**:
+   - `unitPrice - discount >= minUnitPrice` (enforced)
+   - `qty >= minOrderQty` (enforced)
+   - If `truckloadOnly`: `qty % minOrderQty === 0` (enforced)
+
+2. **Delivery Validation**:
+   - If `deliveryMethod === DELIVERED`: route and delivery address required
+
+3. **Quote Status Rules**:
+   - Only DRAFT and REJECTED quotes can be edited
+   - Only DRAFT and REJECTED quotes can be submitted
+   - Only PENDING_APPROVAL quotes can be approved/rejected
+   - Only APPROVED quotes can be marked WON/LOST
+
+### File Paths
+
+**Backend**:
+- Modules: `backend/src/modules/{module-name}/`
+- Migration: `backend/prisma/migrations/20260102000000_add_sales_quote_system/`
+- Seed: `backend/prisma/seed.ts`
+
+**Frontend**:
+- Pages: `frontend/src/pages/{module}/`
+- API Services: `frontend/src/services/sales/`
+- Quote Wizard: `frontend/src/pages/customers/quotes/QuoteWizardPage.tsx`
+- Admin Dashboard: `frontend/src/pages/sales/QuotesAdminPage.tsx`
+- KPI Dashboard: `frontend/src/pages/sales/SalesKPIsPage.tsx`
+
+### How to Run and Verify
+
+1. **Run Migration**:
+   ```bash
+   cd backend
+   pnpm prisma migrate deploy
+   ```
+
+2. **Seed Permissions**:
+   ```bash
+   cd backend
+   pnpm prisma db seed
+   ```
+
+3. **Start Backend**:
+   ```bash
+   cd backend
+   pnpm start:dev
+   ```
+
+4. **Start Frontend**:
+   ```bash
+   cd frontend
+   pnpm dev
+   ```
+
+5. **Verify**:
+   - Login as admin (admin@example.com / Admin123!)
+   - Navigate to `/sales/quotes/new` to create a quote
+   - Navigate to `/sales/quotes` to view and approve quotes
+   - Navigate to `/reporting/sales-kpis` to view KPIs
+
+### Environment Variables
+
+No new environment variables required. Uses existing:
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `CORS_ORIGIN`
+
+---
+
+*Last updated: Sales Quote System implementation*
+*Version: 2.0.0*
