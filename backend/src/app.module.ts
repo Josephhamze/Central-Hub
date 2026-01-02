@@ -17,6 +17,10 @@ import { ProductionModule } from './modules/production/production.module';
 import { CostingModule } from './modules/costing/costing.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { AssetsModule } from './modules/assets/assets.module';
+import { MaintenanceSchedulesModule } from './modules/maintenance-schedules/maintenance-schedules.module';
+import { WorkOrdersModule } from './modules/work-orders/work-orders.module';
+import { SparePartsModule } from './modules/spare-parts/spare-parts.module';
+import { DepreciationModule } from './modules/depreciation/depreciation.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
@@ -57,7 +61,11 @@ import { RootController } from './root.controller';
     ProductionModule,
     CostingModule,
     InventoryModule,
-    AssetsModule,
+    AssetsModule,,
+    MaintenanceSchedulesModule,
+    WorkOrdersModule,
+    SparePartsModule,
+    DepreciationModule
     LogisticsModule,
     CustomersModule,
     ReportingModule,

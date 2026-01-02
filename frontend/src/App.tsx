@@ -13,6 +13,7 @@ import { ProductionPage } from '@pages/production/ProductionPage';
 import { CostingPage } from '@pages/costing/CostingPage';
 import { InventoryPage } from '@pages/inventory/InventoryPage';
 import { AssetsPage } from '@pages/assets/AssetsPage';
+import { AssetRegistryPage } from '@pages/assets/AssetRegistryPage';
 import { LogisticsPage } from '@pages/logistics/LogisticsPage';
 import { CustomersPage } from '@pages/customers/CustomersPage';
 import { ReportingPage } from '@pages/reporting/ReportingPage';
@@ -92,7 +93,14 @@ function App() {
         <Route path="inventory/*" element={<InventoryPage />} />
         <Route path="inventory/warehouses" element={<WarehousesPage />} />
         <Route path="inventory/stock-items" element={<StockItemsPage />} />
-        <Route path="assets/*" element={<AssetsPage />} />
+                <Route path="assets" element={<AssetsPage />} />
+        <Route path="assets/registry" element={<AssetRegistryPage />} />
+        <Route path="assets/:id" element={<AssetRegistryPage />} />
+        <Route path="assets/work-orders" element={<AssetRegistryPage />} />
+        <Route path="assets/work-orders/:id" element={<AssetRegistryPage />} />
+        <Route path="assets/maintenance/schedules" element={<AssetRegistryPage />} />
+        <Route path="assets/parts" element={<AssetRegistryPage />} />
+        <Route path="assets/depreciation" element={<AssetRegistryPage />} />
         <Route path="logistics/*" element={<LogisticsPage />} />
         <Route path="logistics/routes" element={<RoutesPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
