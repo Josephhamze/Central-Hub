@@ -269,19 +269,6 @@ export function StockItemsPage() {
           )}
         </div>
       }
-      title="Stock Items"
-      description="Manage inventory products and stock items"
-      actions={
-        canCreate ? (
-          <Button
-            variant="primary"
-            onClick={() => setIsCreateModalOpen(true)}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            Create Stock Item
-          </Button>
-        ) : undefined
-      }
     >
       <div className="mb-6 space-y-4">
         <div className="flex gap-4">
