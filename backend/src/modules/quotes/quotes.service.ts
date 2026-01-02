@@ -413,7 +413,29 @@ export class QuotesService {
       }
 
       // Recalculate transport if route changed
-      const routeId = dto.routeId ?? quote.routeId;
+      // Auto-match route if delivery method is DELIVERED and city is provided
+      let routeId = dto.routeId ?? quote.routeId;
+      if (dto.deliveryMethod === DeliveryMethod.DELIVERED || (!dto.deliveryMethod && quote.deliveryMethod === DeliveryMethod.DELIVERED)) {
+        const deliveryCity = dto.deliveryCity ?? quote.deliveryCity;
+        if (deliveryCity && !routeId) {
+          // Get company city from project
+          const project = await this.prisma.project.findUnique({
+            where: { id: quote.projectId },
+            include: { company: true },
+          });
+          if (project?.company?.city) {
+            const matchedRoute = await this.prisma.route.findFirst({
+              where: {
+                fromCity: project.company.city,
+                toCity: deliveryCity,
+              },
+            });
+            if (matchedRoute) {
+              routeId = matchedRoute.id;
+            }
+          }
+        }
+      }
       const transport = await this.calculateTransport(routeId);
       const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
