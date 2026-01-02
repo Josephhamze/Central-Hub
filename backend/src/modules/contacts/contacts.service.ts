@@ -8,13 +8,16 @@ export class ContactsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(customerId?: string, page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+    // Convert string query params to numbers
+    const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
+    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
+    const skip = (pageNum - 1) * limitNum;
     const where = customerId ? { customerId } : {};
     const [items, total] = await Promise.all([
-      this.prisma.contact.findMany({ where, skip, take: limit, include: { customer: { select: { id: true, type: true, companyName: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.contact.findMany({ where, skip, take: limitNum, include: { customer: { select: { id: true, type: true, companyName: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } }),
       this.prisma.contact.count({ where }),
     ]);
-    return { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return { items, pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) } };
   }
 
   async findOne(id: string) {

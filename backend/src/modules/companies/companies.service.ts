@@ -12,7 +12,10 @@ export class CompaniesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, search?: string) {
-    const skip = (page - 1) * limit;
+    // Convert string query params to numbers
+    const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
+    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
+    const skip = (pageNum - 1) * limitNum;
     const where = search
       ? {
           OR: [
@@ -27,7 +30,7 @@ export class CompaniesService {
       this.prisma.company.findMany({
         where,
         skip,
-        take: limit,
+        take: limitNum,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.company.count({ where }),

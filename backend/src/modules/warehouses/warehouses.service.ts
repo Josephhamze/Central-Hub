@@ -8,20 +8,23 @@ export class WarehousesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(companyId?: string, projectId?: string, page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+    // Convert string query params to numbers
+    const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
+    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
+    const skip = (pageNum - 1) * limitNum;
     const where: any = {};
     if (companyId) where.companyId = companyId;
     if (projectId) where.projectId = projectId;
 
     const [items, total] = await Promise.all([
       this.prisma.warehouse.findMany({
-        where, skip, take: limit,
+        where, skip, take: limitNum,
         include: { company: { select: { id: true, name: true } }, project: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.warehouse.count({ where }),
     ]);
-    return { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return { items, pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) } };
   }
 
   async findOne(id: string) {
