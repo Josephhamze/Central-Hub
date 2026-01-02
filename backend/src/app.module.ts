@@ -31,8 +31,10 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RootController } from './root.controller';
 
 @Module({
+  controllers: [RootController],
   imports: [
     // Configuration
     ConfigModule.forRoot({
