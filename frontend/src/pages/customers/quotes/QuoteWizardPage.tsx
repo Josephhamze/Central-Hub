@@ -91,7 +91,7 @@ export function QuoteWizardPage() {
   };
 
   const handleSubmit = () => {
-    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.items || quoteData.items.length === 0) {
+    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0) {
       showError('Please complete all required fields');
       return;
     }
@@ -107,6 +107,7 @@ export function QuoteWizardPage() {
       companyId: quoteData.companyId!,
       projectId: quoteData.projectId!,
       customerId: quoteData.customerId!,
+      deliveryMethod: quoteData.deliveryMethod!,
       items: dtoItems,
     };
     createQuoteMutation.mutate(dto);
@@ -525,8 +526,6 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
   const customer = customersData?.items.find(c => c.id === quoteData.customerId);
   const project = projectsData?.items.find(p => p.id === quoteData.projectId);
   
-  const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
-  const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
   const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
   const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
   // Transport is calculated server-side, so we don't include it in the preview
