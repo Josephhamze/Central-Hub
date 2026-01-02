@@ -1,48 +1,41 @@
-import { Settings } from 'lucide-react';
-import { ModulePlaceholder } from '@components/common/ModulePlaceholder';
+import { useNavigate } from 'react-router-dom';
+import { Building2, FolderKanban } from 'lucide-react';
+import { PageContainer } from '@components/layout/PageContainer';
+import { Card } from '@components/ui/Card';
 
 export function AdministrationPage() {
+  const navigate = useNavigate();
+
   return (
-    <ModulePlaceholder
+    <PageContainer
       title="Administration"
-      description="System configuration, user management, and platform settings"
-      icon={<Settings className="w-8 h-8 text-content-secondary" />}
-      sections={[
-        {
-          name: 'System Settings',
-          description: 'Configure global system parameters and preferences',
-        },
-        {
-          name: 'User Management',
-          description: 'Manage user accounts, profiles, and access',
-        },
-        {
-          name: 'Role Management',
-          description: 'Define roles and assign permissions',
-        },
-        {
-          name: 'Audit Logs',
-          description: 'View system activity and security events',
-        },
-        {
-          name: 'Integrations',
-          description: 'Connect external services and APIs',
-        },
-        {
-          name: 'Backup & Recovery',
-          description: 'Manage data backups and restoration',
-        },
-      ]}
-      features={[
-        'User account lifecycle management',
-        'Role-based access control configuration',
-        'System-wide settings and preferences',
-        'Audit trail and activity logging',
-        'API key management',
-        'Email and notification settings',
-        'Data import/export utilities',
-        'System health monitoring',
-      ]}
-    />
+      description="System configuration and management"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/administration/companies')}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-content-primary mb-1">Companies</h3>
+              <p className="text-sm text-content-secondary">Manage company directory</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/administration/projects')}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <FolderKanban className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-content-primary mb-1">Projects</h3>
+              <p className="text-sm text-content-secondary">Manage company projects</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </PageContainer>
   );
 }

@@ -24,6 +24,12 @@ import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
 import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
 import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
 import { CompaniesPage } from '@pages/administration/CompaniesPage';
+import { ProjectsPage } from '@pages/administration/ProjectsPage';
+import { CustomersManagementPage } from '@pages/customers/CustomersManagementPage';
+import { ContactsPage } from '@pages/customers/ContactsPage';
+import { WarehousesPage } from '@pages/inventory/WarehousesPage';
+import { StockItemsPage } from '@pages/inventory/StockItemsPage';
+import { RoutesPage } from '@pages/logistics/RoutesPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -67,13 +73,19 @@ function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="administration/*" element={<AdministrationPage />} />
         <Route path="administration/companies" element={<CompaniesPage />} />
+        <Route path="administration/projects" element={<ProjectsPage />} />
         <Route path="operations/*" element={<OperationsPage />} />
         <Route path="production/*" element={<ProductionPage />} />
         <Route path="costing/*" element={<CostingPage />} />
         <Route path="inventory/*" element={<InventoryPage />} />
+        <Route path="inventory/warehouses" element={<WarehousesPage />} />
+        <Route path="inventory/stock-items" element={<StockItemsPage />} />
         <Route path="assets/*" element={<AssetsPage />} />
         <Route path="logistics/*" element={<LogisticsPage />} />
+        <Route path="logistics/routes" element={<RoutesPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
+        <Route path="customers/customers" element={<CustomersManagementPage />} />
+        <Route path="customers/contacts" element={<ContactsPage />} />
         <Route path="reporting/*" element={<ReportingPage />} />
         <Route path="reporting/sales-kpis" element={<SalesKPIsPage />} />
         <Route path="sales/quotes/new" element={<QuoteWizardPage />} />

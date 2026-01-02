@@ -1,48 +1,41 @@
-import { Warehouse } from 'lucide-react';
-import { ModulePlaceholder } from '@components/common/ModulePlaceholder';
+import { useNavigate } from 'react-router-dom';
+import { Warehouse, Package } from 'lucide-react';
+import { PageContainer } from '@components/layout/PageContainer';
+import { Card } from '@components/ui/Card';
 
 export function InventoryPage() {
+  const navigate = useNavigate();
+
   return (
-    <ModulePlaceholder
+    <PageContainer
       title="Inventory & Warehousing"
       description="Manage stock levels, warehouses, and inventory movements"
-      icon={<Warehouse className="w-8 h-8 text-content-secondary" />}
-      sections={[
-        {
-          name: 'Warehouses',
-          description: 'Configure warehouse locations',
-        },
-        {
-          name: 'Stock Items',
-          description: 'Manage inventory items catalog',
-        },
-        {
-          name: 'Stock Levels',
-          description: 'Monitor current stock quantities',
-        },
-        {
-          name: 'Stock Movements',
-          description: 'Track inventory transactions',
-        },
-        {
-          name: 'Stock Counts',
-          description: 'Perform physical inventory counts',
-        },
-        {
-          name: 'Reorder Management',
-          description: 'Configure reorder points and alerts',
-        },
-      ]}
-      features={[
-        'Multi-warehouse management',
-        'Location and bin tracking',
-        'Serial and batch number tracking',
-        'Stock reservation system',
-        'Automatic reorder notifications',
-        'Stock valuation methods',
-        'Inventory aging analysis',
-        'Barcode/QR code support',
-      ]}
-    />
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/inventory/warehouses')}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <Warehouse className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-content-primary mb-1">Warehouses</h3>
+              <p className="text-sm text-content-secondary">Manage warehouse locations</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/inventory/stock-items')}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <Package className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-content-primary mb-1">Stock Items</h3>
+              <p className="text-sm text-content-secondary">Manage inventory products</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </PageContainer>
   );
 }
