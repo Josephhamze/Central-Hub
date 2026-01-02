@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
@@ -40,7 +39,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+
   const queryClient = useQueryClient();
 
   const { data: notifications } = useQuery({
