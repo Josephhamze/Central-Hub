@@ -43,7 +43,7 @@ export function QuoteWizardPage() {
     mutationFn: (data: CreateQuoteDto) => quotesApi.create(data),
     onSuccess: (res) => {
       success('Quote created successfully');
-      navigate(`/sales/quotes/${res.data.data.id}`);
+      navigate(`/sales/quotes`);
     },
     onError: (err: any) => {
       showError(err.response?.data?.error?.message || 'Failed to create quote');
@@ -51,6 +51,23 @@ export function QuoteWizardPage() {
   });
 
   const handleNext = () => {
+    // Validate current step before proceeding
+    if (currentStep === 1 && !quoteData.companyId) {
+      showError('Please select a company');
+      return;
+    }
+    if (currentStep === 2 && !quoteData.customerId) {
+      showError('Please select a customer');
+      return;
+    }
+    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod)) {
+      showError('Please complete project and delivery method');
+      return;
+    }
+    if (currentStep === 4 && (!quoteData.items || quoteData.items.length === 0)) {
+      showError('Please add at least one product');
+      return;
+    }
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
