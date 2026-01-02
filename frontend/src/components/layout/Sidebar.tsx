@@ -2,18 +2,12 @@ import { NavLink } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
-  Settings,
-  Cog,
   Factory,
   Calculator,
   Warehouse,
-  Wrench,
-  Truck,
-  Users,
-  BarChart3,
   FileText,
   ChevronLeft,
-  ChevronRight,
+  ChevronRight
 } from 'lucide-react';
 
 interface SidebarProps {
