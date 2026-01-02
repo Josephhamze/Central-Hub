@@ -23,17 +23,21 @@ import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
-import { quotesApi } from '@services/sales/quotes';
+import { quotesApi, type Quote } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
 
 export function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [approveNotes, setApproveNotes] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
   const [outcomeType, setOutcomeType] = useState<'WON' | 'LOST'>('WON');
@@ -61,6 +65,36 @@ export function QuoteDetailPage() {
     },
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to submit quote';
+      showError(errorMessage);
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (notes?: string) => quotesApi.approve(id!, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      success('Quote approved');
+      setApproveModalOpen(false);
+      setApproveNotes('');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to approve quote';
+      showError(errorMessage);
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (reason: string) => quotesApi.reject(id!, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      success('Quote rejected');
+      setRejectModalOpen(false);
+      setRejectReason('');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to reject quote';
       showError(errorMessage);
     },
   });
@@ -122,6 +156,31 @@ export function QuoteDetailPage() {
   const canEdit = (quote.status === 'DRAFT' || quote.status === 'REJECTED') && isCreator;
   const canSubmit = quote.status === 'DRAFT' && isCreator;
   const canWithdraw = quote.status === 'PENDING_APPROVAL' && isCreator;
+  // Check if user can approve (has permission OR is sales manager OR is admin)
+  // Admins can approve their own quotes
+  const canApproveQuote = () => {
+    if (quote.status !== 'PENDING_APPROVAL') return false;
+    
+    // Check various role name formats
+    const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+    const isSalesManager = hasRole('Sales Manager') || hasRole('SALES_MANAGER') || hasRole('sales_manager');
+    const hasApprovePermission = hasPermission('quotes:approve');
+    
+    // If admin, can always approve (including own quotes)
+    if (isAdmin) return true;
+    
+    // If sales manager or has permission, can approve
+    if (isSalesManager || hasApprovePermission) {
+      // Only block if it's their own quote AND they're not admin
+      if (user?.id === quote.salesRepUserId && !isAdmin) {
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  };
+
   const canMarkOutcome = quote.status === 'APPROVED' && isCreator;
 
   const getStatusBadge = (status: string) => {
@@ -180,6 +239,24 @@ export function QuoteDetailPage() {
               >
                 Withdraw Quote
               </Button>
+            )}
+            {canApproveQuote() && (
+              <>
+                <Button
+                  variant="primary"
+                  onClick={() => setApproveModalOpen(true)}
+                  leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => setRejectModalOpen(true)}
+                  leftIcon={<XCircle className="w-4 h-4" />}
+                >
+                  Reject
+                </Button>
+              </>
             )}
             {canMarkOutcome && (
               <>
@@ -513,6 +590,33 @@ export function QuoteDetailPage() {
             leftIcon={outcomeType === 'WON' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
           >
             Mark {outcomeType}
+          </Button>
+        </ModalFooter>
+      </Modal>
+      {/* Approve Modal */}
+      <Modal isOpen={approveModalOpen} onClose={() => { setApproveModalOpen(false); setApproveNotes(''); }} title="Approve Quote" size="md">
+        <Input label="Notes (optional)" value={approveNotes} onChange={(e) => setApproveNotes(e.target.value)} placeholder="Add any notes..." />
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => { setApproveModalOpen(false); setApproveNotes(''); }}>Cancel</Button>
+          <Button variant="primary" onClick={() => approveMutation.mutate(approveNotes || undefined)} isLoading={approveMutation.isPending}>
+            Approve
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal isOpen={rejectModalOpen} onClose={() => { setRejectModalOpen(false); setRejectReason(''); }} title="Reject Quote" size="md">
+        <Input label="Reason" required value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Enter rejection reason..." />
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => { setRejectModalOpen(false); setRejectReason(''); }}>Cancel</Button>
+          <Button variant="danger" onClick={() => {
+            if (!rejectReason.trim()) {
+              showError('Reason is required');
+              return;
+            }
+            rejectMutation.mutate(rejectReason);
+          }} isLoading={rejectMutation.isPending}>
+            Reject
           </Button>
         </ModalFooter>
       </Modal>
