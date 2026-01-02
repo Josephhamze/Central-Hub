@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Building2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -12,7 +11,6 @@ import { companiesApi, type Company, type CreateCompanyDto } from '@services/sal
 import { useAuth } from '@contexts/AuthContext';
 
 export function CompaniesPage() {
-  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
