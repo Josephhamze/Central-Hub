@@ -20,14 +20,18 @@ interface HeaderProps {
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/administration': 'Administration',
+  '/operations-production': 'Operations & Production',
   '/operations': 'Operations',
   '/production': 'Production Tracking',
-  '/costing': 'Costing',
+  '/finance-reporting': 'Finance & Reporting',
+  '/costing': 'Finance & Costing',
+  '/reporting': 'Reporting & Analytics',
+  '/inventory-assets': 'Inventory & Assets',
   '/inventory': 'Inventory & Warehousing',
   '/assets': 'Assets & Maintenance',
+  '/sales/quotes': 'Quotes',
   '/logistics': 'Logistics & Transport',
   '/customers': 'Customers & Sales',
-  '/reporting': 'Reporting & Analytics',
   '/profile': 'Profile',
 };
 
@@ -298,15 +302,59 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
                     <User className="w-4 h-4" />
                     Profile
                   </Link>
-                  <Link
-                    to="/administration"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-content-secondary hover:bg-background-hover transition-colors"
-                    role="menuitem"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </Link>
+                </div>
+
+                <div className="border-t border-border-default py-1">
+                  <div className="px-4 py-2">
+                    <p className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">Administration</p>
+                    <div className="space-y-1">
+                      <Link
+                        to="/administration"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-2 py-1.5 text-sm text-content-secondary hover:bg-background-hover transition-colors rounded"
+                        role="menuitem"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Overview
+                      </Link>
+                      <Link
+                        to="/administration/companies"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-2 py-1.5 text-sm text-content-secondary hover:bg-background-hover transition-colors rounded"
+                        role="menuitem"
+                      >
+                        <Building2 className="w-4 h-4" />
+                        Companies
+                      </Link>
+                      <Link
+                        to="/administration/projects"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-2 py-1.5 text-sm text-content-secondary hover:bg-background-hover transition-colors rounded"
+                        role="menuitem"
+                      >
+                        <FolderKanban className="w-4 h-4" />
+                        Projects
+                      </Link>
+                      <Link
+                        to="/administration/users"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-2 py-1.5 text-sm text-content-secondary hover:bg-background-hover transition-colors rounded"
+                        role="menuitem"
+                      >
+                        <UsersIcon className="w-4 h-4" />
+                        Users
+                      </Link>
+                      <Link
+                        to="/administration/roles"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-2 py-1.5 text-sm text-content-secondary hover:bg-background-hover transition-colors rounded"
+                        role="menuitem"
+                      >
+                        <Shield className="w-4 h-4" />
+                        Roles & Permissions
+                      </Link>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border-t border-border-default py-1">

@@ -29,15 +29,9 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Administration', path: '/administration', icon: Settings },
-  { name: 'Operations', path: '/operations', icon: Cog },
-  { name: 'Production', path: '/production', icon: Factory },
-  { name: 'Costing', path: '/costing', icon: Calculator },
-  { name: 'Inventory', path: '/inventory', icon: Warehouse },
-  { name: 'Assets', path: '/assets', icon: Wrench },
-  { name: 'Logistics', path: '/logistics', icon: Truck },
-  { name: 'Customers', path: '/customers', icon: Users },
-  { name: 'Reporting', path: '/reporting', icon: BarChart3 },
+  { name: 'Operations & Production', path: '/operations-production', icon: Factory },
+  { name: 'Finance & Reporting', path: '/finance-reporting', icon: Calculator },
+  { name: 'Inventory & Assets', path: '/inventory-assets', icon: Warehouse },
   { name: 'Quotes', path: '/sales/quotes', icon: FileText },
 ];
 

@@ -33,6 +33,10 @@ import { ContactsPage } from '@pages/customers/ContactsPage';
 import { WarehousesPage } from '@pages/inventory/WarehousesPage';
 import { StockItemsPage } from '@pages/inventory/StockItemsPage';
 import { RoutesPage } from '@pages/logistics/RoutesPage';
+import { OperationsProductionPage } from '@pages/operations-production/OperationsProductionPage';
+import { FinanceReportingPage } from '@pages/finance-reporting/FinanceReportingPage';
+import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
+
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -79,9 +83,12 @@ function App() {
         <Route path="administration/projects" element={<ProjectsPage />} />
         <Route path="administration/users" element={<UsersManagementPage />} />
         <Route path="administration/roles" element={<RolesManagementPage />} />
+        <Route path="operations-production" element={<OperationsProductionPage />} />
         <Route path="operations/*" element={<OperationsPage />} />
         <Route path="production/*" element={<ProductionPage />} />
+        <Route path="finance-reporting" element={<FinanceReportingPage />} />
         <Route path="costing/*" element={<CostingPage />} />
+        <Route path="inventory-assets" element={<InventoryAssetsPage />} />
         <Route path="inventory/*" element={<InventoryPage />} />
         <Route path="inventory/warehouses" element={<WarehousesPage />} />
         <Route path="inventory/stock-items" element={<StockItemsPage />} />

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -30,6 +30,7 @@ export function QuotesAdminPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [outcomeCategory, setOutcomeCategory] = useState('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
+  const [activeTab, setActiveTab] = useState<'quotes' | 'customers' | 'logistics'>('quotes');
 
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
@@ -251,6 +252,67 @@ export function QuotesAdminPage() {
         </div>
       </Card>
 
+        </>
+      )}
+
+      {/* Customers Tab */}
+      {activeTab === 'customers' && (
+        <Card>
+          <CardHeader title="Customers & Sales" />
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/customers/customers')}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-accent-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-content-primary mb-1">Customers</h3>
+                    <p className="text-sm text-content-secondary">Manage customer directory</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/customers/contacts')}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-accent-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-content-primary mb-1">Contacts</h3>
+                    <p className="text-sm text-content-secondary">Manage customer contacts</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Logistics Tab */}
+      {activeTab === 'logistics' && (
+        <Card>
+          <CardHeader title="Logistics & Transport" />
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/logistics/routes')}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+                    <Truck className="w-6 h-6 text-accent-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-content-primary mb-1">Routes & Tolls</h3>
+                    <p className="text-sm text-content-secondary">Manage delivery routes and toll costs</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Quick Quote Creation - Step 1 */}
+      {activeTab === 'quotes' && (
       {/* Quick Quote Creation - Step 1 */}
       <Card>
         <CardHeader title="Quick Create Quote" />
@@ -343,6 +405,7 @@ export function QuotesAdminPage() {
           </Button>
         </ModalFooter>
       </Modal>
+        )}
     </PageContainer>
   );
 }
