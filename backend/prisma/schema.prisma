@@ -39,12 +39,12 @@ model User {
   auditLogs     AuditLog[]
   salesQuotes   Quote[] @relation("SalesRepQuotes")
   quoteApprovals QuoteApprovalAudit[] @relation("QuoteApprovalActors")
-  notifications Notification[] @relation("UserNotifications")
-
+  notifications Notification[] @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  workOrders       WorkOrder[] @relation("WorkOrderAssignments")
+  assetHistory     AssetHistory[] @relation("AssetHistoryActors")
 
   @@index([accountStatus])
-  @@index([emailVerified])  workOrders       WorkOrder[] @relation("WorkOrderAssignments")
-  assetHistory     AssetHistory[] @relation("AssetHistoryActors")
+  @@index([emailVerified])
   @@map("users")
 }
 
