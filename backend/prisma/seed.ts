@@ -75,7 +75,25 @@ async function main() {
     { code: 'quotes:approve', name: 'Approve Quotes', module: 'quotes' },
     { code: 'quotes:reject', name: 'Reject Quotes', module: 'quotes' },
     { code: 'reporting:view_sales_kpis', name: 'View Sales KPIs', module: 'reporting' },
-  );
+  ,
+
+    { code: 'assets:view', name: 'View Assets', module: 'assets' },
+    { code: 'assets:create', name: 'Create Assets', module: 'assets' },
+    { code: 'assets:update', name: 'Update Assets', module: 'assets' },
+    { code: 'assets:retire', name: 'Retire Assets', module: 'assets' },
+    { code: 'maintenance:view', name: 'View Maintenance', module: 'maintenance' },
+    { code: 'maintenance:schedule', name: 'Schedule Maintenance', module: 'maintenance' },
+    { code: 'maintenance:execute', name: 'Execute Maintenance', module: 'maintenance' },
+    { code: 'maintenance:approve', name: 'Approve Maintenance', module: 'maintenance' },
+    { code: 'workorders:view', name: 'View Work Orders', module: 'workorders' },
+    { code: 'workorders:create', name: 'Create Work Orders', module: 'workorders' },
+    { code: 'workorders:update', name: 'Update Work Orders', module: 'workorders' },
+    { code: 'workorders:close', name: 'Close Work Orders', module: 'workorders' },
+    { code: 'parts:view', name: 'View Parts', module: 'parts' },
+    { code: 'parts:manage', name: 'Manage Parts', module: 'parts' },
+    { code: 'depreciation:view', name: 'View Depreciation', module: 'depreciation' },
+    { code: 'depreciation:manage', name: 'Manage Depreciation', module: 'depreciation' },
+);
   permissions.push(
     { code: 'system:manage_users', name: 'Manage Users', module: 'system' },
     { code: 'system:manage_roles', name: 'Manage Roles', module: 'system' },

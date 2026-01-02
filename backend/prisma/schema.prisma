@@ -43,7 +43,8 @@ model User {
 
 
   @@index([accountStatus])
-  @@index([emailVerified])
+  @@index([emailVerified])  workOrders       WorkOrder[] @relation("WorkOrderAssignments")
+  assetHistory     AssetHistory[] @relation("AssetHistoryActors")
   @@map("users")
 }
 
@@ -251,6 +252,7 @@ model Project {
   quotes      Quote[]
 
   @@index([companyId])
+  assets           Asset[]
   @@map("projects")
 }
 
@@ -272,6 +274,8 @@ model Warehouse {
 
   @@index([companyId])
   @@index([projectId])
+  assets           Asset[]
+  spareParts        SparePart[]
   @@map("warehouses")
 }
 
@@ -513,3 +517,264 @@ model Notification {
   @@index([createdAt])
   @@map("notifications")
 }
+// ============================================================================
+// ASSETS & MAINTENANCE SYSTEM
+// ============================================================================
+
+enum AssetStatus {
+  OPERATIONAL
+  MAINTENANCE
+  BROKEN
+  RETIRED
+}
+
+enum AssetCriticality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MaintenanceScheduleType {
+  TIME_BASED
+  USAGE_BASED
+}
+
+enum WorkOrderType {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_PARTS
+  COMPLETED
+  CANCELLED
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+}
+
+enum AssetHistoryEventType {
+  CREATED
+  STATUS_CHANGED
+  MAINTENANCE_DONE
+  WORK_ORDER_COMPLETED
+  PART_CONSUMED
+  COST_UPDATED
+  RETIRED
+}
+
+// Asset Registry
+model Asset {
+  id                String            @id @default(cuid())
+  assetTag          String            @unique @map("asset_tag")
+  name              String
+  category          String            // Crusher, Truck, Generator, etc.
+  manufacturer      String?
+  model             String?
+  serialNumber      String?           @map("serial_number")
+  acquisitionDate   DateTime          @map("acquisition_date")
+  acquisitionCost   Decimal           @map("acquisition_cost") @db.Decimal(12, 2)
+  currentValue      Decimal           @map("current_value") @db.Decimal(12, 2)
+  status            AssetStatus       @default(OPERATIONAL)
+  location          String?           // site / project / warehouse
+  projectId         String?           @map("project_id")
+  warehouseId       String?           @map("warehouse_id")
+  assignedTo        String?           @map("assigned_to") // operator or department
+  criticality        AssetCriticality  @default(MEDIUM)
+  expectedLifeYears Int?              @map("expected_life_years")
+  notes             String?
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  project            Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  warehouse          Warehouse?       @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  maintenanceSchedules MaintenanceSchedule[]
+  workOrders        WorkOrder[]
+  history           AssetHistory[]
+  depreciationProfile DepreciationProfile?
+  depreciationEntries DepreciationEntry[]
+
+  @@index([assetTag])
+  @@index([status])
+  @@index([category])
+  @@index([projectId])
+  @@index([warehouseId])
+  @@map("assets")
+}
+
+// Maintenance Schedules (Preventive)
+model MaintenanceSchedule {
+  id                  String                  @id @default(cuid())
+  assetId             String                  @map("asset_id")
+  type                MaintenanceScheduleType
+  intervalDays        Int?                    @map("interval_days") // for time-based
+  intervalHours       Int?                    @map("interval_hours") // for usage-based
+  checklistJson       Json?                   @map("checklist_json")
+  estimatedDurationHours Decimal?             @map("estimated_duration_hours") @db.Decimal(5, 2)
+  requiredPartsJson   Json?                   @map("required_parts_json")
+  isActive            Boolean                 @default(true) @map("is_active")
+  lastPerformedAt     DateTime?               @map("last_performed_at")
+  nextDueAt           DateTime?               @map("next_due_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+
+  // Relations
+  asset               Asset                   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  workOrders          WorkOrder[]
+
+  @@index([assetId])
+  @@index([isActive])
+  @@index([nextDueAt])
+  @@map("maintenance_schedules")
+}
+
+// Work Orders (Corrective + Preventive)
+model WorkOrder {
+  id              String            @id @default(cuid())
+  assetId         String            @map("asset_id")
+  scheduleId      String?           @map("schedule_id")
+  type            WorkOrderType
+  priority        WorkOrderPriority @default(MEDIUM)
+  status          WorkOrderStatus   @default(OPEN)
+  description     String
+  assignedToUserId String?           @map("assigned_to_user_id")
+  startedAt       DateTime?          @map("started_at")
+  completedAt    DateTime?          @map("completed_at")
+  downtimeHours  Decimal?           @map("downtime_hours") @db.Decimal(10, 2)
+  laborCost      Decimal            @default(0) @map("labor_cost") @db.Decimal(12, 2)
+  partsCost      Decimal            @default(0) @map("parts_cost") @db.Decimal(12, 2)
+  totalCost      Decimal            @default(0) @map("total_cost") @db.Decimal(12, 2)
+  notes          String?
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  asset           Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  schedule        MaintenanceSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  assignedTo      User?             @relation("WorkOrderAssignments", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  partUsages      PartUsage[]
+
+  @@index([assetId])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([assignedToUserId])
+  @@index([createdAt])
+  @@map("work_orders")
+}
+
+// Spare Parts
+model SparePart {
+  id              String      @id @default(cuid())
+  name            String
+  sku             String      @unique
+  uom             String      // Unit of measure
+  warehouseId     String      @map("warehouse_id")
+  quantityOnHand  Decimal     @default(0) @map("quantity_on_hand") @db.Decimal(10, 2)
+  minStockLevel   Decimal     @default(0) @map("min_stock_level") @db.Decimal(10, 2)
+  unitCost        Decimal     @map("unit_cost") @db.Decimal(10, 2)
+  isCritical      Boolean     @default(false) @map("is_critical")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  warehouse       Warehouse   @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  partUsages      PartUsage[]
+
+  @@index([sku])
+  @@index([warehouseId])
+  @@map("spare_parts")
+}
+
+// Part Usage (consumption tracking)
+model PartUsage {
+  id              String      @id @default(cuid())
+  workOrderId     String      @map("work_order_id")
+  sparePartId     String      @map("spare_part_id")
+  quantityUsed    Decimal     @map("quantity_used") @db.Decimal(10, 2)
+  costSnapshot    Decimal     @map("cost_snapshot") @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  workOrder       WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  sparePart       SparePart   @relation(fields: [sparePartId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([sparePartId])
+  @@map("part_usages")
+}
+
+// Asset History (Immutable Log)
+model AssetHistory {
+  id              String                @id @default(cuid())
+  assetId         String                @map("asset_id")
+  eventType       AssetHistoryEventType @map("event_type")
+  metadataJson    Json?                 @map("metadata_json")
+  actorUserId     String?               @map("actor_user_id")
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  // Relations
+  asset           Asset                 @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  actor           User?                 @relation("AssetHistoryActors", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([assetId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("asset_history")
+}
+
+// Depreciation Profile
+model DepreciationProfile {
+  id              String              @id @default(cuid())
+  assetId         String              @unique @map("asset_id")
+  method          DepreciationMethod
+  usefulLifeYears Int                 @map("useful_life_years")
+  salvageValue    Decimal             @map("salvage_value") @db.Decimal(12, 2)
+  startDate       DateTime            @map("start_date")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  asset           Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  entries         DepreciationEntry[]
+
+  @@index([assetId])
+  @@map("depreciation_profiles")
+}
+
+// Depreciation Entry
+model DepreciationEntry {
+  id                  String              @id @default(cuid())
+  assetId             String              @map("asset_id")
+  profileId           String              @map("profile_id")
+  period              String              // YYYY-MM format
+  depreciationAmount  Decimal             @map("depreciation_amount") @db.Decimal(12, 2)
+  bookValueAfter      Decimal             @map("book_value_after") @db.Decimal(12, 2)
+  isPosted            Boolean             @default(false) @map("is_posted")
+  postedAt            DateTime?           @map("posted_at")
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  asset               Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  profile             DepreciationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, period])
+  @@index([assetId])
+  @@index([profileId])
+  @@index([period])
+  @@index([isPosted])
+  @@map("depreciation_entries")
+}
+
