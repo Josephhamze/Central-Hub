@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -15,6 +15,7 @@ import { useAuth } from '@contexts/AuthContext';
 
 export function StockItemsPage() {
   const { hasPermission, hasRole } = useAuth();
+  const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN');
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -22,6 +23,9 @@ export function StockItemsPage() {
   const [projectFilter] = useState<string | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadResults, setUploadResults] = useState<{ success: Array<{ row: number; name: string; sku: string }>; errors: Array<{ row: number; error: string }> } | null>(null);
   const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
   const [formData, setFormData] = useState<CreateStockItemDto>({
     companyId: '',
@@ -102,6 +106,66 @@ export function StockItemsPage() {
     },
   });
 
+  const bulkImportMutation = useMutation({
+    mutationFn: (file: File) => stockItemsApi.bulkImport(file),
+    onSuccess: (response) => {
+      const results = response.data.data;
+      setUploadResults(results);
+      queryClient.invalidateQueries({ queryKey: ['stock-items'] });
+      if (results.errors.length === 0) {
+        success(`Successfully imported ${results.success.length} stock item(s)`);
+        setTimeout(() => {
+          setIsUploadModalOpen(false);
+          setUploadFile(null);
+          setUploadResults(null);
+        }, 3000);
+      } else {
+        showError(`Imported ${results.success.length} item(s), but ${results.errors.length} error(s) occurred. Check details below.`);
+      }
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to import stock items');
+    },
+  });
+
+  const downloadTemplate = () => {
+    // Create Excel-like CSV template
+    const headers = ['Project Name', 'Warehouse Name', 'Name', 'SKU', 'Description', 'UOM', 'Min Unit Price', 'Default Unit Price', 'Min Order Qty', 'Truckload Only', 'Is Active'];
+    const exampleRow = ['Katonto', 'Main Warehouse', 'Cement 50kg', 'CEM-50KG', 'Portland Cement 50kg bag', 'BAG', '8.50', '10.00', '100', 'No', 'Yes'];
+    
+    const csvContent = [headers, exampleRow].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'stock_items_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    success('Template downloaded. You can open it in Excel and save as .xlsx format.');
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+        showError('Please select an Excel file (.xlsx, .xls) or CSV file');
+        return;
+      }
+      setUploadFile(file);
+      setUploadResults(null);
+    }
+  };
+
+  const handleUpload = () => {
+    if (!uploadFile) {
+      showError('Please select a file');
+      return;
+    }
+    bulkImportMutation.mutate(uploadFile);
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => stockItemsApi.remove(id),
     onSuccess: () => {
@@ -176,6 +240,35 @@ export function StockItemsPage() {
 
   return (
     <PageContainer
+      title="Stock Items"
+      description="Manage inventory stock items"
+      actions={
+        <div className="flex gap-2">
+          {isAdmin && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={downloadTemplate}
+                leftIcon={<Download className="w-4 h-4" />}
+              >
+                Download Template
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setIsUploadModalOpen(true)}
+                leftIcon={<Upload className="w-4 h-4" />}
+              >
+                Upload Excel
+              </Button>
+            </>
+          )}
+          {hasPermission('stock:create') && (
+            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
+              Create Stock Item
+            </Button>
+          )}
+        </div>
+      }
       title="Stock Items"
       description="Manage inventory products and stock items"
       actions={
@@ -425,6 +518,92 @@ export function StockItemsPage() {
         <ModalFooter>
           <Button variant="secondary" onClick={() => { setIsEditModalOpen(false); setSelectedStockItem(null); }}>Cancel</Button>
           <Button variant="primary" onClick={handleUpdate} isLoading={updateMutation.isPending}>Update Stock Item</Button>
+        </ModalFooter>
+      </Modal>
+      {/* Upload Modal */}
+      <Modal isOpen={isUploadModalOpen} onClose={() => { setIsUploadModalOpen(false); setUploadFile(null); setUploadResults(null); }} title="Upload Stock Items from Excel" size="lg">
+        <div className="space-y-4">
+          <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
+            <div className="flex items-start gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-status-info mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-content-secondary">
+                <p className="font-medium mb-1">Excel Format Requirements:</p>
+                <p>Columns: Project Name, Warehouse Name, Name, SKU (optional), Description (optional), UOM, Min Unit Price, Default Unit Price, Min Order Qty, Truckload Only (Yes/No), Is Active (Yes/No)</p>
+                <p className="mt-2">
+                  <button onClick={downloadTemplate} className="text-accent-primary hover:underline">
+                    Download template
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-content-primary mb-2">
+              Select Excel File (.xlsx, .xls)
+            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileSelect}
+              className="block w-full text-sm text-content-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent-primary file:text-white hover:file:bg-accent-primary-hover"
+            />
+            {uploadFile && (
+              <p className="mt-2 text-sm text-content-secondary">
+                Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(2)} KB)
+              </p>
+            )}
+          </div>
+
+          {uploadResults && (
+            <div className="space-y-3">
+              {uploadResults.success.length > 0 && (
+                <div className="p-3 bg-status-success-bg border border-status-success rounded-lg">
+                  <p className="text-sm font-medium text-status-success mb-2">
+                    Successfully imported {uploadResults.success.length} item(s):
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.success.map((item, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {item.row}: {item.name} (SKU: {item.sku})
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uploadResults.errors.length > 0 && (
+                <div className="p-3 bg-status-error-bg border border-status-error rounded-lg">
+                  <p className="text-sm font-medium text-status-error mb-2">
+                    {uploadResults.errors.length} error(s) occurred:
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.errors.map((error, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {error.row}: {error.error}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => { setIsUploadModalOpen(false); setUploadFile(null); setUploadResults(null); }}>
+            {uploadResults ? 'Close' : 'Cancel'}
+          </Button>
+          {!uploadResults && (
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              isLoading={bulkImportMutation.isPending}
+              disabled={!uploadFile}
+              leftIcon={<Upload className="w-4 h-4" />}
+            >
+              Upload & Import
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     </PageContainer>

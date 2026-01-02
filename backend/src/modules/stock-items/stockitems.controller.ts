@@ -1,5 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors, UploadedFile, UseInterceptors as UseInterceptorsDecorator } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { BadRequestException } from '@nestjs/common';
 import { StockItemsService } from './stockitems.service';
 import { CreateStockItemDto } from './dto/create-stock-item.dto';
 import { UpdateStockItemDto } from './dto/update-stock-item.dto';
@@ -44,6 +47,33 @@ export class StockItemsController {
   @ApiOperation({ summary: 'Update a stock item' })
   async update(@Param('id') id: string, @Body() dto: UpdateStockItemDto) {
     return this.stockItemsService.update(id, dto);
+  }
+
+  @Post('bulk-import')
+  @UseGuards(RbacGuard)
+  @Permissions('stock:create')
+  @UseInterceptorsDecorator(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Bulk import stock items from Excel file' })
+  async bulkImport(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    if (!file.mimetype.includes('spreadsheet') && !file.mimetype.includes('excel') && !file.originalname.endsWith('.xlsx') && !file.originalname.endsWith('.xls')) {
+      throw new BadRequestException('File must be an Excel file (.xlsx or .xls)');
+    }
+    return this.stockItemsService.bulkImport(file);
   }
 
   @Delete(':id')

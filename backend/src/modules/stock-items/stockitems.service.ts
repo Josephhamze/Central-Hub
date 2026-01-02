@@ -105,4 +105,111 @@ export class StockItemsService {
     }
     return this.prisma.stockItem.delete({ where: { id } });
   }
+
+
+  async bulkImport(file: Express.Multer.File) {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (data.length < 2) {
+      throw new BadRequestException('Excel file must contain at least a header row and one data row');
+    }
+
+    // Expected headers: Project Name, Warehouse Name, Name, SKU, Description, UOM, Min Unit Price, Default Unit Price, Min Order Qty, Truckload Only, Is Active
+    const headers = data[0] as string[];
+    const expectedHeaders = ['Project Name', 'Warehouse Name', 'Name', 'SKU', 'Description', 'UOM', 'Min Unit Price', 'Default Unit Price', 'Min Order Qty', 'Truckload Only', 'Is Active'];
+    
+    // Validate headers (case-insensitive)
+    const normalizedHeaders = headers.map(h => h?.toString().trim());
+    const headerMap: Record<string, number> = {};
+    expectedHeaders.forEach((expected, idx) => {
+      const foundIdx = normalizedHeaders.findIndex(h => h?.toLowerCase() === expected.toLowerCase());
+      if (foundIdx === -1 && idx < 3) { // First 3 are required
+        throw new BadRequestException(`Missing required column: ${expected}`);
+      }
+      if (foundIdx !== -1) {
+        headerMap[expected] = foundIdx;
+      }
+    });
+
+    const results = {
+      success: [] as any[],
+      errors: [] as { row: number; error: string }[],
+    };
+
+    // Get all projects and warehouses for lookup
+    const [projects, warehouses] = await Promise.all([
+      this.prisma.project.findMany({ select: { id: true, name: true } }),
+      this.prisma.warehouse.findMany({ select: { id: true, name: true } }),
+    ]);
+
+    const projectMap = new Map(projects.map(p => [p.name.toLowerCase(), p.id]));
+    const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w.id]));
+
+    // Process each row
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] as any[];
+      if (!row || row.every(cell => !cell || cell.toString().trim() === '')) continue; // Skip empty rows
+
+      try {
+        const projectName = row[headerMap['Project Name']]?.toString().trim();
+        const warehouseName = row[headerMap['Warehouse Name']]?.toString().trim();
+        const name = row[headerMap['Name']]?.toString().trim();
+        const sku = row[headerMap['SKU']]?.toString().trim() || undefined;
+        const description = row[headerMap['Description']]?.toString().trim() || undefined;
+        const uom = row[headerMap['UOM']]?.toString().trim();
+        const minUnitPrice = parseFloat(row[headerMap['Min Unit Price']]?.toString().replace(/[^0-9.]/g, '') || '0');
+        const defaultUnitPrice = parseFloat(row[headerMap['Default Unit Price']]?.toString().replace(/[^0-9.]/g, '') || '0');
+        const minOrderQty = parseFloat(row[headerMap['Min Order Qty']]?.toString().replace(/[^0-9.]/g, '') || '1');
+        const truckloadOnly = (row[headerMap['Truckload Only']]?.toString().trim().toLowerCase() || 'no') === 'yes';
+        const isActive = (row[headerMap['Is Active']]?.toString().trim().toLowerCase() || 'yes') === 'yes';
+
+        // Validation
+        if (!projectName) throw new Error('Project Name is required');
+        if (!warehouseName) throw new Error('Warehouse Name is required');
+        if (!name) throw new Error('Name is required');
+        if (!uom) throw new Error('UOM is required');
+        if (isNaN(minUnitPrice) || minUnitPrice < 0) throw new Error('Min Unit Price must be a valid number');
+        if (isNaN(defaultUnitPrice) || defaultUnitPrice < 0) throw new Error('Default Unit Price must be a valid number');
+        if (isNaN(minOrderQty) || minOrderQty <= 0) throw new Error('Min Order Qty must be a valid positive number');
+        if (minUnitPrice > defaultUnitPrice) throw new Error('Min Unit Price cannot be greater than Default Unit Price');
+
+        const projectId = projectMap.get(projectName.toLowerCase());
+        if (!projectId) throw new Error(`Project "${projectName}" not found`);
+
+        const warehouseId = warehouseMap.get(warehouseName.toLowerCase());
+        if (!warehouseId) throw new Error(`Warehouse "${warehouseName}" not found`);
+
+        // Create stock item
+        const finalSku = sku || this.generateSku(name);
+        const stockItem = await this.prisma.stockItem.create({
+          data: {
+            projectId,
+            warehouseId,
+            name,
+            sku: finalSku,
+            uom,
+            minUnitPrice,
+            defaultUnitPrice,
+            minOrderQty,
+            truckloadOnly,
+            isActive,
+          },
+        });
+
+        results.success.push({ row: i + 1, name, sku: finalSku });
+      } catch (error: any) {
+        results.errors.push({
+          row: i + 1,
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
+
 }

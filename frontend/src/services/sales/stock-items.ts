@@ -43,4 +43,11 @@ export const stockItemsApi = {
   create: (data: CreateStockItemDto) => api.post<ApiResponse<StockItem>>('/stock-items', data),
   update: (id: string, data: Partial<CreateStockItemDto>) => api.put<ApiResponse<StockItem>>(`/stock-items/${id}`, data),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/stock-items/${id}`),
+  bulkImport: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<{ success: Array<{ row: number; name: string; sku: string }>; errors: Array<{ row: number; error: string }> }>>('/stock-items/bulk-import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
