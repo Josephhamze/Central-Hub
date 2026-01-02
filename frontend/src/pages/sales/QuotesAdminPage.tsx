@@ -93,17 +93,35 @@ export function QuotesAdminPage() {
   // Admins can approve their own quotes
   const canApprove = (quote: Quote) => {
     if (quote.status !== 'PENDING_APPROVAL') return false;
-    const isAdmin = hasRole('Admin');
-    const isSalesManager = hasRole('Sales Manager');
+    
+    // Check various role name formats
+    const isAdmin = hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+    const isSalesManager = hasRole('Sales Manager') || hasRole('SALES_MANAGER') || hasRole('sales_manager');
     const hasApprovePermission = hasPermission('quotes:approve');
+    
+    // Debug logging (remove in production)
+    if (quote.status === 'PENDING_APPROVAL') {
+      console.log('Quote approval check:', {
+        quoteId: quote.id,
+        status: quote.status,
+        isAdmin,
+        isSalesManager,
+        hasApprovePermission,
+        userId: user?.id,
+        quoteCreatorId: quote.salesRepUserId,
+        isOwnQuote: user?.id === quote.salesRepUserId,
+      });
+    }
     
     // If admin, can always approve (including own quotes)
     if (isAdmin) return true;
     
-    // If sales manager or has permission, can approve (but not own quotes unless admin)
+    // If sales manager or has permission, can approve
     if (isSalesManager || hasApprovePermission) {
-      // Allow approving own quotes only if admin
-      if (user?.id === quote.salesRepUserId && !isAdmin) return false;
+      // Only block if it's their own quote AND they're not admin
+      if (user?.id === quote.salesRepUserId && !isAdmin) {
+        return false;
+      }
       return true;
     }
     
