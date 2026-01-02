@@ -294,6 +294,54 @@ export function QuotesAdminPage() {
 
       {/* Quick Quote Creation - Step 1 */}
         <Card>
+        <CardHeader title="Quick Create Quote" />
+        <div className="p-6">
+          <p className="text-sm text-content-secondary mb-4">Select a company to start creating a new quote</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {companiesData?.items.map((company) => (
+              <Card
+                key={company.id}
+                className={cn(
+                  'cursor-pointer transition-all hover:shadow-lg border-2',
+                  selectedCompanyId === company.id
+                    ? 'border-status-success bg-status-success-bg ring-2 ring-status-success ring-opacity-50'
+                    : 'border-border-default hover:border-accent-primary'
+                )}
+                onClick={() => handleCompanySelect(company.id)}
+              >
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
+                      selectedCompanyId === company.id ? 'bg-status-success text-white' : 'bg-accent-primary/10 text-accent-primary'
+                    )}>
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold text-content-primary mb-1">{company.name}</h3>
+                        {selectedCompanyId === company.id && (
+                          <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0" />
+                        )}
+                      </div>
+                      {company.legalName && (
+                        <p className="text-xs text-content-secondary mb-1">{company.legalName}</p>
+                      )}
+                      {company.email && (
+                        <p className="text-xs text-content-tertiary">{company.email}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </Card>
+        </>
+      )}
+
+      {/* Customers Tab */}
       {activeTab === 'customers' && (
         <Card>
           <CardHeader title="Customers & Sales" />
@@ -347,55 +395,6 @@ export function QuotesAdminPage() {
             </div>
           </div>
         </Card>
-      )}
-
-      {/* Quick Quote Creation - Step 1 */}
-        <Card>
-        <CardHeader title="Quick Create Quote" />
-        <div className="p-6">
-          <p className="text-sm text-content-secondary mb-4">Select a company to start creating a new quote</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {companiesData?.items.map((company) => (
-              <Card
-                key={company.id}
-                className={cn(
-                  'cursor-pointer transition-all hover:shadow-lg border-2',
-                  selectedCompanyId === company.id
-                    ? 'border-status-success bg-status-success-bg ring-2 ring-status-success ring-opacity-50'
-                    : 'border-border-default hover:border-accent-primary'
-                )}
-                onClick={() => handleCompanySelect(company.id)}
-              >
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
-                      selectedCompanyId === company.id ? 'bg-status-success text-white' : 'bg-accent-primary/10 text-accent-primary'
-                    )}>
-                      <Building2 className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-lg font-bold text-content-primary mb-1">{company.name}</h3>
-                        {selectedCompanyId === company.id && (
-                          <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0" />
-                        )}
-                      </div>
-                      {company.legalName && (
-                        <p className="text-xs text-content-secondary mb-1">{company.legalName}</p>
-                      )}
-                      {company.email && (
-                        <p className="text-xs text-content-tertiary">{company.email}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </Card>
-        </>
       )}
 
       {/* Approve Modal */}
