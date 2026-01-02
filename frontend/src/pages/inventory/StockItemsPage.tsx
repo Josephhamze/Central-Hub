@@ -317,7 +317,7 @@ export function StockItemsPage() {
               </select>
             </div>
           )}
-          <Input label="SKU" value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="Stock keeping unit" />
+          <Input label="SKU (optional, auto-generated if empty)" value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="Leave empty to auto-generate" />
           <Input label="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Product name" />
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
@@ -395,7 +395,7 @@ export function StockItemsPage() {
               </select>
             </div>
           )}
-          <Input label="SKU" value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="Stock keeping unit" />
+          <Input label="SKU (optional, auto-generated if empty)" value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="Leave empty to auto-generate" />
           <Input label="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Product name" />
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>

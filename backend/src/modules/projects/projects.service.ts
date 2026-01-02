@@ -7,6 +7,24 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
+
+  /**
+   * Generate a unique project code from project name
+   */
+  private generateProjectCode(name: string): string {
+    // Convert name to uppercase, remove special chars, replace spaces with hyphens
+    const base = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 15);
+    
+    // Add timestamp suffix for uniqueness
+    const timestamp = Date.now().toString(36).toUpperCase().slice(-6);
+    return `${base}-${timestamp}`;
+  }
+
+
   async findAll(companyId?: string, page = 1, limit = 20) {
     // Convert string query params to numbers
     const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
@@ -45,9 +63,19 @@ export class ProjectsService {
   async create(dto: CreateProjectDto) {
     const company = await this.prisma.company.findUnique({ where: { id: dto.companyId } });
     if (!company) throw new NotFoundException('Company not found');
+    
+    // Auto-generate code if not provided
+    const code = dto.code?.trim() || this.generateProjectCode(dto.name);
+    
     // Only include fields that exist in the Prisma schema
     const { description, startDate, endDate, status, ...prismaData } = dto;
-    return this.prisma.project.create({ data: prismaData });
+    
+    return this.prisma.project.create({ 
+      data: {
+        ...prismaData,
+        code,
+      }
+    });
   }
 
   async update(id: string, dto: UpdateProjectDto) {
