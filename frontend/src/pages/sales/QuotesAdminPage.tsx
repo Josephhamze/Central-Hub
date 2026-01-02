@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -11,6 +13,7 @@ import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes'
 import { useAuth } from '@contexts/AuthContext';
 
 export function QuotesAdminPage() {
+  const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
@@ -73,7 +76,7 @@ export function QuotesAdminPage() {
   };
 
   return (
-    <PageContainer title="Quotes Administration" description="Manage and approve sales quotes">
+    <PageContainer title="Quotes Administration" description="Manage and approve sales quotes" action={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
       <Card className="mb-6">
         <CardHeader title="Filters" />
         <div className="p-6 flex gap-4">
