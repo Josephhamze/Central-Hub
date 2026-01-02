@@ -20,6 +20,14 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+// Sales Quote System modules
+import { CompaniesModule } from './modules/companies/companies.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { WarehousesModule } from './modules/warehouses/warehouses.module';
+import { ContactsModule } from './modules/contacts/contacts.module';
+import { StockItemsModule } from './modules/stock-items/stockitems.module';
+import { RoutesModule } from './modules/routes/routes.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -69,12 +77,3 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
   ],
 })
 export class AppModule {}
-
-// Sales Quote System modules
-import { CompaniesModule } from './modules/companies/companies.module';
-import { ProjectsModule } from './modules/projects/projects.module';
-import { WarehousesModule } from './modules/warehouses/warehouses.module';
-import { ContactsModule } from './modules/contacts/contacts.module';
-import { StockItemsModule } from './modules/stock-items/stockitems.module';
-import { RoutesModule } from './modules/routes/routes.module';
-import { QuotesModule } from './modules/quotes/quotes.module';
