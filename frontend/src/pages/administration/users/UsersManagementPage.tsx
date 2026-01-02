@@ -322,7 +322,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="default" onClick={() => {
+          <Button variant="secondary" onClick={() => {
             setIsCreateModalOpen(false);
             resetForm();
           }}>
@@ -380,7 +380,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="default" onClick={() => {
+          <Button variant="secondary" onClick={() => {
             setIsRolesModalOpen(false);
             setSelectedUser(null);
           }}>
