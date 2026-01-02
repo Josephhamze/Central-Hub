@@ -158,7 +158,7 @@ export function QuoteDetailPage() {
             {canEdit && (
               <Button
                 variant="secondary"
-                onClick={() => navigate(`/sales/quotes/${id}/edit`)}
+                onClick={() => { showError("Quote editing feature coming soon. For now, please create a new quote."); }}
                 leftIcon={<Edit className="w-4 h-4" />}
               >
                 Edit Quote
