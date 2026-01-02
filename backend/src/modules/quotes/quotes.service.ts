@@ -234,17 +234,29 @@ export class QuotesService {
       }
     }
 
-    // Validate delivery method and route
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.routeId) {
-      throw new BadRequestException('Route is required for delivered quotes');
+    // Validate delivery method and address
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && (!dto.deliveryAddressLine1 || !dto.deliveryCity || !dto.deliveryPostalCode)) {
+      throw new BadRequestException('Delivery address (including city) is required for delivered quotes');
     }
 
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && (!dto.deliveryAddressLine1 || !dto.deliveryCity || !dto.deliveryPostalCode)) {
-      throw new BadRequestException('Delivery address is required for delivered quotes');
+    // Auto-match route based on company city (departure) and delivery city (destination)
+    let routeId = dto.routeId;
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId && dto.deliveryCity && company.city) {
+      const matchedRoute = await this.prisma.route.findFirst({
+        where: {
+          fromCity: company.city,
+          toCity: dto.deliveryCity,
+        },
+      });
+      if (matchedRoute) {
+        routeId = matchedRoute.id;
+      } else {
+        throw new BadRequestException(`No route found from ${company.city} to ${dto.deliveryCity}. Please ensure the route exists.`);
+      }
     }
 
     // Calculate transport
-    const transport = await this.calculateTransport(dto.routeId);
+    const transport = await this.calculateTransport(routeId);
 
     // Validate and process items
     if (!dto.items || dto.items.length === 0) {
@@ -314,7 +326,7 @@ export class QuotesService {
         deliveryState: dto.deliveryState,
         deliveryPostalCode: dto.deliveryPostalCode,
         deliveryCountry: dto.deliveryCountry,
-        routeId: dto.routeId,
+        routeId: routeId,
         distanceKmSnapshot: transport.distanceKm,
         costPerKmSnapshot: transport.costPerKm,
         tollTotalSnapshot: transport.tolls,

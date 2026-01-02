@@ -98,8 +98,8 @@ export function QuoteWizardPage() {
       showError('Please select a customer');
       return;
     }
-    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod)) {
-      showError('Please complete project and delivery method');
+    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryCity))) {
+      showError('Please complete project, delivery method, and delivery city (required for route calculation)');
       return;
     }
     if (currentStep === 4 && (!quoteData.items || quoteData.items.length === 0)) {
@@ -118,8 +118,8 @@ export function QuoteWizardPage() {
   };
 
   const handleSubmit = () => {
-    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0) {
-      showError('Please complete all required fields');
+    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0 || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryCity)) {
+      showError('Please complete all required fields. City is required for delivered quotes.');
       return;
     }
     // Convert UI items to DTO items (remove UI-only fields)
@@ -773,7 +773,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="City"
+                  label="City *"
                   value={quoteData.deliveryCity || ''}
                   onChange={(e) => onUpdate({ ...quoteData, deliveryCity: e.target.value })}
                   placeholder="City"
@@ -787,7 +787,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
               </div>
               <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
                 <p className="text-xs text-content-secondary">
-                  <strong>Tip:</strong> Include the city name (Lubumbashi, Likasi, or Kolwezi) for automatic route matching.
+                  <strong>Tip:</strong> City is required for automatic route calculation. The system will match a route from the project's company city to the delivery city.
                 </p>
               </div>
             </div>

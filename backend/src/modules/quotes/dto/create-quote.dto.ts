@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, ValidateNested, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DeliveryMethod } from '@prisma/client';
 import { CreateQuoteItemDto } from './create-quote-item.dto';
@@ -13,7 +13,7 @@ export class CreateQuoteDto {
   @ApiPropertyOptional() @IsString() @IsOptional() routeId?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryAddressLine1?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryAddressLine2?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() deliveryCity?: string;
+  @ApiPropertyOptional() @IsString() @ValidateIf((o) => o.deliveryMethod === DeliveryMethod.DELIVERED) @IsOptional() deliveryCity?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryState?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryPostalCode?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryCountry?: string;
