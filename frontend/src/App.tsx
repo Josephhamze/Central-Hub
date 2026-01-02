@@ -94,6 +94,7 @@ function App() {
         <Route path="reporting/*" element={<ReportingPage />} />
         <Route path="reporting/sales-kpis" element={<SalesKPIsPage />} />
         <Route path="sales/quotes/new" element={<QuoteWizardPage />} />
+        <Route path="sales/quotes/:id/edit" element={<QuoteWizardPage />} />
         <Route path="sales/quotes/:id" element={<QuoteDetailPage />} />
         <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />

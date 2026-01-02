@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   Building2,
@@ -23,6 +23,7 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { Button } from '@components/ui/Button';
+import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { Input } from '@components/ui/Input';
@@ -58,6 +59,7 @@ const STEPS = [
 ];
 
 export function QuoteWizardPage() {
+  const { id: quoteId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -66,7 +68,7 @@ export function QuoteWizardPage() {
   });
 
   // Generate quote number (in real app, this would come from backend)
-  const quoteNumber = `EE-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000)}`;
+  const quoteNumber = existingQuote?.quoteNumber || `EE-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000)}`;
 
   // Fetch companies for step 1
   const { data: companiesData } = useQuery({
@@ -77,10 +79,50 @@ export function QuoteWizardPage() {
     },
   });
 
+  // Load quote if editing
+  const { data: existingQuote, isLoading: isLoadingQuote } = useQuery({
+    queryKey: ['quote', quoteId],
+    queryFn: async () => {
+      const res = await quotesApi.findOne(quoteId!);
+      return res.data.data;
+    },
+    enabled: !!quoteId,
+  });
+
+  // Populate form with existing quote data when editing
+  useEffect(() => {
+    if (existingQuote && quoteId) {
+      setQuoteData({
+        companyId: existingQuote.companyId,
+        projectId: existingQuote.projectId,
+        customerId: existingQuote.customerId,
+        contactId: existingQuote.contactId,
+        warehouseId: (existingQuote as any).warehouseId,
+        deliveryMethod: existingQuote.deliveryMethod,
+        deliveryAddressLine1: existingQuote.deliveryAddressLine1,
+        deliveryAddressLine2: existingQuote.deliveryAddressLine2,
+        deliveryCity: existingQuote.deliveryCity,
+        deliveryState: existingQuote.deliveryState,
+        deliveryPostalCode: existingQuote.deliveryPostalCode,
+        deliveryCountry: existingQuote.deliveryCountry,
+        routeId: existingQuote.routeId,
+        items: existingQuote.items?.map(item => ({
+          stockItemId: item.stockItemId,
+          nameSnapshot: item.nameSnapshot,
+          uomSnapshot: item.uomSnapshot,
+          qty: Number(item.qty),
+          unitPrice: Number(item.unitPrice),
+          discount: Number(item.discount),
+          lineTotal: Number(item.lineTotal),
+        })) || [],
+      });
+    }
+  }, [existingQuote, quoteId]);
+
   const createQuoteMutation = useMutation({
-    mutationFn: (data: CreateQuoteDto) => quotesApi.create(data),
+    mutationFn: (data: CreateQuoteDto) => quoteId ? quotesApi.update(quoteId, data) : quotesApi.create(data),
     onSuccess: () => {
-      success('Quote created successfully');
+      success(quoteId ? 'Quote updated successfully' : 'Quote created successfully');
       navigate(`/sales/quotes`);
     },
     onError: (err: any) => {
@@ -151,12 +193,20 @@ export function QuoteWizardPage() {
     createQuoteMutation.mutate(dto);
   };
 
+  if (quoteId && isLoadingQuote) {
+    return (
+      <PageContainer title="Edit Quote">
+        <div className="text-center py-12 text-content-secondary">Loading quote...</div>
+      </PageContainer>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background-secondary">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header with Quote Number */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-content-primary">Quote Builder</h1>
+          <h1 className="text-3xl font-bold text-content-primary">{quoteId ? "Edit Quote" : "Quote Builder"}</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-content-secondary">Quote:</span>
             <span className="text-sm font-semibold text-content-primary">{quoteNumber}</span>
