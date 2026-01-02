@@ -205,7 +205,7 @@ export function RolesManagementPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-content-primary">{role.name}</h3>
                     {role.isSystem && (
-                      <Badge variant="secondary">System Role</Badge>
+                      <Badge variant="default">System Role</Badge>
                     )}
                     {role.userCount !== undefined && role.userCount > 0 && (
                       <Badge variant="info">{role.userCount} user{role.userCount !== 1 ? 's' : ''}</Badge>
@@ -221,7 +221,7 @@ export function RolesManagementPage() {
                       </Badge>
                     ))}
                     {role.permissions && role.permissions.length > 5 && (
-                      <Badge variant="secondary" size="sm">
+                      <Badge variant="default" size="sm">
                         +{role.permissions.length - 5} more
                       </Badge>
                     )}

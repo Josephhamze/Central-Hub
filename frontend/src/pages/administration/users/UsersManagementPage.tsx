@@ -365,7 +365,7 @@ export function UsersManagementPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-content-primary">{role.name}</span>
                       {role.isSystem && (
-                        <Badge variant="secondary" size="sm">System</Badge>
+                        <Badge variant="default" size="sm">System</Badge>
                       )}
                     </div>
                     {role.description && (
