@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Patch,
   Param,
@@ -17,6 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
 import { AssignRolesDto } from './dto/assign-roles.dto';
@@ -99,6 +101,17 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User activated' })
   async activate(@Param('id') id: string) {
     return this.usersService.activate(id);
+  }
+
+
+  @Post()
+  @UseGuards(RbacGuard)
+  @Permissions('system:manage_users')
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input or email already in use' })
+  async create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
   }
 
   @Put(':id/roles')

@@ -25,6 +25,8 @@ import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
 import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
 import { CompaniesPage } from '@pages/administration/CompaniesPage';
 import { ProjectsPage } from '@pages/administration/ProjectsPage';
+import { UsersManagementPage } from '@pages/administration/users/UsersManagementPage';
+import { RolesManagementPage } from '@pages/administration/roles/RolesManagementPage';
 import { CustomersManagementPage } from '@pages/customers/CustomersManagementPage';
 import { ContactsPage } from '@pages/customers/ContactsPage';
 import { WarehousesPage } from '@pages/inventory/WarehousesPage';

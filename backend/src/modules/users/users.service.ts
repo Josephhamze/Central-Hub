@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
 import { ThemePreference } from '@prisma/client';
@@ -258,4 +259,64 @@ export class UsersService {
 
     return this.findOne(userId);
   }
+
+  async create(dto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    // Verify all roles exist if provided
+    if (dto.roleIds?.length) {
+      const roles = await this.prisma.role.findMany({
+        where: { id: { in: dto.roleIds } },
+      });
+
+      if (roles.length !== dto.roleIds.length) {
+        throw new BadRequestException('One or more roles not found');
+      }
+    }
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        isActive: true,
+        emailVerified: false,
+        roles: dto.roleIds?.length
+          ? {
+              create: dto.roleIds.map((roleId) => ({
+                roleId,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      roles: user.roles.map((ur) => ur.role),
+      createdAt: user.createdAt,
+    };
+  }
+
 }
