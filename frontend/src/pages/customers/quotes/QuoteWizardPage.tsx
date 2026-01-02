@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   Building2,
@@ -60,11 +60,13 @@ const STEPS = [
 
 export function QuoteWizardPage() {
   const { id: quoteId } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [quoteData, setQuoteData] = useState<QuoteDataUI>({
     items: [],
+    companyId: searchParams.get('companyId') || undefined,
   });
 
   // Fetch companies for step 1

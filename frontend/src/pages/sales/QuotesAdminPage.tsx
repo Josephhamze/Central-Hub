@@ -80,9 +80,24 @@ export function QuotesAdminPage() {
   });
 
   // Check if user can approve (has permission OR is sales manager OR is admin)
+  // Admins can approve their own quotes
   const canApprove = (quote: Quote) => {
     if (quote.status !== 'PENDING_APPROVAL') return false;
-    return hasPermission('quotes:approve') || hasRole('Sales Manager') || hasRole('Admin');
+    const isAdmin = hasRole('Admin');
+    const isSalesManager = hasRole('Sales Manager');
+    const hasApprovePermission = hasPermission('quotes:approve');
+    
+    // If admin, can always approve (including own quotes)
+    if (isAdmin) return true;
+    
+    // If sales manager or has permission, can approve (but not own quotes unless admin)
+    if (isSalesManager || hasApprovePermission) {
+      // Allow approving own quotes only if admin
+      if (user?.id === quote.salesRepUserId && !isAdmin) return false;
+      return true;
+    }
+    
+    return false;
   };
 
   const getStatusBadge = (status: QuoteStatus) => {
