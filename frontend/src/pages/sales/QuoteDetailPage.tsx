@@ -23,7 +23,7 @@ import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
-import { quotesApi, type Quote } from '@services/sales/quotes';
+import { quotesApi } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
 
 export function QuoteDetailPage() {
