@@ -868,6 +868,25 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
 
   if (!companyId || !projectId) {
     return (
+      <div className="text-center py-12 text-content-secondary">
+        <Package className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
+        <p>Please complete Steps 1 and 3 first</p>
+      </div>
+    );
+  }
+
+  if (stockItemsError) {
+    return (
+      <Card className="p-6 border-2 border-status-error-bg bg-status-error-bg">
+        <div className="flex items-center gap-3 text-status-error">
+          <AlertCircle className="w-5 h-5" />
+          <p>Error loading products: {stockItemsError instanceof Error ? stockItemsError.message : 'Unknown error'}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left Column: Available Products */}
       <div>
