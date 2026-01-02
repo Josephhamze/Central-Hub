@@ -149,6 +149,46 @@ export function QuotesAdminPage() {
 
   return (
     <PageContainer title="Quotes" description="Manage quotes and view sales KPIs" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
+      {/* Tabs */}
+      <div className="mb-6 flex gap-2 border-b border-border-default">
+        <button
+          onClick={() => setActiveTab('quotes')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            activeTab === 'quotes'
+              ? 'border-accent-primary text-accent-primary'
+              : 'border-transparent text-content-secondary hover:text-content-primary'
+          )}
+        >
+          Quotes
+        </button>
+        <button
+          onClick={() => setActiveTab('customers')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            activeTab === 'customers'
+              ? 'border-accent-primary text-accent-primary'
+              : 'border-transparent text-content-secondary hover:text-content-primary'
+          )}
+        >
+          Customers
+        </button>
+        <button
+          onClick={() => setActiveTab('logistics')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            activeTab === 'logistics'
+              ? 'border-accent-primary text-accent-primary'
+              : 'border-transparent text-content-secondary hover:text-content-primary'
+          )}
+        >
+          Logistics
+        </button>
+      </div>
+
+      {/* Quotes Tab */}
+      {activeTab === 'quotes' && (
+        <>
       {/* KPIs Section */}
       <Card className="mb-6">
         <CardHeader title="Sales KPIs" />
@@ -252,10 +292,8 @@ export function QuotesAdminPage() {
         </div>
       </Card>
 
-        </>
-      )}
-
-      {/* Customers Tab */}
+      {/* Quick Quote Creation - Step 1 */}
+        <Card>
       {activeTab === 'customers' && (
         <Card>
           <CardHeader title="Customers & Sales" />
@@ -312,9 +350,7 @@ export function QuotesAdminPage() {
       )}
 
       {/* Quick Quote Creation - Step 1 */}
-      {activeTab === 'quotes' && (
-      {/* Quick Quote Creation - Step 1 */}
-      <Card>
+        <Card>
         <CardHeader title="Quick Create Quote" />
         <div className="p-6">
           <p className="text-sm text-content-secondary mb-4">Select a company to start creating a new quote</p>
@@ -359,6 +395,8 @@ export function QuotesAdminPage() {
           </div>
         </div>
       </Card>
+        </>
+      )}
 
       {/* Approve Modal */}
       <Modal isOpen={approveModalOpen} onClose={() => { setApproveModalOpen(false); setApproveNotes(''); }} title="Approve Quote" size="md">
@@ -405,7 +443,6 @@ export function QuotesAdminPage() {
           </Button>
         </ModalFooter>
       </Modal>
-        )}
     </PageContainer>
   );
 }
