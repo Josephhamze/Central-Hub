@@ -95,7 +95,7 @@ export function QuotesAdminPage() {
     if (quote.status !== 'PENDING_APPROVAL') return false;
     
     // Check various role name formats
-    const isAdmin = hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+    const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
     const isSalesManager = hasRole('Sales Manager') || hasRole('SALES_MANAGER') || hasRole('sales_manager');
     const hasApprovePermission = hasPermission('quotes:approve');
     
