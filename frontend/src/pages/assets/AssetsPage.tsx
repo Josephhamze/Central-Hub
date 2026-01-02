@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Wrench, AlertTriangle, Clock, CheckCircle2, Package, ArrowRight, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +14,6 @@ import { useToast } from '@contexts/ToastContext';
 export function AssetsPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const { error: showError } = useToast();
 
   const { data: overview, isLoading: overviewLoading } = useQuery<AssetOverview>({
     queryKey: ['assets', 'overview'],

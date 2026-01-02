@@ -398,13 +398,13 @@ export class WorkOrdersService {
       });
 
       // Update work order parts cost
-      const currentPartsCost = workOrder.partsCost || 0;
+      const currentPartsCost = Number(workOrder.partsCost || 0);
       const additionalCost = Number(sparePart.unitCost) * dto.quantityUsed;
       await tx.workOrder.update({
         where: { id: workOrderId },
         data: {
           partsCost: currentPartsCost + additionalCost,
-          totalCost: (workOrder.totalCost || 0) + additionalCost,
+          totalCost: Number(workOrder.totalCost || 0) + additionalCost,
         },
       });
 

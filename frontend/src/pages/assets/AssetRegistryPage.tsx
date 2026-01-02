@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Eye, Edit, Trash2, Package } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
-import { assetsApi, type Asset } from '@services/assets/assets';
+import { assetsApi } from '@services/assets/assets';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
 
 export function AssetRegistryPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -25,7 +25,6 @@ export function AssetRegistryPage() {
 
   const canCreate = hasPermission('assets:create');
   const canUpdate = hasPermission('assets:update');
-  const canRetire = hasPermission('assets:retire');
 
   const getStatusBadge = (status: string) => {
     switch (status) {

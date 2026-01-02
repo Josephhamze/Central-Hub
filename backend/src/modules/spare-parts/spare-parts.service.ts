@@ -207,15 +207,13 @@ export class SparePartsService {
     const parts = allParts.filter(
       (part) => Number(part.quantityOnHand) <= Number(part.minStockLevel)
     );
-      include: {
-        warehouse: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: [
-        { isCritical: 'desc' },
-        { quantityOnHand: 'asc' },
-      ],
+
+    // Sort: critical first, then by quantity ascending
+    parts.sort((a, b) => {
+      if (a.isCritical !== b.isCritical) {
+        return a.isCritical ? -1 : 1;
+      }
+      return Number(a.quantityOnHand) - Number(b.quantityOnHand);
     });
 
     return parts;

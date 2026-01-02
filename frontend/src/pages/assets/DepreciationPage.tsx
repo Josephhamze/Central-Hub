@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Calculator, TrendingDown } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { EmptyState } from '@components/ui/EmptyState';

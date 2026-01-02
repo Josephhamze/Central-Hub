@@ -61,11 +61,11 @@ import { RootController } from './root.controller';
     ProductionModule,
     CostingModule,
     InventoryModule,
-    AssetsModule,,
+    AssetsModule,
     MaintenanceSchedulesModule,
     WorkOrdersModule,
     SparePartsModule,
-    DepreciationModule
+    DepreciationModule,
     LogisticsModule,
     CustomersModule,
     ReportingModule,

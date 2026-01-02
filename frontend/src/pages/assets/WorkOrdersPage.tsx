@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Filter, Wrench, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Wrench, Clock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
-import { workOrdersApi, type WorkOrder } from '@services/assets/work-orders';
+import { workOrdersApi } from '@services/assets/work-orders';
 import { useAuth } from '@contexts/AuthContext';
 
 export function WorkOrdersPage() {
