@@ -45,7 +45,9 @@ export class ProjectsService {
   async create(dto: CreateProjectDto) {
     const company = await this.prisma.company.findUnique({ where: { id: dto.companyId } });
     if (!company) throw new NotFoundException('Company not found');
-    return this.prisma.project.create({ data: dto });
+    // Only include fields that exist in the Prisma schema
+    const { description, startDate, endDate, status, ...prismaData } = dto;
+    return this.prisma.project.create({ data: prismaData });
   }
 
   async update(id: string, dto: UpdateProjectDto) {
