@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, UserCheck, UserX, Users, Shield } from 'lucide-react';
+import { Plus, Search, UserCheck, UserX, Users, Shield } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -8,7 +8,7 @@ import { Input } from '@components/ui/Input';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { Badge } from '@components/ui/Badge';
 import { useToast } from '@contexts/ToastContext';
-import { usersApi, rolesApi, type User, type CreateUserDto, type Role } from '@services/system/users';
+import { usersApi, rolesApi, type User, type CreateUserDto } from '@services/system/users';
 import { useAuth } from '@contexts/AuthContext';
 
 export function UsersManagementPage() {
@@ -16,7 +16,7 @@ export function UsersManagementPage() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -206,7 +206,7 @@ export function UsersManagementPage() {
                   <p className="text-sm text-content-secondary mb-3">{user.email}</p>
                   <div className="flex flex-wrap gap-2">
                     {user.roles?.map((role) => (
-                      <Badge key={role.id} variant="secondary">
+                      <Badge key={role.id} variant="default">
                         <Shield className="w-3 h-3 mr-1" />
                         {role.name}
                       </Badge>
@@ -322,7 +322,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={() => {
+          <Button variant="default" onClick={() => {
             setIsCreateModalOpen(false);
             resetForm();
           }}>
@@ -365,7 +365,7 @@ export function UsersManagementPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-content-primary">{role.name}</span>
                       {role.isSystem && (
-                        <Badge variant="secondary" size="sm">System</Badge>
+                        <Badge variant="default" size="sm">System</Badge>
                       )}
                     </div>
                     {role.description && (
@@ -380,7 +380,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={() => {
+          <Button variant="default" onClick={() => {
             setIsRolesModalOpen(false);
             setSelectedUser(null);
           }}>
