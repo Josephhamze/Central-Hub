@@ -122,11 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    return user?.permissions.includes(permission) ?? false;
+    return user?.permissions?.includes(permission) ?? false;
   };
 
   const hasRole = (role: string) => {
-    return user?.roles.includes(role) ?? false;
+    return user?.roles?.includes(role) ?? false;
   };
 
   return (
