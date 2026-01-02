@@ -52,5 +52,3 @@ export function SalesKPIsPage() {
     </PageContainer>
   );
 }
-EOF
-echo "Dashboards created"
