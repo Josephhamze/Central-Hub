@@ -224,12 +224,319 @@ function Step3ProjectDelivery({ quoteData, onUpdate }: { quoteData: Partial<Crea
 // Step 4: Products
 function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyId?: string; projectId?: string; quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
   const { error: showError } = useToast();
-  // ... full implementation would go here but it's very long
-  return <div>Step 4 - Products selection (full implementation in progress)</div>;
+  const [search, setSearch] = useState('');
+  const { data: stockItemsData } = useQuery({
+    queryKey: ['stock-items', companyId, projectId],
+    queryFn: async () => {
+      const res = await stockItemsApi.findAll(companyId, projectId, 1, 100);
+      return res.data.data;
+    },
+    enabled: !!companyId && !!projectId,
+  });
+
+  const addItem = (stockItem: StockItem) => {
+    const items = quoteData.items || [];
+    const existing = items.find(i => i.stockItemId === stockItem.id);
+    if (existing) {
+      showError('Item already added');
+      return;
+    }
+    const newItem: QuoteItem = {
+      stockItemId: stockItem.id,
+      nameSnapshot: stockItem.name,
+      uomSnapshot: stockItem.uom,
+      qty: stockItem.minOrderQty,
+      unitPrice: stockItem.defaultUnitPrice,
+      discount: 0,
+      lineTotal: stockItem.defaultUnitPrice * stockItem.minOrderQty,
+    };
+    onUpdate({ ...quoteData, items: [...items, newItem] });
+  };
+
+  const updateItem = (index: number, updates: Partial<QuoteItem>) => {
+    const items = [...(quoteData.items || [])];
+    const item = items[index];
+    const stockItem = stockItemsData?.items.find(si => si.id === item.stockItemId);
+    if (!stockItem) return;
+
+    const qty = updates.qty ?? item.qty;
+    const unitPrice = updates.unitPrice ?? item.unitPrice;
+    const discount = updates.discount ?? item.discount;
+
+    if (unitPrice - discount < stockItem.minUnitPrice) {
+      showError(`Unit price after discount must be at least $${stockItem.minUnitPrice}`);
+      return;
+    }
+    if (qty < stockItem.minOrderQty) {
+      showError(`Quantity must be at least ${stockItem.minOrderQty}`);
+      return;
+    }
+    if (stockItem.truckloadOnly && qty % stockItem.minOrderQty !== 0) {
+      showError(`Quantity must be a multiple of ${stockItem.minOrderQty} (truckload only)`);
+      return;
+    }
+
+    items[index] = {
+      ...item,
+      ...updates,
+      lineTotal: qty * (unitPrice - discount),
+    };
+    onUpdate({ ...quoteData, items });
+  };
+
+  const removeItem = (index: number) => {
+    const items = [...(quoteData.items || [])];
+    items.splice(index, 1);
+    onUpdate({ ...quoteData, items });
+  };
+
+  const filtered = stockItemsData?.items.filter(si => 
+    si.name.toLowerCase().includes(search.toLowerCase()) ||
+    si.sku.toLowerCase().includes(search.toLowerCase())
+  ) || [];
+
+  if (!companyId || !projectId) {
+    return (
+      <div className="text-center py-8 text-content-secondary">
+        Please complete Steps 1 and 3 first
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-tertiary" />
+        <Input
+          placeholder="Search products by name or SKU..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Available Products</h3>
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-content-secondary">
+            {search ? 'No products found matching your search' : 'No products available for this project'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.map((stockItem) => (
+              <Card key={stockItem.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-content-primary">{stockItem.name}</h4>
+                    <p className="text-sm text-content-secondary">SKU: {stockItem.sku}</p>
+                    <p className="text-sm text-content-tertiary mt-1">${stockItem.defaultUnitPrice.toFixed(2)} / {stockItem.uom}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-content-tertiary">Min Qty: {stockItem.minOrderQty}</p>
+                      <p className="text-xs text-content-tertiary">Min Price: ${stockItem.minUnitPrice.toFixed(2)}</p>
+                      {stockItem.truckloadOnly && (
+                        <p className="text-xs text-status-warning">Truckload only</p>
+                      )}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="primary" onClick={() => addItem(stockItem)} leftIcon={<Plus className="w-4 h-4" />}>
+                    Add
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {quoteData.items && quoteData.items.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Selected Products ({quoteData.items.length})</h3>
+          <div className="space-y-4">
+            {quoteData.items.map((item, index) => {
+              const stockItem = stockItemsData?.items.find(si => si.id === item.stockItemId);
+              return (
+                <Card key={index} className="p-4">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="font-semibold text-content-primary">{item.nameSnapshot}</h4>
+                      <p className="text-sm text-content-secondary">{item.uomSnapshot}</p>
+                      {stockItem && (
+                        <div className="mt-1 space-y-0.5">
+                          <p className="text-xs text-content-tertiary">Min: {stockItem.minOrderQty} | Min Price: ${stockItem.minUnitPrice.toFixed(2)}</p>
+                          {stockItem.truckloadOnly && (
+                            <p className="text-xs text-status-warning">Must be multiple of {stockItem.minOrderQty}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => removeItem(index)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Input
+                      label="Quantity"
+                      type="number"
+                      min={stockItem?.minOrderQty || 1}
+                      step={stockItem?.truckloadOnly ? stockItem.minOrderQty : 1}
+                      value={item.qty}
+                      onChange={(e) => updateItem(index, { qty: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Unit Price"
+                      type="number"
+                      step="0.01"
+                      min={stockItem?.minUnitPrice || 0}
+                      value={item.unitPrice}
+                      onChange={(e) => updateItem(index, { unitPrice: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Discount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={item.unitPrice - (stockItem?.minUnitPrice || 0)}
+                      value={item.discount}
+                      onChange={(e) => updateItem(index, { discount: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="mt-3 pt-3 border-t flex justify-between items-center">
+                    <span className="text-sm text-content-secondary">Line Total:</span>
+                    <span className="font-semibold text-content-primary">${item.lineTotal.toFixed(2)}</span>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Step 5: Review
 function Step5Review({ quoteData }: { quoteData: Partial<CreateQuoteDto> }) {
-  // ... full implementation would go here
-  return <div>Step 5 - Review (full implementation in progress)</div>;
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const res = await companiesApi.findAll(1, 100);
+      return res.data.data;
+    },
+  });
+  const { data: customersData } = useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const res = await customersApi.findAll(1, 100);
+      return res.data.data;
+    },
+  });
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects', quoteData.companyId],
+    queryFn: async () => {
+      const res = await projectsApi.findAll(quoteData.companyId, 1, 100);
+      return res.data.data;
+    },
+    enabled: !!quoteData.companyId,
+  });
+  const { data: stockItemsData } = useQuery({
+    queryKey: ['stock-items', quoteData.companyId, quoteData.projectId],
+    queryFn: async () => {
+      const res = await stockItemsApi.findAll(quoteData.companyId, quoteData.projectId, 1, 100);
+      return res.data.data;
+    },
+    enabled: !!quoteData.companyId && !!quoteData.projectId,
+  });
+
+  const company = companiesData?.items.find(c => c.id === quoteData.companyId);
+  const customer = customersData?.items.find(c => c.id === quoteData.customerId);
+  const project = projectsData?.items.find(p => p.id === quoteData.projectId);
+  
+  const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+  const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
+  const transportTotal = quoteData.transportTotal || 0;
+  const grandTotal = subtotal - discountTotal + transportTotal;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-4">
+          <h3 className="font-semibold text-content-primary mb-3">Company</h3>
+          <p className="text-content-secondary">{company?.name || 'Not selected'}</p>
+          {company?.email && <p className="text-sm text-content-tertiary mt-1">{company.email}</p>}
+        </Card>
+        <Card className="p-4">
+          <h3 className="font-semibold text-content-primary mb-3">Customer</h3>
+          <p className="text-content-secondary">
+            {customer 
+              ? (customer.type === 'COMPANY' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+              : 'Not selected'}
+          </p>
+          {customer?.email && <p className="text-sm text-content-tertiary mt-1">{customer.email}</p>}
+        </Card>
+        <Card className="p-4">
+          <h3 className="font-semibold text-content-primary mb-3">Project</h3>
+          <p className="text-content-secondary">{project?.name || 'Not selected'}</p>
+          {project?.description && <p className="text-sm text-content-tertiary mt-1">{project.description}</p>}
+        </Card>
+        <Card className="p-4">
+          <h3 className="font-semibold text-content-primary mb-3">Delivery Method</h3>
+          <p className="text-content-secondary">{quoteData.deliveryMethod || 'Not selected'}</p>
+          {quoteData.deliveryMethod === 'DELIVERED' && quoteData.deliveryAddressLine1 && (
+            <div className="mt-2 text-sm text-content-tertiary">
+              <p>{quoteData.deliveryAddressLine1}</p>
+              {quoteData.deliveryCity && <p>{quoteData.deliveryCity}, {quoteData.deliveryPostalCode}</p>}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <h3 className="font-semibold text-content-primary mb-4">Products & Pricing</h3>
+        <div className="space-y-3">
+          {(quoteData.items || []).map((item, index) => {
+            const stockItem = stockItemsData?.items.find(si => si.id === item.stockItemId);
+            return (
+              <div key={index} className="flex justify-between items-start py-3 border-b border-border-default">
+                <div className="flex-1">
+                  <p className="font-medium text-content-primary">{item.nameSnapshot}</p>
+                  <p className="text-sm text-content-secondary mt-1">
+                    {item.qty} {item.uomSnapshot} × ${item.unitPrice.toFixed(2)}
+                    {item.discount > 0 && (
+                      <span className="text-status-warning"> - ${item.discount.toFixed(2)} discount</span>
+                    )}
+                  </p>
+                  {stockItem && (
+                    <p className="text-xs text-content-tertiary mt-1">SKU: {stockItem.sku}</p>
+                  )}
+                </div>
+                <p className="font-semibold text-content-primary ml-4">${item.lineTotal.toFixed(2)}</p>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-6 pt-4 border-t border-border-default space-y-2">
+          <div className="flex justify-between text-content-secondary">
+            <span>Subtotal:</span>
+            <span>${subtotal.toFixed(2)}</span>
+          </div>
+          {discountTotal > 0 && (
+            <div className="flex justify-between text-status-warning">
+              <span>Discount:</span>
+              <span>-${discountTotal.toFixed(2)}</span>
+            </div>
+          )}
+          {transportTotal > 0 && (
+            <div className="flex justify-between text-content-secondary">
+              <span>Transport:</span>
+              <span>${transportTotal.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-lg font-bold text-content-primary pt-2 border-t border-border-default">
+            <span>Grand Total:</span>
+            <span>${grandTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 }
