@@ -35,6 +35,7 @@ model User {
   auditLogs     AuditLog[]
   salesQuotes   Quote[] @relation("SalesRepQuotes")
   quoteApprovals QuoteApprovalAudit[] @relation("QuoteApprovalActors")
+  notifications Notification[] @relation("UserNotifications")
 
   @@map("users")
 }
@@ -477,4 +478,25 @@ model QuoteApprovalAudit {
   @@index([quoteId])
   @@index([actorUserId])
   @@map("quote_approval_audits")
+}
+
+// Notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String   // e.g., 'quote_approved', 'quote_rejected', 'quote_submitted'
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?  // Optional link to related resource
+  createdAt DateTime @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+
+  // Relations
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
 }

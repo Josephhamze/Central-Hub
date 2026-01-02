@@ -28,6 +28,7 @@ import { ContactsModule } from './modules/contacts/contacts.module';
 import { StockItemsModule } from './modules/stock-items/stockitems.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -69,6 +70,7 @@ import { RootController } from './root.controller';
     StockItemsModule,
     RoutesModule,
     QuotesModule,
+    NotificationsModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default

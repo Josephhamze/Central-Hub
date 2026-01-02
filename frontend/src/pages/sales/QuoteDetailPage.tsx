@@ -8,6 +8,7 @@ import {
   X,
   CheckCircle2,
   XCircle,
+  Printer,
   Building2,
   User,
   Package,
@@ -181,6 +182,132 @@ export function QuoteDetailPage() {
     return false;
   };
 
+  const canPrint = quote.status === 'APPROVED' || quote.status === 'WON' || quote.status === 'LOST';
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Quote ${quote.quoteNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            .header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+            .quote-number { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+            .section { margin-bottom: 30px; }
+            .section-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            .info-row { margin-bottom: 8px; }
+            .label { font-weight: bold; display: inline-block; width: 150px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+            th { background-color: #f0f0f0; font-weight: bold; }
+            .total-row { font-weight: bold; }
+            .text-right { text-align: right; }
+            @media print {
+              body { padding: 20px; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="quote-number">Quote ${quote.quoteNumber}</div>
+            <div>Status: ${quote.status.replace('_', ' ')}</div>
+            <div>Date: ${new Date(quote.createdAt).toLocaleDateString()}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Company Information</div>
+            <div class="info-row"><span class="label">Company:</span> ${quote.company?.name || 'N/A'}</div>
+            <div class="info-row"><span class="label">Project:</span> ${quote.project?.name || 'N/A'}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Customer Information</div>
+            <div class="info-row"><span class="label">Customer:</span> ${quote.customer?.companyName || `${quote.customer?.firstName || ''} ${quote.customer?.lastName || ''}`.trim() || 'N/A'}</div>
+            ${quote.contact ? `<div class="info-row"><span class="label">Contact:</span> ${quote.contact.name}</div>` : ''}
+          </div>
+
+          <div class="section">
+            <div class="section-title">Delivery Information</div>
+            <div class="info-row"><span class="label">Method:</span> ${quote.deliveryMethod || 'N/A'}</div>
+            ${quote.deliveryMethod === 'DELIVERED' ? `
+              <div class="info-row"><span class="label">Address:</span> ${quote.deliveryAddressLine1 || ''} ${quote.deliveryCity || ''}</div>
+              ${quote.route ? `<div class="info-row"><span class="label">Route:</span> ${quote.route.fromCity} to ${quote.route.toCity}</div>` : ''}
+            ` : ''}
+          </div>
+
+          <div class="section">
+            <div class="section-title">Products & Pricing</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Discount</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${quote.items?.map(item => `
+                  <tr>
+                    <td>${item.nameSnapshot}</td>
+                    <td>${Number(item.qty).toFixed(2)} ${item.uomSnapshot}</td>
+                    <td>$${Number(item.unitPrice).toFixed(2)}</td>
+                    <td>$${Number(item.discount).toFixed(2)}</td>
+                    <td>$${Number(item.lineTotal).toFixed(2)}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="5">No items</td></tr>'}
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="4" class="text-right">Subtotal:</td>
+                  <td>$${Number(quote.subtotal).toFixed(2)}</td>
+                </tr>
+                ${Number(quote.discountTotal) > 0 ? `
+                  <tr class="total-row">
+                    <td colspan="4" class="text-right">Discount:</td>
+                    <td>-$${Number(quote.discountTotal).toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                ${Number(quote.transportTotal) > 0 ? `
+                  <tr class="total-row">
+                    <td colspan="4" class="text-right">Transport:</td>
+                    <td>$${Number(quote.transportTotal).toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td colspan="4" class="text-right">Grand Total:</td>
+                  <td>$${Number(quote.grandTotal).toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          ${quote.salesRep ? `
+            <div class="section">
+              <div class="section-title">Sales Representative</div>
+              <div class="info-row"><span class="label">Name:</span> ${quote.salesRep.firstName} ${quote.salesRep.lastName}</div>
+              ${quote.salesRep.email ? `<div class="info-row"><span class="label">Email:</span> ${quote.salesRep.email}</div>` : ''}
+            </div>
+          ` : ''}
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   const canMarkOutcome = quote.status === 'APPROVED' && isCreator;
 
   const getStatusBadge = (status: string) => {
@@ -257,6 +384,15 @@ export function QuoteDetailPage() {
                   Reject
                 </Button>
               </>
+            )}
+            {canPrint && (
+              <Button
+                variant="secondary"
+                onClick={handlePrint}
+                leftIcon={<Printer className="w-4 h-4" />}
+              >
+                Print Quote
+              </Button>
             )}
             {canMarkOutcome && (
               <>

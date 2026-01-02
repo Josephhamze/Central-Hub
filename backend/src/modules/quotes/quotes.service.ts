@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QuoteStatus, DeliveryMethod, ApprovalAction } from '@prisma/client';
@@ -7,7 +8,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class QuotesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   // Generate unique quote number: Q-YYYYMM-####
   private async generateQuoteNumber(): Promise<string> {
@@ -577,7 +581,7 @@ export class QuotesService {
       throw new BadRequestException(`Cannot approve quote with status ${quote.status}`);
     }
 
-    return this.prisma.$transaction([
+    const result = await this.prisma.$transaction([
       this.prisma.quote.update({
         where: { id },
         data: {
@@ -593,7 +597,20 @@ export class QuotesService {
           notes,
         },
       }),
-    ]).then(() => this.findOne(id, userId, userPermissions));
+    ]);
+    
+    // Notify quote creator
+    if (quote.salesRepUserId) {
+      await this.notificationsService.create(
+        quote.salesRepUserId,
+        'quote_approved',
+        'Quote Approved',
+        `Your quote ${quote.quoteNumber} has been approved.`,
+        `/sales/quotes/${id}`,
+      );
+    }
+    
+    return this.findOne(id, userId, userPermissions);
   }
 
   async reject(id: string, userId: string, userPermissions: string[], reason: string) {
@@ -607,7 +624,7 @@ export class QuotesService {
       throw new BadRequestException(`Cannot reject quote with status ${quote.status}`);
     }
 
-    return this.prisma.$transaction([
+    const result = await this.prisma.$transaction([
       this.prisma.quote.update({
         where: { id },
         data: {
@@ -623,7 +640,20 @@ export class QuotesService {
           notes: reason,
         },
       }),
-    ]).then(() => this.findOne(id, userId, userPermissions));
+    ]);
+    
+    // Notify quote creator
+    if (quote.salesRepUserId) {
+      await this.notificationsService.create(
+        quote.salesRepUserId,
+        'quote_rejected',
+        'Quote Rejected',
+        `Your quote ${quote.quoteNumber} has been rejected. Reason: ${reason}`,
+        `/sales/quotes/${id}`,
+      );
+    }
+    
+    return this.findOne(id, userId, userPermissions);
   }
 
   async withdraw(id: string, userId: string) {

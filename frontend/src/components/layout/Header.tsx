@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
@@ -9,6 +11,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
+import { notificationsApi, type Notification } from '@services/notifications/notifications';
 import { ThemeToggle } from '@components/ui/ThemeToggle';
 
 interface HeaderProps {
@@ -34,7 +37,53 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: notifications } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const res = await notificationsApi.findAll();
+      return res.data.data;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      const res = await notificationsApi.getUnreadCount();
+      return res.data.data;
+    },
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = unreadCountData?.count || 0;
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const handleNotificationClick = (notification: Notification) => {
+    markAsReadMutation.mutate(notification.id);
+    if (notification.link) {
+      navigate(notification.link);
+      setNotificationMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,6 +92,20 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
         !userMenuRef.current.contains(event.target as Node)
       ) {
         setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationMenuRef.current &&
+        !notificationMenuRef.current.contains(event.target as Node)
+      ) {
+        setNotificationMenuOpen(false);
       }
     }
 
@@ -94,16 +157,86 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
           {/* Notifications */}
-          <button
-            className={clsx(
-              'p-2 rounded-lg transition-colors',
-              'hover:bg-background-hover',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40'
+          <div className="relative" ref={notificationMenuRef}>
+            <button
+              onClick={() => setNotificationMenuOpen(!notificationMenuOpen)}
+              className={clsx(
+                'relative p-2 rounded-lg transition-colors',
+                'hover:bg-background-hover',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40'
+              )}
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5 text-content-secondary" />
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 w-4 h-4 bg-status-error rounded-full text-xs text-white flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notificationMenuOpen && (
+              <div
+                className={clsx(
+                  'absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto',
+                  'bg-background-elevated border border-border-default rounded-lg shadow-elevation-3',
+                  'animate-scale-in origin-top-right'
+                )}
+              >
+                <div className="p-4 border-b border-border-default flex items-center justify-between">
+                  <h3 className="font-semibold text-content-primary">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={() => markAllAsReadMutation.mutate()}
+                      className="text-xs text-accent-primary hover:underline"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="py-2">
+                  {notifications && notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <button
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={clsx(
+                          'w-full text-left px-4 py-3 hover:bg-background-hover transition-colors',
+                          'border-b border-border-default last:border-b-0',
+                          !notification.read && 'bg-status-info-bg/30'
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={clsx(
+                            'w-2 h-2 rounded-full mt-2 flex-shrink-0',
+                            !notification.read ? 'bg-accent-primary' : 'bg-transparent'
+                          )} />
+                          <div className="flex-1 min-w-0">
+                            <p className={clsx(
+                              'text-sm font-medium',
+                              !notification.read ? 'text-content-primary' : 'text-content-secondary'
+                            )}>
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-content-tertiary mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-content-tertiary mt-1">
+                              {new Date(notification.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-8 text-center text-content-secondary text-sm">
+                      No notifications
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5 text-content-secondary" />
-          </button>
+          </div>
 
           {/* Theme toggle */}
           <ThemeToggle />
