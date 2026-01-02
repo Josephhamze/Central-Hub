@@ -10,14 +10,18 @@ export interface Customer {
   lastName?: string;
   email?: string;
   phone?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  taxId?: string;
-  notes?: string;
+  billingAddressLine1?: string;
+  billingAddressLine2?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingPostalCode?: string;
+  billingCountry?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
   createdAt: string;
   updatedAt: string;
 }

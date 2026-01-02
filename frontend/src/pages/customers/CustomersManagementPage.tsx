@@ -134,14 +134,14 @@ export function CustomersManagementPage() {
       lastName: customer.lastName || '',
       email: customer.email || '',
       phone: customer.phone || '',
-      addressLine1: customer.addressLine1 || '',
-      addressLine2: customer.addressLine2 || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      postalCode: customer.postalCode || '',
-      country: customer.country || '',
-      taxId: customer.taxId || '',
-      notes: customer.notes || '',
+      addressLine1: customer.billingAddressLine1 || '',
+      addressLine2: customer.billingAddressLine2 || '',
+      city: customer.billingCity || '',
+      state: customer.billingState || '',
+      postalCode: customer.billingPostalCode || '',
+      country: customer.billingCountry || '',
+      taxId: '', // Not in backend schema
+      notes: '', // Not in backend schema
     });
     setIsEditModalOpen(true);
   };
