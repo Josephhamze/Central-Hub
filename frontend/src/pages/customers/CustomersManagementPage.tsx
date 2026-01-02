@@ -110,6 +110,10 @@ export function CustomersManagementPage() {
       showError('First name and last name are required');
       return;
     }
+    if (!formData.addressLine1?.trim() || !formData.city?.trim() || !formData.postalCode?.trim()) {
+      showError('Billing address (line 1, city, and postal code) are required');
+      return;
+    }
     // Map frontend field names to backend field names
     const { addressLine1, addressLine2, city, state, postalCode, country, taxId, notes, ...rest } = formData;
     const apiData = {
