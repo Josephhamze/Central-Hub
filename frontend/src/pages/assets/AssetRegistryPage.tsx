@@ -9,7 +9,6 @@ import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { assetsApi } from '@services/assets/assets';
 import { useAuth } from '@contexts/AuthContext';
-import { useToast } from '@contexts/ToastContext';
 
 export function AssetRegistryPage() {
   const navigate = useNavigate();
