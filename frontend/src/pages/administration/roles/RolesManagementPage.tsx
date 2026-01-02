@@ -338,7 +338,7 @@ export function RolesManagementPage() {
         </div>
         <ModalFooter>
           <Button
-            variant="default"
+            variant="secondary"
             onClick={() => {
               setIsCreateModalOpen(false);
               setIsEditModalOpen(false);
