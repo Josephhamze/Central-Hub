@@ -187,6 +187,7 @@ enum ApprovalAction {
   SUBMIT
   APPROVE
   REJECT
+  WITHDRAW
   MARK_WON
   MARK_LOST
 }

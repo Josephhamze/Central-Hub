@@ -102,6 +102,7 @@ export const quotesApi = {
   submit: (id: string, notes?: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/submit`, { notes }),
   approve: (id: string, notes?: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/approve`, { notes }),
   reject: (id: string, reason: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/reject`, { reason }),
+  withdraw: (id: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/withdraw`),
   markOutcome: (id: string, outcome: 'WON' | 'LOST', reasonCategory: string, reasonNotes?: string) =>
     api.post<ApiResponse<Quote>>(`/quotes/${id}/outcome?outcome=${outcome}`, { reasonCategory, reasonNotes }),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/quotes/${id}`),

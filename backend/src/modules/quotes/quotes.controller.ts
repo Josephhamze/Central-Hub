@@ -145,6 +145,17 @@ export class QuotesController {
     return this.quotesService.reject(id, userId, userPermissions, dto.reason);
   }
 
+  @Post(':id/withdraw')
+  @UseGuards(RbacGuard)
+  @Permissions('quotes:submit')
+  @ApiOperation({ summary: 'Withdraw a quote from approval (change status back to DRAFT)' })
+  async withdraw(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.quotesService.withdraw(id, userId);
+  }
+
   @Post(':id/outcome')
   @UseGuards(RbacGuard)
   @Permissions('quotes:approve')

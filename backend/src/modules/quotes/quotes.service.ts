@@ -626,6 +626,35 @@ export class QuotesService {
     ]).then(() => this.findOne(id, userId, userPermissions));
   }
 
+  async withdraw(id: string, userId: string) {
+    const quote = await this.prisma.quote.findUnique({ where: { id } });
+    if (!quote) throw new NotFoundException('Quote not found');
+    
+    if (quote.salesRepUserId !== userId) {
+      throw new ForbiddenException('You can only withdraw your own quotes');
+    }
+    if (quote.status !== QuoteStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(`Cannot withdraw quote with status ${quote.status}. Only quotes pending approval can be withdrawn.`);
+    }
+
+    return this.prisma.$transaction([
+      this.prisma.quote.update({
+        where: { id },
+        data: {
+          status: QuoteStatus.DRAFT,
+          submittedAt: null,
+        },
+      }),
+      this.prisma.quoteApprovalAudit.create({
+        data: {
+          quoteId: id,
+          action: ApprovalAction.WITHDRAW,
+          actorUserId: userId,
+        },
+      }),
+    ]).then(() => this.findOne(id, userId, ['quotes:view']));
+  }
+
   async markOutcome(id: string, outcome: 'WON' | 'LOST', userId: string, userPermissions: string[], reasonCategory: string, reasonNotes?: string) {
     if (!userPermissions.includes('quotes:approve')) {
       throw new ForbiddenException('You do not have permission to mark quote outcomes');

@@ -15,7 +15,7 @@ import { useAuth } from '@contexts/AuthContext';
 export function QuotesAdminPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<{ status?: QuoteStatus; companyId?: string; projectId?: string }>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -103,9 +103,11 @@ export function QuotesAdminPage() {
             <div className="text-center py-8 text-content-secondary">Loading...</div>
           ) : (
             <div className="space-y-4">
-              {data?.items.map((quote) => (
-                <div key={quote.id} className="border rounded-lg p-4 flex justify-between items-center">
-                  <div>
+              {data?.items.map((quote) => {
+                const isCreator = user?.id === quote.salesRepUserId;
+                return (
+                <div key={quote.id} className="border rounded-lg p-4 flex justify-between items-center hover:bg-background-hover transition-colors">
+                  <div className="flex-1 cursor-pointer" onClick={() => navigate(`/sales/quotes/${quote.id}`)}>
                     <div className="flex items-center gap-3 mb-2">
                       <span className="font-semibold">{quote.quoteNumber}</span>
                       {getStatusBadge(quote.status)}
@@ -115,7 +117,7 @@ export function QuotesAdminPage() {
                     </p>
                     <p className="text-sm text-content-tertiary">Total: ${Number(quote.grandTotal).toFixed(2)}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     {quote.status === 'PENDING_APPROVAL' && hasPermission('quotes:approve') && (
                       <>
                         <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setApproveModalOpen(true); }}>
@@ -126,7 +128,7 @@ export function QuotesAdminPage() {
                         </Button>
                       </>
                     )}
-                    {quote.status === 'APPROVED' && hasPermission('quotes:approve') && (
+                    {quote.status === 'APPROVED' && isCreator && (
                       <>
                         <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setOutcomeType('WON'); setOutcomeModalOpen(true); }}>
                           Mark Won
@@ -138,7 +140,8 @@ export function QuotesAdminPage() {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>

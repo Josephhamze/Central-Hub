@@ -22,6 +22,7 @@ import { NotFoundPage } from '@pages/NotFoundPage';
 // Sales Quote System pages
 import { QuoteWizardPage } from '@pages/customers/quotes/QuoteWizardPage';
 import { QuotesAdminPage } from '@pages/sales/QuotesAdminPage';
+import { QuoteDetailPage } from '@pages/sales/QuoteDetailPage';
 import { SalesKPIsPage } from '@pages/sales/SalesKPIsPage';
 import { CompaniesPage } from '@pages/administration/CompaniesPage';
 import { ProjectsPage } from '@pages/administration/ProjectsPage';
@@ -93,6 +94,7 @@ function App() {
         <Route path="reporting/*" element={<ReportingPage />} />
         <Route path="reporting/sales-kpis" element={<SalesKPIsPage />} />
         <Route path="sales/quotes/new" element={<QuoteWizardPage />} />
+        <Route path="sales/quotes/:id" element={<QuoteDetailPage />} />
         <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
