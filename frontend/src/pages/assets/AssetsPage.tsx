@@ -9,7 +9,6 @@ import { assetsApi, type AssetOverview } from '@services/assets/assets';
 import { maintenanceSchedulesApi } from '@services/assets/maintenance';
 import { workOrdersApi } from '@services/assets/work-orders';
 import { useAuth } from '@contexts/AuthContext';
-import { useToast } from '@contexts/ToastContext';
 
 export function AssetsPage() {
   const navigate = useNavigate();

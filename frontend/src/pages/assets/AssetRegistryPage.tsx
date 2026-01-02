@@ -14,7 +14,7 @@ import { useToast } from '@contexts/ToastContext';
 export function AssetRegistryPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const { success } = useToast();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
