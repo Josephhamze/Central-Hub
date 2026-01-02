@@ -22,17 +22,17 @@ export interface StockItem {
 }
 
 export interface CreateStockItemDto {
-  companyId: string;
-  projectId?: string;
-  warehouseId?: string;
-  sku: string;
+  companyId?: string; // Optional, used for UI filtering but not sent to API
+  projectId: string; // Required
+  warehouseId: string; // Required
+  sku?: string; // Optional, auto-generated if not provided
   name: string;
-  description?: string;
+  description?: string; // Optional, not stored in DB but accepted to avoid validation errors
   uom: string;
   minUnitPrice: number;
   defaultUnitPrice: number;
   minOrderQty: number;
-  truckloadOnly: boolean;
+  truckloadOnly?: boolean;
   isActive?: boolean;
 }
 
