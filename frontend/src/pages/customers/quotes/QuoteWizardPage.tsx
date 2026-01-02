@@ -225,7 +225,7 @@ function Step2ClientSelection({ quoteData, onUpdate }: { quoteData: QuoteDataUI;
           >
             <div className="p-6">
               <h3 className="text-lg font-semibold text-content-primary mb-2">
-                {customer.type === 'COMPANY' ? customer.companyName : `${customer.firstName} ${customer.lastName}`}
+                {customer.type === 'COMPANY' ? (customer.companyName || 'Unknown Company') : `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown Customer'}
               </h3>
               {customer.email && <p className="text-sm text-content-secondary mb-2">{customer.email}</p>}
               {customer.phone && <p className="text-sm text-content-tertiary">{customer.phone}</p>}
@@ -239,7 +239,7 @@ function Step2ClientSelection({ quoteData, onUpdate }: { quoteData: QuoteDataUI;
 
 // Step 3: Project & Delivery
 function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
-  const { data: projectsData } = useQuery({
+  const { data: projectsData, error: projectsError } = useQuery({
     queryKey: ['projects', companyId],
     queryFn: async () => {
       const res = await projectsApi.findAll(companyId, 1, 100);
@@ -252,6 +252,14 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     return (
       <div className="text-center py-8 text-content-secondary">
         Please select a company in Step 1 first
+      </div>
+    );
+  }
+
+  if (projectsError) {
+    return (
+      <div className="text-center py-8 text-content-error">
+        Error loading projects: {projectsError instanceof Error ? projectsError.message : 'Unknown error'}
       </div>
     );
   }
@@ -300,7 +308,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
 function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyId?: string; projectId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const { error: showError } = useToast();
   const [search, setSearch] = useState('');
-  const { data: stockItemsData } = useQuery({
+  const { data: stockItemsData, error: stockItemsError } = useQuery({
     queryKey: ['stock-items', companyId, projectId],
     queryFn: async () => {
       const res = await stockItemsApi.findAll(companyId, projectId, 1, 100);
@@ -316,14 +324,16 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
       showError('Item already added');
       return;
     }
+    const minOrderQty = Number(stockItem.minOrderQty) || 1;
+    const defaultUnitPrice = Number(stockItem.defaultUnitPrice) || 0;
     const newItem: QuoteItemUI = {
       stockItemId: stockItem.id,
       nameSnapshot: stockItem.name,
       uomSnapshot: stockItem.uom,
-      qty: stockItem.minOrderQty,
-      unitPrice: stockItem.defaultUnitPrice,
+      qty: minOrderQty,
+      unitPrice: defaultUnitPrice,
       discount: 0,
-      lineTotal: stockItem.defaultUnitPrice * stockItem.minOrderQty,
+      lineTotal: defaultUnitPrice * minOrderQty,
     };
     onUpdate({ ...quoteData, items: [...items, newItem] });
   };
@@ -338,16 +348,16 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
     const unitPrice = updates.unitPrice ?? item.unitPrice;
     const discount = updates.discount ?? item.discount;
 
-    if (unitPrice - discount < stockItem.minUnitPrice) {
-      showError(`Unit price after discount must be at least $${stockItem.minUnitPrice}`);
+    if (unitPrice - discount < Number(stockItem.minUnitPrice)) {
+      showError(`Unit price after discount must be at least $${Number(stockItem.minUnitPrice).toFixed(2)}`);
       return;
     }
-    if (qty < stockItem.minOrderQty) {
-      showError(`Quantity must be at least ${stockItem.minOrderQty}`);
+    if (qty < Number(stockItem.minOrderQty)) {
+      showError(`Quantity must be at least ${Number(stockItem.minOrderQty)}`);
       return;
     }
-    if (stockItem.truckloadOnly && qty % stockItem.minOrderQty !== 0) {
-      showError(`Quantity must be a multiple of ${stockItem.minOrderQty} (truckload only)`);
+    if (stockItem.truckloadOnly && qty % Number(stockItem.minOrderQty) !== 0) {
+      showError(`Quantity must be a multiple of ${Number(stockItem.minOrderQty)} (truckload only)`);
       return;
     }
 
@@ -378,6 +388,14 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
     );
   }
 
+  if (stockItemsError) {
+    return (
+      <div className="text-center py-8 text-content-error">
+        Error loading products: {stockItemsError instanceof Error ? stockItemsError.message : 'Unknown error'}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="relative">
@@ -404,10 +422,10 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                   <div className="flex-1">
                     <h4 className="font-semibold text-content-primary">{stockItem.name}</h4>
                     <p className="text-sm text-content-secondary">SKU: {stockItem.sku}</p>
-                    <p className="text-sm text-content-tertiary mt-1">${stockItem.defaultUnitPrice.toFixed(2)} / {stockItem.uom}</p>
+                    <p className="text-sm text-content-tertiary mt-1">${Number(stockItem.defaultUnitPrice).toFixed(2)} / {stockItem.uom}</p>
                     <div className="mt-2 space-y-1">
-                      <p className="text-xs text-content-tertiary">Min Qty: {stockItem.minOrderQty}</p>
-                      <p className="text-xs text-content-tertiary">Min Price: ${stockItem.minUnitPrice.toFixed(2)}</p>
+                      <p className="text-xs text-content-tertiary">Min Qty: {Number(stockItem.minOrderQty)}</p>
+                      <p className="text-xs text-content-tertiary">Min Price: ${Number(stockItem.minUnitPrice).toFixed(2)}</p>
                       {stockItem.truckloadOnly && (
                         <p className="text-xs text-status-warning">Truckload only</p>
                       )}
@@ -437,9 +455,9 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       <p className="text-sm text-content-secondary">{item.uomSnapshot}</p>
                       {stockItem && (
                         <div className="mt-1 space-y-0.5">
-                          <p className="text-xs text-content-tertiary">Min: {stockItem.minOrderQty} | Min Price: ${stockItem.minUnitPrice.toFixed(2)}</p>
+                          <p className="text-xs text-content-tertiary">Min: {Number(stockItem.minOrderQty)} | Min Price: ${Number(stockItem.minUnitPrice).toFixed(2)}</p>
                           {stockItem.truckloadOnly && (
-                            <p className="text-xs text-status-warning">Must be multiple of {stockItem.minOrderQty}</p>
+                            <p className="text-xs text-status-warning">Must be multiple of {Number(stockItem.minOrderQty)}</p>
                           )}
                         </div>
                       )}
@@ -452,8 +470,8 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                     <Input
                       label="Quantity"
                       type="number"
-                      min={stockItem?.minOrderQty || 1}
-                      step={stockItem?.truckloadOnly ? stockItem.minOrderQty : 1}
+                      min={Number(stockItem?.minOrderQty) || 1}
+                      step={stockItem?.truckloadOnly ? Number(stockItem.minOrderQty) : 1}
                       value={item.qty}
                       onChange={(e) => updateItem(index, { qty: Number(e.target.value) })}
                     />
@@ -461,7 +479,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       label="Unit Price"
                       type="number"
                       step="0.01"
-                      min={stockItem?.minUnitPrice || 0}
+                      min={Number(stockItem?.minUnitPrice) || 0}
                       value={item.unitPrice}
                       onChange={(e) => updateItem(index, { unitPrice: Number(e.target.value) })}
                     />
@@ -470,7 +488,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       type="number"
                       step="0.01"
                       min="0"
-                      max={item.unitPrice - (stockItem?.minUnitPrice || 0)}
+                      max={item.unitPrice - (Number(stockItem?.minUnitPrice) || 0)}
                       value={item.discount}
                       onChange={(e) => updateItem(index, { discount: Number(e.target.value) })}
                     />
@@ -543,7 +561,7 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
           <h3 className="font-semibold text-content-primary mb-3">Customer</h3>
           <p className="text-content-secondary">
             {customer 
-              ? (customer.type === 'COMPANY' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+              ? (customer.type === 'COMPANY' ? (customer.companyName || 'Unknown Company') : `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown Customer')
               : 'Not selected'}
           </p>
           {customer?.email && <p className="text-sm text-content-tertiary mt-1">{customer.email}</p>}
