@@ -39,7 +39,7 @@ model User {
   auditLogs     AuditLog[]
   salesQuotes   Quote[] @relation("SalesRepQuotes")
   quoteApprovals QuoteApprovalAudit[] @relation("QuoteApprovalActors")
-  notifications Notification[] @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  notifications Notification[] @relation("UserNotifications")
   workOrders       WorkOrder[] @relation("WorkOrderAssignments")
   assetHistory     AssetHistory[] @relation("AssetHistoryActors")
 
