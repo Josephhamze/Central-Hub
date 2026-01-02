@@ -124,7 +124,7 @@ export function ContactsPage() {
   const canDelete = hasPermission('contacts:delete');
 
   const filteredContacts = data?.items?.filter(contact => 
-    !search || contact.name.toLowerCase().includes(search.toLowerCase()) ||
+    !search || contact.name?.toLowerCase().includes(search.toLowerCase()) ||
     contact.email?.toLowerCase().includes(search.toLowerCase()) ||
     contact.phone?.toLowerCase().includes(search.toLowerCase())
   ) || [];
