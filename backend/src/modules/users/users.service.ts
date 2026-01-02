@@ -319,4 +319,72 @@ export class UsersService {
     };
   }
 
+  async assignAdminByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Find or get Administrator role
+    let adminRole = await this.prisma.role.findUnique({
+      where: { name: 'Administrator' },
+    });
+
+    if (!adminRole) {
+      adminRole = await this.prisma.role.create({
+        data: {
+          name: 'Administrator',
+          description: 'Full system access with all permissions',
+          isSystem: true,
+        },
+      });
+    }
+
+    // Check if user already has Administrator role
+    const hasAdminRole = user.roles.some((ur) => ur.role.name === 'Administrator');
+
+    if (!hasAdminRole) {
+      await this.prisma.userRole.create({
+        data: {
+          userId: user.id,
+          roleId: adminRole.id,
+        },
+      });
+    }
+
+    // Ensure Administrator role has all permissions
+    const allPermissions = await this.prisma.permission.findMany();
+    for (const perm of allPermissions) {
+      await this.prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: adminRole.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: adminRole.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+
+    return {
+      message: `Administrator role assigned to ${email}`,
+      user: await this.findOne(user.id),
+    };
+  }
+
+
 }
