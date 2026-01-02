@@ -6,13 +6,24 @@ import { Button } from '@components/ui/Button';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
-import { quotesApi, type CreateQuoteDto, type QuoteItem } from '@services/sales/quotes';
+import { quotesApi, type CreateQuoteDto, type CreateQuoteItemDto } from '@services/sales/quotes';
 import { companiesApi, type Company } from '@services/sales/companies';
-import { customersApi, type Customer } from '@services/sales/customers';
-import { projectsApi, type Project } from '@services/sales/projects';
+import { customersApi } from '@services/sales/customers';
+import { projectsApi } from '@services/sales/projects';
 import { stockItemsApi, type StockItem } from '@services/sales/stock-items';
 import { cn } from '@utils/cn';
-import { cn } from '@utils/cn';
+
+// Local UI type for quote items (extends DTO with UI-only fields)
+interface QuoteItemUI extends CreateQuoteItemDto {
+  nameSnapshot: string;
+  uomSnapshot: string;
+  lineTotal: number;
+}
+
+// Extended quote data type for UI state
+interface QuoteDataUI extends Omit<Partial<CreateQuoteDto>, 'items'> {
+  items?: QuoteItemUI[];
+}
 
 const STEPS = [
   { id: 1, name: 'Company', icon: Building2 },
@@ -26,7 +37,7 @@ export function QuoteWizardPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
-  const [quoteData, setQuoteData] = useState<Partial<CreateQuoteDto>>({
+  const [quoteData, setQuoteData] = useState<QuoteDataUI>({
     items: [],
   });
 
@@ -41,7 +52,7 @@ export function QuoteWizardPage() {
 
   const createQuoteMutation = useMutation({
     mutationFn: (data: CreateQuoteDto) => quotesApi.create(data),
-    onSuccess: (res) => {
+    onSuccess: () => {
       success('Quote created successfully');
       navigate(`/sales/quotes`);
     },
@@ -84,7 +95,21 @@ export function QuoteWizardPage() {
       showError('Please complete all required fields');
       return;
     }
-    createQuoteMutation.mutate(quoteData as CreateQuoteDto);
+    // Convert UI items to DTO items (remove UI-only fields)
+    const dtoItems: CreateQuoteItemDto[] = quoteData.items.map(item => ({
+      stockItemId: item.stockItemId,
+      qty: item.qty,
+      unitPrice: item.unitPrice,
+      discount: item.discount,
+    }));
+    const dto: CreateQuoteDto = {
+      ...quoteData,
+      companyId: quoteData.companyId!,
+      projectId: quoteData.projectId!,
+      customerId: quoteData.customerId!,
+      items: dtoItems,
+    };
+    createQuoteMutation.mutate(dto);
   };
 
   return (
@@ -121,8 +146,8 @@ export function QuoteWizardPage() {
             {currentStep === 1 && <Step1CompanySelection companies={companiesData?.items || []} selected={quoteData.companyId} onSelect={(id) => setQuoteData({ ...quoteData, companyId: id })} />}
             {currentStep === 2 && <Step2ClientSelection quoteData={quoteData} onUpdate={setQuoteData} />}
             {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 4 && <Step4Products />}
-            {currentStep === 5 && <Step5Review />}
+            {currentStep === 4 && <Step4Products companyId={quoteData.companyId} projectId={quoteData.projectId} quoteData={quoteData} onUpdate={setQuoteData} />}
+            {currentStep === 5 && <Step5Review quoteData={quoteData} />}
           </div>
         </Card>
 
@@ -168,7 +193,7 @@ function Step1CompanySelection({ companies, selected, onSelect }: { companies: C
 }
 
 // Step 2: Client Selection
-function Step2ClientSelection({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+function Step2ClientSelection({ quoteData, onUpdate }: { quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const [search, setSearch] = useState('');
   const { data: customersData } = useQuery({
     queryKey: ['customers', search],
@@ -212,7 +237,7 @@ function Step2ClientSelection({ companyId, quoteData, onUpdate }: { companyId?: 
 }
 
 // Step 3: Project & Delivery
-function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const { data: projectsData } = useQuery({
     queryKey: ['projects', companyId],
     queryFn: async () => {
@@ -271,7 +296,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
 }
 
 // Step 4: Products
-function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyId?: string; projectId?: string; quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyId?: string; projectId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const { error: showError } = useToast();
   const [search, setSearch] = useState('');
   const { data: stockItemsData } = useQuery({
@@ -290,7 +315,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
       showError('Item already added');
       return;
     }
-    const newItem: QuoteItem = {
+    const newItem: QuoteItemUI = {
       stockItemId: stockItem.id,
       nameSnapshot: stockItem.name,
       uomSnapshot: stockItem.uom,
@@ -302,7 +327,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
     onUpdate({ ...quoteData, items: [...items, newItem] });
   };
 
-  const updateItem = (index: number, updates: Partial<QuoteItem>) => {
+  const updateItem = (index: number, updates: Partial<QuoteItemUI>) => {
     const items = [...(quoteData.items || [])];
     const item = items[index];
     const stockItem = stockItemsData?.items.find(si => si.id === item.stockItemId);
@@ -464,7 +489,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
 }
 
 // Step 5: Review
-function Step5Review({ quoteData }: { quoteData: Partial<CreateQuoteDto> }) {
+function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
@@ -502,8 +527,10 @@ function Step5Review({ quoteData }: { quoteData: Partial<CreateQuoteDto> }) {
   
   const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
   const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
-  const transportTotal = quoteData.transportTotal || 0;
-  const grandTotal = subtotal - discountTotal + transportTotal;
+  const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+  const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
+  // Transport is calculated server-side, so we don't include it in the preview
+  const grandTotal = subtotal - discountTotal;
 
   return (
     <div className="space-y-6">
@@ -574,16 +601,11 @@ function Step5Review({ quoteData }: { quoteData: Partial<CreateQuoteDto> }) {
               <span>-${discountTotal.toFixed(2)}</span>
             </div>
           )}
-          {transportTotal > 0 && (
-            <div className="flex justify-between text-content-secondary">
-              <span>Transport:</span>
-              <span>${transportTotal.toFixed(2)}</span>
-            </div>
-          )}
           <div className="flex justify-between text-lg font-bold text-content-primary pt-2 border-t border-border-default">
             <span>Grand Total:</span>
             <span>${grandTotal.toFixed(2)}</span>
           </div>
+          <p className="text-xs text-content-tertiary mt-2">Note: Transport costs will be calculated and added by the system</p>
         </div>
       </Card>
     </div>
