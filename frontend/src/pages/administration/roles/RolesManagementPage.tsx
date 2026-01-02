@@ -12,7 +12,7 @@ import { rolesApi, type Role, type CreateRoleDto } from '@services/system/users'
 import { useAuth } from '@contexts/AuthContext';
 
 export function RolesManagementPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -143,9 +143,9 @@ export function RolesManagementPage() {
     }
   };
 
-  const canCreate = hasPermission('system:manage_roles');
-  const canUpdate = hasPermission('system:manage_roles');
-  const canDelete = hasPermission('system:manage_roles');
+  const canCreate = hasPermission('system:manage_roles') || hasRole('Administrator');
+  const canUpdate = hasPermission('system:manage_roles') || hasRole('Administrator');
+  const canDelete = hasPermission('system:manage_roles') || hasRole('Administrator');
 
   const filteredRoles = (rolesData || []).filter((role) =>
     !search ||

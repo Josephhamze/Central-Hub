@@ -12,7 +12,7 @@ import { usersApi, rolesApi, type User, type CreateUserDto } from '@services/sys
 import { useAuth } from '@contexts/AuthContext';
 
 export function UsersManagementPage() {
-  const { hasPermission, user: currentUser } = useAuth();
+  const { hasPermission, hasRole, user: currentUser } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -131,8 +131,8 @@ export function UsersManagementPage() {
     }
   };
 
-  const canCreate = hasPermission('system:manage_users');
-  const canManageRoles = hasPermission('system:manage_roles');
+  const canCreate = hasPermission('system:manage_users') || hasRole('Administrator');
+  const canManageRoles = hasPermission('system:manage_roles') || hasRole('Administrator');
 
   const filteredUsers = (data?.items || []).filter((user) =>
     !search ||
