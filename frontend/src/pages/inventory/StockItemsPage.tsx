@@ -261,7 +261,7 @@ export function StockItemsPage() {
               </div>
               <div className="space-y-2 text-sm">
                 <p className="text-content-secondary"><span className="font-medium">UOM:</span> {item.uom}</p>
-                <p className="text-content-secondary"><span className="font-medium">Price:</span> ${item.defaultUnitPrice.toFixed(2)} (Min: ${item.minUnitPrice.toFixed(2)})</p>
+                <p className="text-content-secondary"><span className="font-medium">Price:</span> ${Number(item.defaultUnitPrice).toFixed(2)} (Min: ${Number(item.minUnitPrice).toFixed(2)})</p>
                 <p className="text-content-secondary"><span className="font-medium">Min Qty:</span> {item.minOrderQty}</p>
                 {item.company && (
                   <p className="text-content-tertiary text-xs">Company: {item.company.name}</p>
