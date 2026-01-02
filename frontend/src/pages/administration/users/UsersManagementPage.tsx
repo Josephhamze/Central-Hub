@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import { Plus, Search, UserCheck, UserX, Users, Shield } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -19,6 +20,8 @@ export function UsersManagementPage() {
   const [page] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
+  const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<CreateUserDto>({
     email: '',
@@ -116,18 +119,43 @@ export function UsersManagementPage() {
 
   const handleUpdateRoles = () => {
     if (!selectedUser) return;
+    
+    // Validation: Ensure at least one role is selected
+    if (!formData.roleIds || formData.roleIds.length === 0) {
+      showError('User must have at least one role assigned');
+      return;
+    }
+    
+    // Check if removing admin role from admin user
+    const currentRoles = selectedUser.roles || [];
+    const hadAdminRole = currentRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+    
+    const selectedRoles = rolesData?.filter((r) => formData.roleIds?.includes(r.id)) || [];
+    const willHaveAdminRole = selectedRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+    
+    if (hadAdminRole && !willHaveAdminRole) {
+      if (!window.confirm('Warning: You are removing administrator privileges from this user. Make sure there is at least one other active administrator. Continue?')) {
+        return;
+      }
+    }
+    
     assignRolesMutation.mutate({ id: selectedUser.id, roleIds: formData.roleIds || [] });
   };
 
   const handleActivate = (id: string) => {
-    if (window.confirm('Are you sure you want to activate this user?')) {
-      activateMutation.mutate(id);
-    }
+    activateMutation.mutate(id);
   };
 
-  const handleDeactivate = (id: string) => {
-    if (window.confirm('Are you sure you want to deactivate this user?')) {
-      deactivateMutation.mutate(id);
+  const handleDeactivate = (user: User) => {
+    setUserToDeactivate(user);
+    setIsDeactivateModalOpen(true);
+  };
+
+  const confirmDeactivate = () => {
+    if (userToDeactivate) {
+      deactivateMutation.mutate(userToDeactivate.id);
+      setIsDeactivateModalOpen(false);
+      setUserToDeactivate(null);
     }
   };
 
@@ -165,6 +193,7 @@ export function UsersManagementPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
+            aria-label="Search users by name or email"
           />
         </div>
       </div>
@@ -190,28 +219,44 @@ export function UsersManagementPage() {
             <Card key={user.id} className="p-6">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h3 className="text-lg font-semibold text-content-primary">
                       {user.firstName} {user.lastName}
                     </h3>
-                    {user.isActive ? (
-                      <Badge variant="success">Active</Badge>
-                    ) : (
-                      <Badge variant="error">Inactive</Badge>
+                    {/* Account Status */}
+                    {user.accountStatus === 'ACTIVE' && (
+                      <Badge variant="success" title="Account is active">Active</Badge>
                     )}
-                    {!user.emailVerified && (
-                      <Badge variant="warning">Unverified</Badge>
+                    {user.accountStatus === 'DISABLED' && (
+                      <Badge variant="error" title="Account is disabled">Disabled</Badge>
+                    )}
+                    {user.accountStatus === 'PENDING' && (
+                      <Badge variant="warning" title="Account is pending activation">Pending</Badge>
+                    )}
+                    {/* Verification Status */}
+                    {user.emailVerified ? (
+                      <Badge variant="info" title="Email is verified">Verified</Badge>
+                    ) : (
+                      <Badge variant="warning" title="Email is not verified">Unverified</Badge>
                     )}
                   </div>
                   <p className="text-sm text-content-secondary mb-3">{user.email}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {user.roles?.map((role) => (
-                      <Badge key={role.id} variant="default">
-                        <Shield className="w-3 h-3 mr-1" />
-                        {role.name}
-                      </Badge>
-                    ))}
-                    {(!user.roles || user.roles.length === 0) && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {user.roles && user.roles.length > 0 ? (
+                      <>
+                        {user.roles.slice(0, 3).map((role) => (
+                          <Badge key={role.id} variant="default" title={role.description || role.name} className="flex items-center gap-1">
+                            <Shield className="w-3 h-3" />
+                            <span>{role.name}</span>
+                          </Badge>
+                        ))}
+                        {user.roles.length > 3 && (
+                          <Badge variant="default" title={`${user.roles.slice(3).map(r => r.name).join(', ')}`}>
+                            +{user.roles.length - 3} more
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
                       <span className="text-xs text-content-tertiary">No roles assigned</span>
                     )}
                   </div>
@@ -223,6 +268,7 @@ export function UsersManagementPage() {
                       variant="ghost"
                       onClick={() => handleAssignRoles(user)}
                       leftIcon={<Shield className="w-4 h-4" />}
+                      aria-label={`Manage roles for ${user.firstName} ${user.lastName}`}
                     >
                       Roles
                     </Button>
@@ -231,7 +277,7 @@ export function UsersManagementPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleDeactivate(user.id)}
+                      onClick={() => handleDeactivate(user)}
                       leftIcon={<UserX className="w-4 h-4" />}
                       disabled={user.id === currentUser?.id}
                     >
@@ -344,7 +390,24 @@ export function UsersManagementPage() {
         title={`Assign Roles - ${selectedUser?.firstName} ${selectedUser?.lastName}`}
       >
         <div className="space-y-4">
-          {rolesData && rolesData.length > 0 ? (
+          {(() => {
+            const currentRoles = selectedUser?.roles || [];
+            const hadAdminRole = currentRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+            const selectedRoleIds = formData.roleIds || [];
+            const selectedRoles = rolesData?.filter((r) => selectedRoleIds.includes(r.id)) || [];
+            const willHaveAdminRole = selectedRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+            const isRemovingAdmin = hadAdminRole && !willHaveAdminRole;
+            
+            return (
+              <>
+                {isRemovingAdmin && (
+                  <div className="p-3 bg-status-warning-bg border border-status-warning rounded-lg">
+                    <p className="text-sm text-status-warning">
+                      <strong>Warning:</strong> You are removing administrator privileges. Ensure there is at least one other active administrator.
+                    </p>
+                  </div>
+                )}
+                {rolesData && rolesData.length > 0 ? (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {rolesData.map((role) => (
                 <label key={role.id} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-background-secondary">
@@ -378,6 +441,9 @@ export function UsersManagementPage() {
           ) : (
             <p className="text-content-secondary text-center py-4">No roles available</p>
           )}
+              </>
+            );
+          })()}
         </div>
         <ModalFooter>
           <Button variant="secondary" onClick={() => {
@@ -388,6 +454,51 @@ export function UsersManagementPage() {
           </Button>
           <Button variant="primary" onClick={handleUpdateRoles} isLoading={assignRolesMutation.isPending}>
             Save Roles
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Deactivate Confirmation Modal */}
+      <Modal
+        isOpen={isDeactivateModalOpen}
+        onClose={() => {
+          setIsDeactivateModalOpen(false);
+          setUserToDeactivate(null);
+        }}
+        title="Confirm Deactivation"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-content-primary">
+            Are you sure you want to deactivate <strong>{userToDeactivate?.firstName} {userToDeactivate?.lastName}</strong>?
+          </p>
+          {userToDeactivate?.roles?.some((r) => r.name === 'Administrator' || r.name === 'Admin') && (
+            <div className="p-3 bg-status-warning-bg border border-status-warning rounded-lg">
+              <p className="text-sm text-status-warning">
+                <strong>Warning:</strong> This user has administrator privileges. Make sure there is at least one other active administrator before proceeding.
+              </p>
+            </div>
+          )}
+          <p className="text-sm text-content-secondary">
+            The user will not be able to log in until their account is reactivated.
+          </p>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setIsDeactivateModalOpen(false);
+              setUserToDeactivate(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={confirmDeactivate}
+            isLoading={deactivateMutation.isPending}
+          >
+            Deactivate User
           </Button>
         </ModalFooter>
       </Modal>

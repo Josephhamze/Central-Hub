@@ -8,7 +8,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
-import { ThemePreference } from '@prisma/client';
+import { ThemePreference, AccountStatus } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -29,8 +29,10 @@ export class UsersService {
           email: true,
           firstName: true,
           lastName: true,
-          isActive: true,
+          accountStatus: true,
           emailVerified: true,
+          deactivatedAt: true,
+          deactivatedBy: true,
           lastLoginAt: true,
           createdAt: true,
           roles: {
@@ -71,8 +73,10 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
-        isActive: true,
+        accountStatus: true,
         emailVerified: true,
+        deactivatedAt: true,
+        deactivatedBy: true,
         themePreference: true,
         lastLoginAt: true,
         createdAt: true,
@@ -198,21 +202,77 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.user.update({
+    // Check if user is an admin
+    const isAdmin = user.roles.some((ur) => ur.role.name === 'Administrator' || ur.role.name === 'Admin');
+    
+    if (isAdmin) {
+      // Check if this is the last admin user
+      const adminRoles = await this.prisma.role.findMany({
+        where: {
+          OR: [
+            { name: 'Administrator' },
+            { name: 'Admin' },
+          ],
+        },
+      });
+
+      if (adminRoles.length > 0) {
+        // Count active admin users (excluding the one being deactivated)
+        const activeAdminCount = await this.prisma.userRole.count({
+          where: {
+            roleId: { in: adminRoles.map((r) => r.id) },
+            user: {
+              accountStatus: 'ACTIVE',
+              id: { not: id },
+            },
+          },
+        });
+
+        if (activeAdminCount === 0) {
+          throw new BadRequestException('Cannot deactivate the last active administrator');
+        }
+      }
+    }
+
+    // Update user status
+    const updated = await this.prisma.user.update({
       where: { id },
-      data: { isActive: false },
+      data: {
+        accountStatus: 'DISABLED',
+        deactivatedAt: new Date(),
+        deactivatedBy: currentUserId,
+      },
+    });
+
+    // Create audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: currentUserId,
+        action: 'USER_DEACTIVATED',
+        entityType: 'User',
+        entityId: id,
+        oldValues: { accountStatus: user.accountStatus || 'ACTIVE' },
+        newValues: { accountStatus: 'DISABLED' },
+      },
     });
 
     return { message: 'User deactivated successfully' };
   }
 
-  async activate(id: string) {
+  async activate(id: string, currentUserId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -221,30 +281,95 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
-      data: { isActive: true },
+      data: {
+        accountStatus: 'ACTIVE',
+        deactivatedAt: null,
+        deactivatedBy: null,
+      },
+    });
+
+    // Create audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: currentUserId,
+        action: 'USER_ACTIVATED',
+        entityType: 'User',
+        entityId: id,
+        oldValues: { accountStatus: user.accountStatus || 'DISABLED' },
+        newValues: { accountStatus: 'ACTIVE' },
+      },
     });
 
     return { message: 'User activated successfully' };
   }
 
-  async assignRoles(userId: string, roleIds: string[]) {
+  async assignRoles(userId: string, roleIds: string[], currentUserId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    // Check if user currently has admin role
+    const currentRoles = user.roles.map((ur) => ur.role);
+    const hadAdminRole = currentRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+
     // Verify all roles exist
-    const roles = await this.prisma.role.findMany({
+    const newRoles = await this.prisma.role.findMany({
       where: { id: { in: roleIds } },
     });
 
-    if (roles.length !== roleIds.length) {
+    if (newRoles.length !== roleIds.length) {
       throw new BadRequestException('One or more roles not found');
+    }
+
+    // Check if new roles include admin
+    const willHaveAdminRole = newRoles.some((r) => r.name === 'Administrator' || r.name === 'Admin');
+
+    // If removing admin role from a user who had it
+    if (hadAdminRole && !willHaveAdminRole) {
+      // Check if this is the last admin user
+      const adminRoles = await this.prisma.role.findMany({
+        where: {
+          OR: [
+            { name: 'Administrator' },
+            { name: 'Admin' },
+          ],
+        },
+      });
+
+      if (adminRoles.length > 0) {
+        // Count active admin users (excluding the one being modified)
+        const activeAdminCount = await this.prisma.userRole.count({
+          where: {
+            roleId: { in: adminRoles.map((r) => r.id) },
+            user: {
+              accountStatus: 'ACTIVE',
+              id: { not: userId },
+            },
+          },
+        });
+
+        if (activeAdminCount === 0) {
+          throw new BadRequestException('Cannot remove the last administrator role from the last active administrator');
+        }
+      }
+    }
+
+    // Ensure at least one role is assigned
+    if (roleIds.length === 0) {
+      throw new BadRequestException('User must have at least one role');
     }
 
     // Remove existing roles and assign new ones
@@ -259,6 +384,18 @@ export class UsersService {
         })),
       }),
     ]);
+
+    // Create audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: currentUserId,
+        action: 'USER_ROLES_UPDATED',
+        entityType: 'User',
+        entityId: userId,
+        oldValues: { roleIds: currentRoles.map((r) => r.id) },
+        newValues: { roleIds },
+      },
+    });
 
     return this.findOne(userId);
   }
@@ -291,7 +428,7 @@ export class UsersService {
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        isActive: true,
+        accountStatus: 'ACTIVE',
         emailVerified: false,
         roles: dto.roleIds?.length
           ? {
@@ -315,7 +452,7 @@ export class UsersService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      isActive: user.isActive,
+      accountStatus: user.accountStatus,
       emailVerified: user.emailVerified,
       roles: user.roles.map((ur) => ur.role),
       createdAt: user.createdAt,

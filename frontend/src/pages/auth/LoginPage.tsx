@@ -81,7 +81,7 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
-              placeholder="admin@example.com"
+              placeholder="Enter your email"
               leftIcon={<Mail className="w-4 h-4" />}
               autoComplete="email"
               autoFocus
@@ -133,13 +133,6 @@ export function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Demo credentials */}
-        <div className="mt-6 p-4 bg-background-tertiary rounded-lg">
-          <p className="text-xs text-content-tertiary text-center">
-            Demo credentials: <span className="font-mono text-content-secondary">admin@example.com</span> / <span className="font-mono text-content-secondary">Admin123!</span>
-          </p>
         </div>
       </div>
     </div>

@@ -239,7 +239,7 @@ async function main() {
       passwordHash,
       firstName: 'System',
       lastName: 'Administrator',
-      isActive: true,
+      accountStatus: 'ACTIVE',
       emailVerified: true,
       themePreference: ThemePreference.SYSTEM,
     },
@@ -260,7 +260,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Created admin user (admin@example.com / Admin123!)');
+  console.log('✅ Created admin user');
 
   // Assign Administrator role to jj@efertongroup.com if user exists
   const additionalAdmin = await prisma.user.findUnique({

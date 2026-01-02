@@ -5,8 +5,10 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  isActive: boolean;
+  accountStatus: 'ACTIVE' | 'DISABLED' | 'PENDING';
   emailVerified: boolean;
+  deactivatedAt?: string;
+  deactivatedBy?: string;
   lastLoginAt?: string;
   createdAt: string;
   updatedAt?: string;

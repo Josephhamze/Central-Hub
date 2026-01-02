@@ -55,8 +55,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is disabled');
+    if (user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is disabled or pending activation');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
@@ -95,6 +95,7 @@ export class AuthService {
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
+        accountStatus: 'ACTIVE',
         roles: viewerRole
           ? {
               create: {
@@ -126,8 +127,8 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token has expired');
     }
 
-    if (!storedToken.user.isActive) {
-      throw new UnauthorizedException('Account is disabled');
+    if (storedToken.user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is disabled or pending activation');
     }
 
     // Revoke the old refresh token

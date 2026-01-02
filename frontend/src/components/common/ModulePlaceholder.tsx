@@ -48,9 +48,7 @@ export function ModulePlaceholder({
             </h2>
             <p className="text-content-tertiary mb-4">{description}</p>
             <p className="text-sm text-content-muted">
-              This module is a placeholder. The UI shell and API endpoints are stubbed
-              and ready for implementation. Use the AI Prompt Context file to generate
-              the actual features.
+              This module is currently under development and will be available in a future update.
             </p>
           </div>
         </div>

@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         firstName: true,
         lastName: true,
-        isActive: true,
+        accountStatus: 'ACTIVE',
         themePreference: true,
         roles: {
           select: {
@@ -58,8 +58,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is disabled');
+    if (user.accountStatus !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is disabled or pending activation');
     }
 
     // Flatten permissions

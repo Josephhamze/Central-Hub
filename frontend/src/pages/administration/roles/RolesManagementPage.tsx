@@ -177,6 +177,7 @@ export function RolesManagementPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
+            aria-label="Search roles by name or description"
           />
         </div>
       </div>
@@ -208,7 +209,7 @@ export function RolesManagementPage() {
                       <Badge variant="default">System Role</Badge>
                     )}
                     {role.userCount !== undefined && role.userCount > 0 && (
-                      <Badge variant="info">{role.userCount} user{role.userCount !== 1 ? 's' : ''}</Badge>
+                      <Badge variant="info" className="whitespace-nowrap">{role.userCount} {role.userCount === 1 ? 'user' : 'users'}</Badge>
                     )}
                   </div>
                   {role.description && (
@@ -237,6 +238,7 @@ export function RolesManagementPage() {
                       variant="ghost"
                       onClick={() => handleEdit(role)}
                       leftIcon={<Edit className="w-4 h-4" />}
+                      aria-label={`Edit role ${role.name}`}
                     >
                       Edit
                     </Button>
@@ -247,6 +249,7 @@ export function RolesManagementPage() {
                       variant="ghost"
                       onClick={() => handleDelete(role.id)}
                       leftIcon={<Trash2 className="w-4 h-4" />}
+                      aria-label={`Delete role ${role.name}`}
                     >
                       Delete
                     </Button>

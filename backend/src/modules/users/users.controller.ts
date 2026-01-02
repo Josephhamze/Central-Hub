@@ -100,8 +100,8 @@ export class UsersController {
   @Permissions('system:manage_users')
   @ApiOperation({ summary: 'Activate a user' })
   @ApiResponse({ status: 200, description: 'User activated' })
-  async activate(@Param('id') id: string) {
-    return this.usersService.activate(id);
+  async activate(@Param('id') id: string, @CurrentUser('id') currentUserId: string) {
+    return this.usersService.activate(id, currentUserId);
   }
 
 
@@ -120,8 +120,8 @@ export class UsersController {
   @Permissions('system:manage_users', 'system:manage_roles')
   @ApiOperation({ summary: 'Assign roles to a user' })
   @ApiResponse({ status: 200, description: 'Roles assigned successfully' })
-  async assignRoles(@Param('id') id: string, @Body() dto: AssignRolesDto) {
-    return this.usersService.assignRoles(id, dto.roleIds);
+  async assignRoles(@Param('id') id: string, @Body() dto: AssignRolesDto, @CurrentUser('id') currentUserId: string) {
+    return this.usersService.assignRoles(id, dto.roleIds, currentUserId);
   }
 
   @Post('assign-admin/:email')
