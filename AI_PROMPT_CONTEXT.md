@@ -694,7 +694,283 @@ Based on the design system in AI_PROMPT_CONTEXT.md, create a
 ---
 
 *Last updated: Initial skeleton release*
-*Version: 1.0.0*
+
+
+---
+
+## 8. Assets & Maintenance Module
+
+### Overview
+The Assets & Maintenance module provides comprehensive lifecycle management for physical assets, preventive and corrective maintenance, work order execution, spare parts inventory, and depreciation tracking.
+
+### Database Schema
+
+**Models:**
+- `Asset` - Physical asset registry
+- `MaintenanceSchedule` - Preventive maintenance schedules
+- `WorkOrder` - Maintenance work orders (preventive + corrective)
+- `SparePart` - Spare parts inventory
+- `PartUsage` - Parts consumption tracking
+- `AssetHistory` - Immutable audit log
+- `DepreciationProfile` - Depreciation configuration
+- `DepreciationEntry` - Monthly depreciation entries
+
+**Enums:**
+- `AssetStatus`: OPERATIONAL, MAINTENANCE, BROKEN, RETIRED
+- `AssetCriticality`: LOW, MEDIUM, HIGH
+- `MaintenanceScheduleType`: TIME_BASED, USAGE_BASED
+- `WorkOrderType`: PREVENTIVE, CORRECTIVE, INSPECTION
+- `WorkOrderPriority`: LOW, MEDIUM, HIGH, CRITICAL
+- `WorkOrderStatus`: OPEN, IN_PROGRESS, WAITING_PARTS, COMPLETED, CANCELLED
+- `DepreciationMethod`: STRAIGHT_LINE, DECLINING_BALANCE
+- `AssetHistoryEventType`: CREATED, STATUS_CHANGED, MAINTENANCE_DONE, WORK_ORDER_COMPLETED, PART_CONSUMED, COST_UPDATED, RETIRED
+
+**Key Relations:**
+- Asset → Project, Warehouse
+- Asset → MaintenanceSchedules, WorkOrders, History, DepreciationProfile
+- WorkOrder → Asset, MaintenanceSchedule, User (assignedTo), PartUsages
+- SparePart → Warehouse
+- PartUsage → WorkOrder, SparePart
+
+### Backend Modules
+
+**Location:** `backend/src/modules/`
+
+1. **Assets Module** (`assets/`)
+   - `assets.service.ts` - CRUD, retire, history, overview
+   - `assets.controller.ts` - REST endpoints
+   - DTOs: `create-asset.dto.ts`, `update-asset.dto.ts`
+
+2. **Maintenance Schedules Module** (`maintenance-schedules/`)
+   - `maintenance-schedules.service.ts` - CRUD, overdue detection, auto-calculate nextDueAt
+   - `maintenance-schedules.controller.ts` - REST endpoints
+   - DTOs: `create-maintenance-schedule.dto.ts`, `update-maintenance-schedule.dto.ts`
+
+3. **Work Orders Module** (`work-orders/`)
+   - `work-orders.service.ts` - CRUD, start/complete/cancel, part consumption
+   - `work-orders.controller.ts` - REST endpoints
+   - DTOs: `create-work-order.dto.ts`, `update-work-order.dto.ts`, `complete-work-order.dto.ts`, `consume-part.dto.ts`
+
+4. **Spare Parts Module** (`spare-parts/`)
+   - `spare-parts.service.ts` - CRUD, low stock detection
+   - `spare-parts.controller.ts` - REST endpoints
+   - DTOs: `create-spare-part.dto.ts`, `update-spare-part.dto.ts`
+
+5. **Depreciation Module** (`depreciation/`)
+   - `depreciation.service.ts` - Profile creation, monthly calculation, posting
+   - `depreciation.controller.ts` - REST endpoints
+   - DTOs: `create-profile.dto.ts`, `run-monthly.dto.ts`
+
+### API Endpoints
+
+**Base:** `/api/v1`
+
+**Assets:**
+- `GET /assets/overview` - Get asset health summary
+- `GET /assets` - List assets (with pagination, search, status filter)
+- `GET /assets/:id` - Get asset details
+- `GET /assets/:id/history` - Get asset history
+- `POST /assets` - Create asset
+- `PUT /assets/:id` - Update asset
+- `PATCH /assets/:id/retire` - Retire asset
+
+**Maintenance Schedules:**
+- `GET /maintenance-schedules` - List schedules
+- `GET /maintenance-schedules/overdue` - Get overdue schedules
+- `GET /maintenance-schedules/:id` - Get schedule details
+- `POST /maintenance-schedules` - Create schedule
+- `PUT /maintenance-schedules/:id` - Update schedule
+- `DELETE /maintenance-schedules/:id` - Delete schedule
+
+**Work Orders:**
+- `GET /work-orders` - List work orders
+- `GET /work-orders/:id` - Get work order details
+- `POST /work-orders` - Create work order
+- `PUT /work-orders/:id` - Update work order
+- `PATCH /work-orders/:id/start` - Start work order
+- `PATCH /work-orders/:id/complete` - Complete work order
+- `PATCH /work-orders/:id/cancel` - Cancel work order
+- `POST /work-orders/:id/consume-part` - Consume spare part
+
+**Spare Parts:**
+- `GET /spare-parts` - List spare parts
+- `GET /spare-parts/low-stock` - Get low stock parts
+- `GET /spare-parts/:id` - Get part details
+- `POST /spare-parts` - Create part
+- `PUT /spare-parts/:id` - Update part
+- `DELETE /spare-parts/:id` - Delete part
+
+**Depreciation:**
+- `GET /depreciation` - List depreciation profiles
+- `GET /depreciation/assets/:assetId` - Get profile for asset
+- `POST /depreciation/profiles` - Create profile
+- `POST /depreciation/run-monthly` - Run monthly calculation
+- `POST /depreciation/post/:assetId/:period` - Post entry
+- `POST /depreciation/post-period/:period` - Post all entries for period
+
+### Permissions
+
+**Assets:**
+- `assets:view` - View assets
+- `assets:create` - Create assets
+- `assets:update` - Update assets
+- `assets:retire` - Retire assets
+
+**Maintenance:**
+- `maintenance:view` - View maintenance schedules
+- `maintenance:schedule` - Create/edit schedules
+- `maintenance:execute` - Execute maintenance
+- `maintenance:approve` - Approve maintenance
+
+**Work Orders:**
+- `workorders:view` - View work orders
+- `workorders:create` - Create work orders
+- `workorders:update` - Update work orders
+- `workorders:close` - Close/complete work orders
+
+**Parts:**
+- `parts:view` - View spare parts
+- `parts:manage` - Manage spare parts
+
+**Depreciation:**
+- `depreciation:view` - View depreciation
+- `depreciation:manage` - Manage depreciation
+
+### Frontend Routes
+
+**Location:** `frontend/src/pages/assets/`
+
+- `/assets` - Landing page (overview, KPIs, overdue maintenance, open work orders)
+- `/assets/registry` - Asset registry (list view with search/filters)
+- `/assets/:id` - Asset detail page (tabbed interface)
+- `/assets/work-orders` - Work orders list
+- `/assets/work-orders/:id` - Work order detail
+- `/assets/maintenance/schedules` - Maintenance schedules list
+- `/assets/parts` - Spare parts inventory
+- `/assets/depreciation` - Depreciation management
+
+### Frontend Services
+
+**Location:** `frontend/src/services/assets/`
+
+- `assets.ts` - Assets API client
+- `work-orders.ts` - Work orders API client
+- `maintenance.ts` - Maintenance schedules API client
+- `parts.ts` - Spare parts API client
+- `depreciation.ts` - Depreciation API client
+
+### Business Rules
+
+1. **Asset Management:**
+   - AssetTag must be unique
+   - Retired assets are read-only
+   - Cannot retire asset with open work orders
+   - Status changes automatically log to AssetHistory
+
+2. **Maintenance Schedules:**
+   - Auto-calculate `nextDueAt` based on type (time-based vs usage-based)
+   - Overdue schedules trigger alerts
+   - Cannot delete schedule with associated work orders
+
+3. **Work Orders:**
+   - Completing a work order:
+     - Updates asset status (MAINTENANCE → OPERATIONAL)
+     - Logs to asset history
+     - Updates maintenance schedule `lastPerformedAt` and `nextDueAt`
+     - Consumes spare parts (reduces stock)
+     - Calculates total cost (labor + parts)
+   - Starting a work order sets asset status to MAINTENANCE
+   - Cannot consume more parts than available stock
+
+4. **Spare Parts:**
+   - SKU must be unique
+   - Low stock warning when quantityOnHand <= minStockLevel
+   - Cannot delete part with usage history
+
+5. **Depreciation:**
+   - One profile per asset
+   - Monthly entries locked once posted
+   - Posting updates asset currentValue
+   - Straight-line: (Cost - Salvage) / Useful Life / 12
+   - Declining balance: Current Book Value * (2 / Useful Life) / 12
+
+### File Structure
+
+```
+backend/src/modules/
+  assets/
+    assets.controller.ts
+    assets.service.ts
+    assets.module.ts
+    dto/
+      create-asset.dto.ts
+      update-asset.dto.ts
+  maintenance-schedules/
+    maintenance-schedules.controller.ts
+    maintenance-schedules.service.ts
+    maintenance-schedules.module.ts
+    dto/
+      create-maintenance-schedule.dto.ts
+      update-maintenance-schedule.dto.ts
+  work-orders/
+    work-orders.controller.ts
+    work-orders.service.ts
+    work-orders.module.ts
+    dto/
+      create-work-order.dto.ts
+      update-work-order.dto.ts
+      complete-work-order.dto.ts
+      consume-part.dto.ts
+  spare-parts/
+    spare-parts.controller.ts
+    spare-parts.service.ts
+    spare-parts.module.ts
+    dto/
+      create-spare-part.dto.ts
+      update-spare-part.dto.ts
+  depreciation/
+    depreciation.controller.ts
+    depreciation.service.ts
+    depreciation.module.ts
+    dto/
+      create-profile.dto.ts
+      run-monthly.dto.ts
+
+frontend/src/
+  pages/assets/
+    AssetsPage.tsx
+    AssetRegistryPage.tsx
+    WorkOrdersPage.tsx
+    MaintenanceSchedulesPage.tsx
+    SparePartsPage.tsx
+    DepreciationPage.tsx
+  services/assets/
+    assets.ts
+    work-orders.ts
+    maintenance.ts
+    parts.ts
+    depreciation.ts
+```
+
+### Testing
+
+Key test scenarios:
+- Create asset → verify history entry
+- Create maintenance schedule → verify nextDueAt calculation
+- Create work order → start → consume parts → complete → verify:
+  - Asset status updated
+  - Schedule updated
+  - Parts stock reduced
+  - Costs calculated
+  - History logged
+- Run monthly depreciation → verify entries created
+- Post depreciation → verify asset value updated
+
+---
+
+*Last updated: Assets & Maintenance module implementation*
+*Version: 1.1.0*
+
 
 ---
 

@@ -14,6 +14,10 @@ import { CostingPage } from '@pages/costing/CostingPage';
 import { InventoryPage } from '@pages/inventory/InventoryPage';
 import { AssetsPage } from '@pages/assets/AssetsPage';
 import { AssetRegistryPage } from '@pages/assets/AssetRegistryPage';
+import { WorkOrdersPage } from '@pages/assets/WorkOrdersPage';
+import { MaintenanceSchedulesPage } from '@pages/assets/MaintenanceSchedulesPage';
+import { SparePartsPage } from '@pages/assets/SparePartsPage';
+import { DepreciationPage } from '@pages/assets/DepreciationPage';
 import { LogisticsPage } from '@pages/logistics/LogisticsPage';
 import { CustomersPage } from '@pages/customers/CustomersPage';
 import { ReportingPage } from '@pages/reporting/ReportingPage';
@@ -96,11 +100,11 @@ function App() {
                 <Route path="assets" element={<AssetsPage />} />
         <Route path="assets/registry" element={<AssetRegistryPage />} />
         <Route path="assets/:id" element={<AssetRegistryPage />} />
-        <Route path="assets/work-orders" element={<AssetRegistryPage />} />
+        <Route path="assets/work-orders" element={<WorkOrdersPage />} />
         <Route path="assets/work-orders/:id" element={<AssetRegistryPage />} />
-        <Route path="assets/maintenance/schedules" element={<AssetRegistryPage />} />
-        <Route path="assets/parts" element={<AssetRegistryPage />} />
-        <Route path="assets/depreciation" element={<AssetRegistryPage />} />
+        <Route path="assets/maintenance/schedules" element={<MaintenanceSchedulesPage />} />
+        <Route path="assets/parts" element={<SparePartsPage />} />
+        <Route path="assets/depreciation" element={<DepreciationPage />} />
         <Route path="logistics/*" element={<LogisticsPage />} />
         <Route path="logistics/routes" element={<RoutesPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
