@@ -84,7 +84,9 @@ export function QuoteWizardPage() {
       navigate(`/sales/quotes`);
     },
     onError: (err: any) => {
-      showError(err.response?.data?.error?.message || 'Failed to create quote');
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to create quote';
+      showError(errorMessage);
+      console.error('Quote creation error:', err.response?.data || err);
     },
   });
 

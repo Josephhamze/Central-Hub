@@ -241,7 +241,14 @@ export class QuotesService {
 
     // Auto-match route based on company city (departure) and delivery city (destination)
     let routeId = dto.routeId;
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId && dto.deliveryCity && company.city) {
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
+      if (!dto.deliveryCity) {
+        throw new BadRequestException('Delivery city is required for route calculation');
+      }
+      if (!company.city) {
+        throw new BadRequestException(`Company "${company.name}" does not have a city set. Please set the company city to enable automatic route matching.`);
+      }
+      
       const matchedRoute = await this.prisma.route.findFirst({
         where: {
           fromCity: company.city,
@@ -251,8 +258,13 @@ export class QuotesService {
       if (matchedRoute) {
         routeId = matchedRoute.id;
       } else {
-        throw new BadRequestException(`No route found from ${company.city} to ${dto.deliveryCity}. Please ensure the route exists.`);
+        throw new BadRequestException(`No route found from ${company.city} to ${dto.deliveryCity}. Please ensure the route exists in the system.`);
       }
+    }
+    
+    // Validate that DELIVERED quotes have a route
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
+      throw new BadRequestException('Route is required for delivered quotes. Please ensure a route exists or the company has a city set for automatic matching.');
     }
 
     // Calculate transport
