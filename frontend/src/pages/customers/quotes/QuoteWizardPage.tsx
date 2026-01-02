@@ -333,7 +333,7 @@ export function QuoteWizardPage() {
               isLoading={createQuoteMutation.isPending}
               leftIcon={<FileText className="w-4 h-4" />}
             >
-              Create Quote
+{quoteId ? "Update Quote" : "Create Quote"}
             </Button>
           )}
         </div>
