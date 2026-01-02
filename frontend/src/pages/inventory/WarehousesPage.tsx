@@ -13,7 +13,7 @@ import { projectsApi } from '@services/sales/projects';
 import { useAuth } from '@contexts/AuthContext';
 
 export function WarehousesPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -128,9 +128,9 @@ export function WarehousesPage() {
     }
   };
 
-  const canCreate = hasPermission('warehouses:create');
-  const canUpdate = hasPermission('warehouses:update');
-  const canDelete = hasPermission('warehouses:delete');
+  const canCreate = hasPermission('warehouses:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('warehouses:update') || hasRole('Administrator');
+  const canDelete = hasPermission('warehouses:delete') || hasRole('Administrator');
 
   const filteredWarehouses = (data?.items || []).filter(warehouse => 
     !search || warehouse.name?.toLowerCase().includes(search.toLowerCase()) ||

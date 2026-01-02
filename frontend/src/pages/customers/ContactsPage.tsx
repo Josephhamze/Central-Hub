@@ -12,7 +12,7 @@ import { customersApi } from '@services/sales/customers';
 import { useAuth } from '@contexts/AuthContext';
 
 export function ContactsPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -119,9 +119,9 @@ export function ContactsPage() {
     }
   };
 
-  const canCreate = hasPermission('contacts:create');
-  const canUpdate = hasPermission('contacts:update');
-  const canDelete = hasPermission('contacts:delete');
+  const canCreate = hasPermission('contacts:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('contacts:update') || hasRole('Administrator');
+  const canDelete = hasPermission('contacts:delete') || hasRole('Administrator');
 
   const filteredContacts = (data?.items || []).filter(contact => 
     !search || contact.name?.toLowerCase().includes(search.toLowerCase()) ||

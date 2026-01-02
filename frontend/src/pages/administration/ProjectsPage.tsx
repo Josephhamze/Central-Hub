@@ -12,7 +12,7 @@ import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
 
 export function ProjectsPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -119,9 +119,9 @@ export function ProjectsPage() {
     }
   };
 
-  const canCreate = hasPermission('projects:create');
-  const canUpdate = hasPermission('projects:update');
-  const canDelete = hasPermission('projects:delete');
+  const canCreate = hasPermission('projects:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('projects:update') || hasRole('Administrator');
+  const canDelete = hasPermission('projects:delete') || hasRole('Administrator');
 
   const filteredProjects = (data?.items || []).filter(project => 
     !search || project.name?.toLowerCase().includes(search.toLowerCase()) ||

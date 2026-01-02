@@ -11,7 +11,7 @@ import { companiesApi, type Company, type CreateCompanyDto } from '@services/sal
 import { useAuth } from '@contexts/AuthContext';
 
 export function CompaniesPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -134,9 +134,9 @@ export function CompaniesPage() {
     }
   };
 
-  const canCreate = hasPermission('companies:create');
-  const canUpdate = hasPermission('companies:update');
-  const canDelete = hasPermission('companies:delete');
+  const canCreate = hasPermission('companies:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('companies:update') || hasRole('Administrator');
+  const canDelete = hasPermission('companies:delete') || hasRole('Administrator');
 
   return (
     <PageContainer

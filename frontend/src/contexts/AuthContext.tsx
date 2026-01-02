@@ -14,8 +14,8 @@ interface User {
   firstName: string;
   lastName: string;
   themePreference: 'LIGHT' | 'DARK' | 'SYSTEM';
-  roles: string[];
-  permissions: string[];
+  roles: string[] | Array<{ id: string; name: string }>;
+  permissions: string[] | Array<{ code: string; name: string; module: string }>;
 }
 
 interface AuthTokens {
@@ -122,11 +122,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    return user?.permissions?.includes(permission) ?? false;
+    if (!user?.permissions) return false;
+    // Handle both string array and object array formats
+    if (Array.isArray(user.permissions)) {
+      return user.permissions.some((p) => {
+        if (typeof p === 'string') {
+          return p === permission;
+        }
+        return p.code === permission;
+      });
+    }
+    return false;
   };
 
   const hasRole = (role: string) => {
-    return user?.roles?.includes(role) ?? false;
+    if (!user?.roles) return false;
+    // Handle both string array and object array formats
+    if (Array.isArray(user.roles)) {
+      return user.roles.some((r) => {
+        if (typeof r === 'string') {
+          return r === role;
+        }
+        return r.name === role;
+      });
+    }
+    return false;
   };
 
   return (

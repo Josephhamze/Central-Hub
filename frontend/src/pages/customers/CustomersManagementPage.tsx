@@ -11,7 +11,7 @@ import { customersApi, type Customer, type CreateCustomerDto, type CustomerType 
 import { useAuth } from '@contexts/AuthContext';
 
 export function CustomersManagementPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -153,9 +153,9 @@ export function CustomersManagementPage() {
     }
   };
 
-  const canCreate = hasPermission('customers:create');
-  const canUpdate = hasPermission('customers:update');
-  const canDelete = hasPermission('customers:delete');
+  const canCreate = hasPermission('customers:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('customers:update') || hasRole('Administrator');
+  const canDelete = hasPermission('customers:delete') || hasRole('Administrator');
 
   return (
     <PageContainer

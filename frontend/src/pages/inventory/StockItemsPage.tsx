@@ -14,7 +14,7 @@ import { warehousesApi } from '@services/sales/warehouses';
 import { useAuth } from '@contexts/AuthContext';
 
 export function StockItemsPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -163,9 +163,9 @@ export function StockItemsPage() {
     }
   };
 
-  const canCreate = hasPermission('stock:create');
-  const canUpdate = hasPermission('stock:update');
-  const canDelete = hasPermission('stock:delete');
+  const canCreate = hasPermission('stock:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('stock:update') || hasRole('Administrator');
+  const canDelete = hasPermission('stock:delete') || hasRole('Administrator');
 
   const filteredItems = (data?.items || []).filter(item => 
     !search || item.name?.toLowerCase().includes(search.toLowerCase()) ||

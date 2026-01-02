@@ -11,7 +11,7 @@ import { routesApi, type Route, type CreateRouteDto, type CreateTollDto } from '
 import { useAuth } from '@contexts/AuthContext';
 
 export function RoutesPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -154,9 +154,9 @@ export function RoutesPage() {
     }
   };
 
-  const canCreate = hasPermission('routes:create');
-  const canUpdate = hasPermission('routes:update');
-  const canDelete = hasPermission('routes:delete');
+  const canCreate = hasPermission('routes:create') || hasRole('Administrator');
+  const canUpdate = hasPermission('routes:update') || hasRole('Administrator');
+  const canDelete = hasPermission('routes:delete') || hasRole('Administrator');
 
   const filteredRoutes = (data?.items || []).filter(route => 
     !search || route.fromCity?.toLowerCase().includes(search.toLowerCase()) ||
