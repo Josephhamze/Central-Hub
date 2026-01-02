@@ -6,7 +6,7 @@ import { Card, CardHeader } from '@components/ui/Card';
 import { quotesApi } from '@services/sales/quotes';
 
 export function SalesKPIsPage() {
-  const [filters, setFilters] = useState<{ companyId?: string; projectId?: string; startDate?: string; endDate?: string }>({});
+  const [filters] = useState<{ companyId?: string; projectId?: string; startDate?: string; endDate?: string }>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['quotes-kpis', filters],

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { UcontactsController } from './contacts.controller';
-import { UcontactsService } from './contacts.service';
+import { ContactsController } from './contacts.controller';
+import { ContactsService } from './contacts.service';
 
 @Module({
-  controllers: [UcontactsController],
-  providers: [UcontactsService],
-  exports: [UcontactsService],
+  controllers: [ContactsController],
+  providers: [ContactsService],
+  exports: [ContactsService],
 })
-export class UcontactsModule {}
+export class ContactsModule {}

@@ -318,8 +318,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-    });
-  }
-
-  console.log('✅ Updated role permissions for sales quote system');

@@ -435,7 +435,7 @@ export class QuotesService {
       // Just update quote fields
       return this.prisma.quote.update({
         where: { id },
-        data: dto,
+        data: dto as any,
         include: {
           company: true,
           project: true,
@@ -590,7 +590,6 @@ export class QuotesService {
 
     return this.prisma.quote.delete({ where: { id } });
   }
-}
   // KPI calculations
   async getSalesKPIs(
     userId: string,

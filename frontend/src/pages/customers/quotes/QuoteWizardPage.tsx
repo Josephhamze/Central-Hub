@@ -1,17 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Building2, User, Package, Truck, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '@components/ui/Button';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Input } from '@components/ui/Input';
-import { Badge } from '@components/ui/Badge';
-import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
-import { quotesApi, type CreateQuoteDto, type QuoteItem as QuoteItemType, type DeliveryMethod, type CustomerType } from '@services/sales/quotes';
+import { quotesApi, type CreateQuoteDto } from '@services/sales/quotes';
 import { companiesApi, type Company } from '@services/sales/companies';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@contexts/AuthContext';
 import { cn } from '@utils/cn';
 
 const STEPS = [
@@ -25,7 +21,6 @@ const STEPS = [
 export function QuoteWizardPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [quoteData, setQuoteData] = useState<Partial<CreateQuoteDto>>({
     items: [],

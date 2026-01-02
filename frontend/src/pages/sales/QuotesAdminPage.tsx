@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, CheckCircle2, XCircle, Clock, Filter } from 'lucide-react';
+import { FileText, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -13,7 +13,7 @@ import { useAuth } from '@contexts/AuthContext';
 
 export function QuotesAdminPage() {
   const { success, error: showError } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<{ status?: QuoteStatus; companyId?: string; projectId?: string }>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -126,7 +126,7 @@ export function QuotesAdminPage() {
                     )}
                     {quote.status === 'APPROVED' && hasPermission('quotes:approve') && (
                       <>
-                        <Button size="sm" variant="success" onClick={() => { setSelectedQuote(quote); setOutcomeType('WON'); setOutcomeModalOpen(true); }}>
+                        <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setOutcomeType('WON'); setOutcomeModalOpen(true); }}>
                           Mark Won
                         </Button>
                         <Button size="sm" variant="danger" onClick={() => { setSelectedQuote(quote); setOutcomeType('LOST'); setOutcomeModalOpen(true); }}>
