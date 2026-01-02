@@ -10,7 +10,7 @@ import { Input } from '@components/ui/Input';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes';
-import { companiesApi, type Company } from '@services/sales/companies';
+import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
 import { cn } from '@utils/cn';
 
