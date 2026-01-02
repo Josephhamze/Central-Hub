@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsDateString } from 'class-validator';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Company ID' })
@@ -19,6 +19,26 @@ export class CreateProjectDto {
   @IsString()
   @IsOptional()
   region?: string;
+
+  @ApiPropertyOptional({ description: 'Project description' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Start date' })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'End date' })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'Project status' })
+  @IsString()
+  @IsOptional()
+  status?: string;
 
   @ApiPropertyOptional({ description: 'Is active', default: true })
   @IsBoolean()
