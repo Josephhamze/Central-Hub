@@ -14,7 +14,6 @@ import {
   MapPin,
   Warehouse,
   List,
-  Users,
   UserPlus,
   AlertCircle,
   Info,
@@ -24,7 +23,7 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { Button } from '@components/ui/Button';
-import { Card, CardHeader } from '@components/ui/Card';
+import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
@@ -47,6 +46,7 @@ interface QuoteItemUI extends CreateQuoteItemDto {
 // Extended quote data type for UI state
 interface QuoteDataUI extends Omit<Partial<CreateQuoteDto>, 'items'> {
   items?: QuoteItemUI[];
+  warehouseId?: string; // UI-only field for warehouse selection
 }
 
 const STEPS = [
