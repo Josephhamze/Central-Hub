@@ -16,7 +16,6 @@ export class NotificationsController {
 
   @Get()
   @UseGuards(RbacGuard)
-  @Permissions('notifications:view')
   @ApiOperation({ summary: 'Get all notifications for current user' })
   async findAll(
     @CurrentUser('id') userId: string,
@@ -27,7 +26,6 @@ export class NotificationsController {
 
   @Get('unread-count')
   @UseGuards(RbacGuard)
-  @Permissions('notifications:view')
   @ApiOperation({ summary: 'Get unread notification count' })
   async getUnreadCount(@CurrentUser('id') userId: string) {
     const count = await this.notificationsService.getUnreadCount(userId);
@@ -36,7 +34,6 @@ export class NotificationsController {
 
   @Put(':id/read')
   @UseGuards(RbacGuard)
-  @Permissions('notifications:view')
   @ApiOperation({ summary: 'Mark notification as read' })
   async markAsRead(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.notificationsService.markAsRead(userId, id);
@@ -44,7 +41,6 @@ export class NotificationsController {
 
   @Put('read-all')
   @UseGuards(RbacGuard)
-  @Permissions('notifications:view')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllAsRead(@CurrentUser('id') userId: string) {
     return this.notificationsService.markAllAsRead(userId);
