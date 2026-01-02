@@ -591,3 +591,73 @@ export class QuotesService {
     return this.prisma.quote.delete({ where: { id } });
   }
 }
+  // KPI calculations
+  async getSalesKPIs(
+    userId: string,
+    userPermissions: string[],
+    filters: {
+      companyId?: string;
+      projectId?: string;
+      salesRepUserId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    } = {},
+  ) {
+    const where: any = {};
+
+    const canViewAll = userPermissions.includes('quotes:view') && 
+      (userPermissions.includes('system:manage_users') || userPermissions.includes('quotes:approve'));
+    
+    if (!canViewAll) {
+      where.salesRepUserId = userId;
+    }
+
+    if (filters.companyId) where.companyId = filters.companyId;
+    if (filters.projectId) where.projectId = filters.projectId;
+    if (filters.salesRepUserId) where.salesRepUserId = filters.salesRepUserId;
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = filters.startDate;
+      if (filters.endDate) where.createdAt.lte = filters.endDate;
+    }
+
+    const [allQuotes, wonQuotes, lostQuotes, pendingQuotes] = await Promise.all([
+      this.prisma.quote.findMany({ where, select: { id: true, grandTotal: true, status: true, submittedAt: true, approvedAt: true } }),
+      this.prisma.quote.findMany({ where: { ...where, status: QuoteStatus.WON }, select: { grandTotal: true } }),
+      this.prisma.quote.findMany({ where: { ...where, status: QuoteStatus.LOST }, select: { grandTotal: true } }),
+      this.prisma.quote.findMany({ where: { ...where, status: QuoteStatus.PENDING_APPROVAL }, select: { grandTotal: true } }),
+    ]);
+
+    const totalQuotes = allQuotes.length;
+    const wins = wonQuotes.length;
+    const losses = lostQuotes.length;
+    const winRate = totalQuotes > 0 ? (wins / (wins + losses)) * 100 : 0;
+
+    const totalValue = allQuotes.reduce((sum, q) => sum.add(q.grandTotal), new Decimal(0));
+    const avgQuoteValue = totalQuotes > 0 ? totalValue.div(totalQuotes) : new Decimal(0);
+    const pipelineValue = pendingQuotes.reduce((sum, q) => sum.add(q.grandTotal), new Decimal(0));
+    const wonValue = wonQuotes.reduce((sum, q) => sum.add(q.grandTotal), new Decimal(0));
+
+    // Calculate avg approval time
+    const approvedQuotes = allQuotes.filter(q => q.submittedAt && q.approvedAt);
+    let avgApprovalTime = 0;
+    if (approvedQuotes.length > 0) {
+      const totalApprovalTime = approvedQuotes.reduce((sum, q) => {
+        const time = q.approvedAt!.getTime() - q.submittedAt!.getTime();
+        return sum + time;
+      }, 0);
+      avgApprovalTime = totalApprovalTime / approvedQuotes.length / (1000 * 60 * 60); // Convert to hours
+    }
+
+    return {
+      totalQuotes,
+      wins,
+      losses,
+      winRate: parseFloat(winRate.toFixed(2)),
+      avgQuoteValue: parseFloat(avgQuoteValue.toFixed(2)),
+      pipelineValue: parseFloat(pipelineValue.toFixed(2)),
+      wonValue: parseFloat(wonValue.toFixed(2)),
+      avgApprovalTimeHours: parseFloat(avgApprovalTime.toFixed(2)),
+    };
+  }
+}
