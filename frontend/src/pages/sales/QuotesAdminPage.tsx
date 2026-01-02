@@ -76,7 +76,7 @@ export function QuotesAdminPage() {
   };
 
   return (
-    <PageContainer title="Quotes Administration" description="Manage and approve sales quotes" action={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
+    <PageContainer title="Quotes Administration" description="Manage and approve sales quotes" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
       <Card className="mb-6">
         <CardHeader title="Filters" />
         <div className="p-6 flex gap-4">
