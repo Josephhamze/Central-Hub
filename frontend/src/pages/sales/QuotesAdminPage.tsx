@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -15,14 +15,27 @@ import { useAuth } from '@contexts/AuthContext';
 export function QuotesAdminPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, hasRole, user } = useAuth();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<{ status?: QuoteStatus; companyId?: string; projectId?: string }>({});
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'quotes' | 'kpis'>('quotes');
   const [outcomeType, setOutcomeType] = useState<'WON' | 'LOST'>('WON');
+  const [approveNotes, setApproveNotes] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [outcomeCategory, setOutcomeCategory] = useState('');
+  const [outcomeNotes, setOutcomeNotes] = useState('');
+
+  const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
+    queryKey: ['quotes-kpis', filters],
+    queryFn: async () => {
+      const res = await quotesApi.getKPIs(filters);
+      return res.data.data;
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['quotes', filters],
@@ -36,6 +49,7 @@ export function QuotesAdminPage() {
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
       success('Quote approved');
       setApproveModalOpen(false);
     },
@@ -46,6 +60,7 @@ export function QuotesAdminPage() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) => quotesApi.reject(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
       success('Quote rejected');
       setRejectModalOpen(false);
     },
@@ -57,11 +72,18 @@ export function QuotesAdminPage() {
       quotesApi.markOutcome(id, outcome, reasonCategory, reasonNotes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to update outcome'),
   });
+
+  // Check if user can approve (has permission OR is sales manager OR is admin)
+  const canApprove = (quote: Quote) => {
+    if (quote.status !== 'PENDING_APPROVAL') return false;
+    return hasPermission('quotes:approve') || hasRole('Sales Manager') || hasRole('Admin');
+  };
 
   const getStatusBadge = (status: QuoteStatus) => {
     const variants: Record<QuoteStatus, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
@@ -76,9 +98,71 @@ export function QuotesAdminPage() {
   };
 
   return (
-    <PageContainer title="Quotes Administration" description="Manage and approve sales quotes" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
-      <Card className="mb-6">
-        <CardHeader title="Filters" />
+    <PageContainer title="Quotes" description="Manage quotes and view sales KPIs" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
+      {/* Tabs */}
+      <div className="mb-6 border-b border-border-default">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('quotes')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              activeTab === 'quotes'
+                ? 'text-accent-primary border-b-2 border-accent-primary'
+                : 'text-content-secondary hover:text-content-primary'
+            }`}
+          >
+            Quotes
+          </button>
+          <button
+            onClick={() => setActiveTab('kpis')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              activeTab === 'kpis'
+                ? 'text-accent-primary border-b-2 border-accent-primary'
+                : 'text-content-secondary hover:text-content-primary'
+            }`}
+          >
+            KPIs
+          </button>
+        </div>
+      </div>
+
+      {/* KPIs Tab */}
+      {activeTab === 'kpis' && (
+        <Card>
+          <CardHeader title="Sales KPIs" />
+          <div className="p-6">
+            {isLoadingKPIs ? (
+              <div className="text-center py-8 text-content-secondary">Loading...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Quotes', value: kpiData?.totalQuotes || 0, icon: FileText, color: 'text-blue-500' },
+                  { label: 'Wins', value: kpiData?.wins || 0, icon: CheckCircle2, color: 'text-green-500' },
+                  { label: 'Losses', value: kpiData?.losses || 0, icon: XCircle, color: 'text-red-500' },
+                  { label: 'Win Rate', value: `${kpiData?.winRate || 0}%`, icon: TrendingUp, color: 'text-purple-500' },
+                  { label: 'Avg Quote Value', value: `$${Number(kpiData?.avgQuoteValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-yellow-500' },
+                  { label: 'Pipeline Value', value: `$${Number(kpiData?.pipelineValue || 0).toFixed(2)}`, icon: Target, color: 'text-indigo-500' },
+                  { label: 'Won Value', value: `$${Number(kpiData?.wonValue || 0).toFixed(2)}`, icon: DollarSign, color: 'text-green-500' },
+                  { label: 'Avg Approval Time', value: `${Number(kpiData?.avgApprovalTimeHours || 0).toFixed(1)}h`, icon: Clock, color: 'text-orange-500' },
+                ].map((kpi) => (
+                  <Card key={kpi.label} className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-content-secondary">{kpi.label}</span>
+                      <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                    </div>
+                    <div className="text-2xl font-bold text-content-primary">{kpi.value}</div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Quotes Tab */}
+      {activeTab === 'quotes' && (
+        <>
+          <Card className="mb-6">
+            <CardHeader title="Filters" />
         <div className="p-6 flex gap-4">
           <select
             className="px-3 py-2 border rounded-lg bg-background-primary"
@@ -118,7 +202,7 @@ export function QuotesAdminPage() {
                     <p className="text-sm text-content-tertiary">Total: ${Number(quote.grandTotal).toFixed(2)}</p>
                   </div>
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    {quote.status === 'PENDING_APPROVAL' && hasPermission('quotes:approve') && (
+                    {canApprove(quote) && (
                       <>
                         <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setApproveModalOpen(true); }}>
                           Approve
@@ -145,7 +229,9 @@ export function QuotesAdminPage() {
             </div>
           )}
         </div>
-      </Card>
+          </Card>
+        </>
+      )}
 
       {/* Approve Modal */}
       <Modal isOpen={approveModalOpen} onClose={() => { setApproveModalOpen(false); setApproveNotes(''); }} title="Approve Quote" size="md">
