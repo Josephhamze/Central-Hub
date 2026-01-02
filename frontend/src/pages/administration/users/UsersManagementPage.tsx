@@ -206,7 +206,7 @@ export function UsersManagementPage() {
                   <p className="text-sm text-content-secondary mb-3">{user.email}</p>
                   <div className="flex flex-wrap gap-2">
                     {user.roles?.map((role) => (
-                      <Badge key={role.id} variant="secondary">
+                      <Badge key={role.id} variant="default">
                         <Shield className="w-3 h-3 mr-1" />
                         {role.name}
                       </Badge>
@@ -322,7 +322,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={() => {
+          <Button variant="default" onClick={() => {
             setIsCreateModalOpen(false);
             resetForm();
           }}>
@@ -380,7 +380,7 @@ export function UsersManagementPage() {
           )}
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={() => {
+          <Button variant="default" onClick={() => {
             setIsRolesModalOpen(false);
             setSelectedUser(null);
           }}>

@@ -216,7 +216,7 @@ export function RolesManagementPage() {
                   )}
                   <div className="flex flex-wrap gap-2">
                     {role.permissions?.slice(0, 5).map((perm) => (
-                      <Badge key={perm.id} variant="secondary" size="sm">
+                      <Badge key={perm.id} variant="default" size="sm">
                         {perm.code}
                       </Badge>
                     ))}
@@ -338,7 +338,7 @@ export function RolesManagementPage() {
         </div>
         <ModalFooter>
           <Button
-            variant="secondary"
+            variant="default"
             onClick={() => {
               setIsCreateModalOpen(false);
               setIsEditModalOpen(false);
