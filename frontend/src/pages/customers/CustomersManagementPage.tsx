@@ -135,14 +135,14 @@ export function CustomersManagementPage() {
     }
     // Map frontend field names to backend field names
     const { addressLine1, addressLine2, city, state, postalCode, country, taxId, notes, ...rest } = formData;
-    const apiData = {
+    const apiData: CreateCustomerDto = {
       ...rest,
-      billingAddressLine1: addressLine1 || '',
-      billingAddressLine2: addressLine2,
-      billingCity: city || '',
-      billingState: state,
-      billingPostalCode: postalCode || '',
-      billingCountry: country,
+      billingAddressLine1: addressLine1.trim(),
+      billingAddressLine2: addressLine2?.trim() || undefined,
+      billingCity: city.trim(),
+      billingState: state?.trim() || undefined,
+      billingPostalCode: postalCode.trim(),
+      billingCountry: country?.trim() || undefined,
       // taxId and notes are not in the backend schema, so we filter them out
     };
     createMutation.mutate(apiData);

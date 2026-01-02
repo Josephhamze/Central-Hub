@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { CustomerType } from '@prisma/client';
 
 export class CreateCustomerDto {
@@ -10,11 +10,11 @@ export class CreateCustomerDto {
   @ApiPropertyOptional() @IsString() @IsOptional() firstName?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() lastName?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() companyName?: string;
-  @ApiProperty() @IsString() billingAddressLine1: string;
+  @ApiProperty() @IsString() @IsNotEmpty() billingAddressLine1: string;
   @ApiPropertyOptional() @IsString() @IsOptional() billingAddressLine2?: string;
-  @ApiProperty() @IsString() billingCity: string;
+  @ApiProperty() @IsString() @IsNotEmpty() billingCity: string;
   @ApiPropertyOptional() @IsString() @IsOptional() billingState?: string;
-  @ApiProperty() @IsString() billingPostalCode: string;
+  @ApiProperty() @IsString() @IsNotEmpty() billingPostalCode: string;
   @ApiPropertyOptional() @IsString() @IsOptional() billingCountry?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryAddressLine1?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() deliveryAddressLine2?: string;
