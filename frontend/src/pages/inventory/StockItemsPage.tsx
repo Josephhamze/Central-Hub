@@ -19,7 +19,7 @@ export function StockItemsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string | undefined>(undefined);
-  const [projectFilter, setProjectFilter] = useState<string | undefined>(undefined);
+  const [projectFilter] = useState<string | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);

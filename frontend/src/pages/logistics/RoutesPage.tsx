@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Route, MapPin, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Route as RouteIcon, MapPin, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -7,7 +7,7 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
-import { routesApi, type Route, type CreateRouteDto, type Toll, type CreateTollDto } from '@services/sales/routes';
+import { routesApi, type Route, type CreateRouteDto, type CreateTollDto } from '@services/sales/routes';
 import { useAuth } from '@contexts/AuthContext';
 
 export function RoutesPage() {
@@ -195,7 +195,7 @@ export function RoutesPage() {
         <div className="text-center py-12 text-content-secondary">Loading...</div>
       ) : filteredRoutes.length === 0 ? (
         <Card className="p-12 text-center">
-          <Route className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
+          <RouteIcon className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
           <h3 className="text-lg font-semibold text-content-primary mb-2">No routes found</h3>
           <p className="text-content-secondary mb-4">
             {search ? 'Try adjusting your search terms' : 'Get started by creating your first route'}

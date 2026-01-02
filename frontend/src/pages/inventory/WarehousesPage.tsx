@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Warehouse } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Warehouse as WarehouseIcon } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -18,7 +18,7 @@ export function WarehousesPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string | undefined>(undefined);
-  const [projectFilter, setProjectFilter] = useState<string | undefined>(undefined);
+  const [projectFilter] = useState<string | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
@@ -181,7 +181,7 @@ export function WarehousesPage() {
         <div className="text-center py-12 text-content-secondary">Loading...</div>
       ) : filteredWarehouses.length === 0 ? (
         <Card className="p-12 text-center">
-          <Warehouse className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
+          <WarehouseIcon className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
           <h3 className="text-lg font-semibold text-content-primary mb-2">No warehouses found</h3>
           <p className="text-content-secondary mb-4">
             {search ? 'Try adjusting your search terms' : 'Get started by creating your first warehouse'}
