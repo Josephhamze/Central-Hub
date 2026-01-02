@@ -103,7 +103,7 @@ export function QuoteWizardPage() {
           <div className="p-6">
             {currentStep === 1 && <Step1CompanySelection companies={companiesData?.items || []} selected={quoteData.companyId} onSelect={(id) => setQuoteData({ ...quoteData, companyId: id })} />}
             {currentStep === 2 && <Step2ClientSelection quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 3 && <Step3ProjectDelivery quoteData={quoteData} onUpdate={setQuoteData} />}
+            {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} />}
             {currentStep === 4 && <Step4Products />}
             {currentStep === 5 && <Step5Review />}
           </div>
@@ -195,12 +195,44 @@ function Step2ClientSelection({ companyId, quoteData, onUpdate }: { companyId?: 
 }
 
 // Step 3: Project & Delivery
-function Step3ProjectDelivery({ quoteData, onUpdate }: { quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: Partial<CreateQuoteDto>; onUpdate: (data: Partial<CreateQuoteDto>) => void }) {
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects', companyId],
+    queryFn: async () => {
+      const res = await projectsApi.findAll(companyId, 1, 100);
+      return res.data.data;
+    },
+    enabled: !!companyId,
+  });
+
+  if (!companyId) {
+    return (
+      <div className="text-center py-8 text-content-secondary">
+        Please select a company in Step 1 first
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <Input label="Project ID" value={quoteData.projectId || ''} onChange={(e) => onUpdate({ ...quoteData, projectId: e.target.value })} />
       <div>
-        <label className="block text-sm font-medium mb-2">Delivery Method</label>
+        <label className="block text-sm font-medium mb-2">Project *</label>
+        <select
+          className="w-full px-3 py-2 border rounded-lg bg-background-primary text-content-primary"
+          value={quoteData.projectId || ''}
+          onChange={(e) => onUpdate({ ...quoteData, projectId: e.target.value })}
+        >
+          <option value="">Select a project</option>
+          {projectsData?.items.map((project) => (
+            <option key={project.id} value={project.id}>{project.name}</option>
+          ))}
+        </select>
+        {projectsData?.items.length === 0 && (
+          <p className="text-sm text-content-tertiary mt-2">No projects found for this company</p>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">Delivery Method *</label>
         <div className="flex gap-4">
           <Button variant={quoteData.deliveryMethod === 'DELIVERED' ? 'primary' : 'secondary'} onClick={() => onUpdate({ ...quoteData, deliveryMethod: 'DELIVERED' })}>
             Delivered
