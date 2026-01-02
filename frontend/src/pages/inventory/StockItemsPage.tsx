@@ -114,15 +114,17 @@ export function StockItemsPage() {
   });
 
   const handleCreate = () => {
-    if (!formData.companyId || !formData.name.trim() || !formData.uom.trim()) {
-      showError('Company, name, and unit of measure are required');
+    if (!formData.projectId || !formData.warehouseId || !formData.name.trim() || !formData.uom.trim()) {
+      showError('Project, warehouse, name, and unit of measure are required');
       return;
     }
     if (formData.defaultUnitPrice < formData.minUnitPrice) {
       showError('Default unit price must be >= min unit price');
       return;
     }
-    createMutation.mutate(formData);
+    // Remove companyId and description before sending (they're not in the schema)
+    const { companyId, description, ...apiData } = formData;
+    createMutation.mutate(apiData);
   };
 
   const handleEdit = (stockItem: StockItem) => {

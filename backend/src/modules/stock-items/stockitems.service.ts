@@ -7,6 +7,24 @@ import { UpdateStockItemDto } from './dto/update-stock-item.dto';
 export class StockItemsService {
   constructor(private prisma: PrismaService) {}
 
+
+  /**
+   * Generate a unique SKU from product name
+   */
+  private generateSku(name: string): string {
+    // Convert name to uppercase, remove special chars, replace spaces with hyphens
+    const base = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 20);
+    
+    // Add timestamp suffix for uniqueness
+    const timestamp = Date.now().toString(36).toUpperCase().slice(-6);
+    return `${base}-${timestamp}`;
+  }
+
+
   async findAll(projectId?: string, warehouseId?: string, page = 1, limit = 20, search?: string) {
     // Convert string query params to numbers
     const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
@@ -49,9 +67,17 @@ export class StockItemsService {
     if (dto.minUnitPrice > dto.defaultUnitPrice) {
       throw new BadRequestException('Min unit price cannot be greater than default unit price');
     }
+    
+    // Auto-generate SKU if not provided
+    const sku = dto.sku?.trim() || this.generateSku(dto.name);
+    
+    // Filter out fields that don't exist in the schema (description, companyId)
+    const { description, companyId, ...prismaData } = dto;
+    
     return this.prisma.stockItem.create({
       data: {
-        ...dto,
+        ...prismaData,
+        sku,
         minUnitPrice: dto.minUnitPrice,
         defaultUnitPrice: dto.defaultUnitPrice,
         minOrderQty: dto.minOrderQty,
