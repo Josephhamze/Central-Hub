@@ -773,12 +773,22 @@ export class QuotesService {
     const quote = await this.prisma.quote.findUnique({ where: { id } });
     if (!quote) throw new NotFoundException('Quote not found');
 
-    if (quote.salesRepUserId !== userId && !userPermissions.includes('quotes:approve')) {
+    // Check if user is admin (has quotes:approve permission typically means admin)
+    const isAdmin = userPermissions.includes('quotes:approve');
+    const isCreator = quote.salesRepUserId === userId;
+
+    // Admins can delete any quote
+    if (isAdmin) {
+      return this.prisma.quote.delete({ where: { id } });
+    }
+
+    // Regular users can only delete their own draft quotes
+    if (!isCreator) {
       throw new ForbiddenException('You can only delete your own quotes');
     }
 
     if (quote.status !== QuoteStatus.DRAFT) {
-      throw new BadRequestException('Can only delete draft quotes');
+      throw new BadRequestException('You can only delete draft quotes');
     }
 
     return this.prisma.quote.delete({ where: { id } });

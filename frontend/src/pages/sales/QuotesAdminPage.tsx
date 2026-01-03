@@ -99,11 +99,7 @@ export function QuotesAdminPage() {
     },
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete quote';
-      if (errorMessage.includes('draft')) {
-        showError('Only draft quotes can be deleted');
-      } else {
-        showError(errorMessage);
-      }
+      showError(errorMessage);
     },
   });
 
@@ -309,14 +305,14 @@ export function QuotesAdminPage() {
                         </Button>
                       </>
                     )}
-                    {isAdmin && quote.status === 'DRAFT' && (
+                    {((isAdmin) || (isCreator && quote.status === 'DRAFT')) && (
                       <Button 
                         size="sm" 
                         variant="danger" 
                         onClick={() => handleDelete(quote)}
                         leftIcon={<Trash2 className="w-4 h-4" />}
                         disabled={deleteMutation.isPending}
-                        title="Delete quote (Admin only)"
+                        title={isAdmin ? "Delete quote (Admin)" : "Delete draft quote"}
                       >
                         Delete
                       </Button>
