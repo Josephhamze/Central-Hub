@@ -16,7 +16,8 @@ import {
   MapPin,
   FolderKanban,
   Info,
-, FileText} from 'lucide-react';
+  FileText,
+} from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
