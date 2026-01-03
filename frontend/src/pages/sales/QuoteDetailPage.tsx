@@ -151,8 +151,8 @@ export function QuoteDetailPage() {
   });
 
   const handleDelete = () => {
-    if (!quoteData) return;
-    if (window.confirm(`Are you sure you want to delete quote ${quoteData.quoteNumber}? This action cannot be undone.`)) {
+    if (!quote) return;
+    if (window.confirm(`Are you sure you want to delete quote ${quote.quoteNumber}? This action cannot be undone.`)) {
       deleteMutation.mutate();
     }
   };
@@ -444,7 +444,7 @@ export function QuoteDetailPage() {
                 </Button>
               </>
             )}
-            {isAdmin && quoteData && quoteData.status === 'DRAFT' && (
+            {isAdmin && quote && quote.status === 'DRAFT' && (
               <Button
                 variant="danger"
                 onClick={handleDelete}
