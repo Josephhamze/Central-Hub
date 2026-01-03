@@ -43,7 +43,8 @@ export class QuotesService {
   }
 
   // Calculate transport cost
-  private async calculateTransport(routeId: string | null | undefined): Promise<{ base: Decimal; tolls: Decimal; total: Decimal; distanceKm: Decimal; costPerKm: Decimal }> {
+  // Formula: (set $ amount * distance * total tonnage) + tolls
+  private async calculateTransport(routeId: string | null | undefined, items: Array<{ qty: Decimal; uomSnapshot: string }> = []): Promise<{ base: Decimal; tolls: Decimal; total: Decimal; distanceKm: Decimal; costPerKm: Decimal }> {
     if (!routeId) {
       return { base: new Decimal(0), tolls: new Decimal(0), total: new Decimal(0), distanceKm: new Decimal(0), costPerKm: new Decimal(0) };
     }
@@ -58,8 +59,36 @@ export class QuotesService {
     }
 
     const distanceKm = new Decimal(route.distanceKm);
-    const costPerKm = new Decimal(route.costPerKm);
-    const transportBase = distanceKm.mul(costPerKm);
+    const costPerKm = new Decimal(route.costPerKm); // This is the "set $ amount"
+    
+    // Calculate total tonnage from items
+    // Convert all quantities to tons (assuming UOM is in tons, kg, or other units)
+    let totalTonnage = new Decimal(0);
+    for (const item of items) {
+      const qty = new Decimal(item.qty);
+      const uom = item.uomSnapshot.toUpperCase();
+      
+      // Convert to tons based on UOM
+      if (uom === 'TON' || uom === 'TONS' || uom === 'T') {
+        totalTonnage = totalTonnage.add(qty);
+      } else if (uom === 'KG' || uom === 'KGS' || uom === 'KILOGRAM' || uom === 'KILOGRAMS') {
+        totalTonnage = totalTonnage.add(qty.div(1000)); // Convert kg to tons
+      } else if (uom === 'MT' || uom === 'METRIC TON' || uom === 'METRIC TONS') {
+        totalTonnage = totalTonnage.add(qty);
+      } else {
+        // For other UOMs, assume they're already in tons or use quantity as-is
+        // You may need to adjust this based on your business logic
+        totalTonnage = totalTonnage.add(qty);
+      }
+    }
+    
+    // If no tonnage calculated, default to 1 to avoid zero cost
+    if (totalTonnage.eq(0)) {
+      totalTonnage = new Decimal(1);
+    }
+    
+    // New formula: (set $ amount * distance * total tonnage) + tolls
+    const transportBase = costPerKm.mul(distanceKm).mul(totalTonnage);
     const tollTotal = route.tolls.reduce((sum, toll) => sum.add(new Decimal(toll.cost)), new Decimal(0));
     const transportTotal = transportBase.add(tollTotal);
 
@@ -291,8 +320,8 @@ export class QuotesService {
       throw new BadRequestException('Route is required for delivered quotes. Please ensure a route exists or the warehouse/company has a city set for automatic matching.');
     }
 
-    // Calculate transport
-    const transport = await this.calculateTransport(routeId);
+    // Calculate transport (will be recalculated after items are processed)
+    // We'll calculate it after processing items to get tonnage
 
     // Validate and process items
     if (!dto.items || dto.items.length === 0) {
@@ -343,6 +372,8 @@ export class QuotesService {
       });
     }
 
+    // Calculate transport with items for tonnage
+    const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
     const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
 
@@ -503,8 +534,10 @@ export class QuotesService {
           }
         }
       }
-      const transport = await this.calculateTransport(routeId);
-      const grandTotal = subtotal.sub(discountTotal).add(transport.total);
+      const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
+      // Calculate transport with items for tonnage
+    const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
+    const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
       // Update quote and replace items
       return this.prisma.$transaction([
