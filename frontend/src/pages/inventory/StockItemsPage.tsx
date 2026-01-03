@@ -309,9 +309,12 @@ export function StockItemsPage() {
             />
           </div>
           <select
-            className="px-3 py-2 border rounded-lg bg-background-primary text-content-primary"
+            className="px-4 py-2 border rounded-lg bg-background-primary text-content-primary cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[180px]"
             value={companyFilter || ''}
-            onChange={(e) => setCompanyFilter(e.target.value || undefined)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setCompanyFilter(value === '' ? undefined : value);
+            }}
           >
             <option value="">All Companies</option>
             {companiesData?.items.map((company) => (

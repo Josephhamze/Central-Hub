@@ -25,12 +25,16 @@ export class StockItemsService {
   }
 
 
-  async findAll(projectId?: string, warehouseId?: string, page = 1, limit = 20, search?: string) {
+  async findAll(companyId?: string, projectId?: string, warehouseId?: string, page = 1, limit = 20, search?: string) {
     // Convert string query params to numbers
     const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
     const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
     const skip = (pageNum - 1) * limitNum;
     const where: any = {};
+    if (companyId) {
+      // Filter by companyId through the project relation
+      where.project = { companyId };
+    }
     if (projectId) where.projectId = projectId;
     if (warehouseId) where.warehouseId = warehouseId;
     if (search) {

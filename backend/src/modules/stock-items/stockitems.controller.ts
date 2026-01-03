@@ -21,8 +21,8 @@ export class StockItemsController {
   @UseGuards(RbacGuard)
   @Permissions('stock:view')
   @ApiOperation({ summary: 'Get all stock items' })
-  async findAll(@Query('projectId') projectId?: string, @Query('warehouseId') warehouseId?: string, @Query('page') page = 1, @Query('limit') limit = 20, @Query('search') search?: string) {
-    return this.stockItemsService.findAll(projectId, warehouseId, +page, +limit, search);
+  async findAll(@Query('companyId') companyId?: string, @Query('projectId') projectId?: string, @Query('warehouseId') warehouseId?: string, @Query('page') page = 1, @Query('limit') limit = 20, @Query('search') search?: string) {
+    return this.stockItemsService.findAll(companyId, projectId, warehouseId, +page, +limit, search);
   }
 
   @Get(':id')
