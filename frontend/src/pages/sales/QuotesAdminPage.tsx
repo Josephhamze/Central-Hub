@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -89,6 +89,32 @@ export function QuotesAdminPage() {
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to update outcome'),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => quotesApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      success('Quote deleted successfully');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete quote';
+      if (errorMessage.includes('draft')) {
+        showError('Only draft quotes can be deleted');
+      } else {
+        showError(errorMessage);
+      }
+    },
+  });
+
+  const handleDelete = (quote: Quote) => {
+    if (window.confirm(`Are you sure you want to delete quote ${quote.quoteNumber}? This action cannot be undone.`)) {
+      deleteMutation.mutate(quote.id);
+    }
+  };
+
+  // Check if user is admin
+  const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
 
   // Check if user can approve (has permission OR is sales manager OR is admin)
   // Admins can approve their own quotes
@@ -282,6 +308,18 @@ export function QuotesAdminPage() {
                           Mark Lost
                         </Button>
                       </>
+                    )}
+                    {isAdmin && quote.status === 'DRAFT' && (
+                      <Button 
+                        size="sm" 
+                        variant="danger" 
+                        onClick={() => handleDelete(quote)}
+                        leftIcon={<Trash2 className="w-4 h-4" />}
+                        disabled={deleteMutation.isPending}
+                        title="Delete quote (Admin only)"
+                      >
+                        Delete
+                      </Button>
                     )}
                   </div>
                 </div>

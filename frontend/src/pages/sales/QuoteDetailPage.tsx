@@ -17,7 +17,7 @@ import {
   FolderKanban,
   Info,
   FileText,
-} from 'lucide-react';
+, Trash2} from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -33,6 +33,7 @@ export function QuoteDetailPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const { user, hasPermission, hasRole } = useAuth();
+  const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
   const queryClient = useQueryClient();
 
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
@@ -131,6 +132,30 @@ export function QuoteDetailPage() {
       showError(errorMessage);
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => quotesApi.remove(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      success('Quote deleted successfully');
+      navigate('/sales/quotes');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete quote';
+      if (errorMessage.includes('draft')) {
+        showError('Only draft quotes can be deleted');
+      } else {
+        showError(errorMessage);
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    if (!quoteData) return;
+    if (window.confirm(`Are you sure you want to delete quote ${quoteData.quoteNumber}? This action cannot be undone.`)) {
+      deleteMutation.mutate();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -418,6 +443,17 @@ export function QuoteDetailPage() {
                   Mark Lost
                 </Button>
               </>
+            )}
+            {isAdmin && quote.status === 'DRAFT' && (
+              <Button
+                variant="danger"
+                onClick={handleDelete}
+                leftIcon={<Trash2 className="w-4 h-4" />}
+                disabled={deleteMutation.isPending}
+                title="Delete quote (Admin only)"
+              >
+                Delete Quote
+              </Button>
             )}
           </div>
         </div>
