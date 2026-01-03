@@ -444,7 +444,7 @@ export function QuoteDetailPage() {
                 </Button>
               </>
             )}
-            {isAdmin && quote.status === 'DRAFT' && (
+            {isAdmin && quoteData && quoteData.status === 'DRAFT' && (
               <Button
                 variant="danger"
                 onClick={handleDelete}
