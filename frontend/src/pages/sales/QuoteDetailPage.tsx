@@ -259,7 +259,7 @@ export function QuoteDetailPage() {
                     <td>${item.nameSnapshot}</td>
                     <td>${Number(item.qty).toFixed(2)} ${item.uomSnapshot}</td>
                     <td>$${Number(item.unitPrice).toFixed(2)}</td>
-                    <td>$${Number(item.discount).toFixed(2)}</td>
+                    <td>${Number(item.discountPercentage) > 0 ? `${Number(item.discountPercentage).toFixed(1)}%` : '-'}</td>
                     <td>$${Number(item.lineTotal).toFixed(2)}</td>
                   </tr>
                 `).join('') || '<tr><td colspan="5">No items</td></tr>'}
@@ -269,10 +269,10 @@ export function QuoteDetailPage() {
                   <td colspan="4" class="text-right">Subtotal:</td>
                   <td>$${Number(quote.subtotal).toFixed(2)}</td>
                 </tr>
-                ${Number(quote.discountTotal) > 0 ? `
+                ${Number(quote.discountPercentage) > 0 ? `
                   <tr class="total-row">
-                    <td colspan="4" class="text-right">Discount:</td>
-                    <td>-$${Number(quote.discountTotal).toFixed(2)}</td>
+                    <td colspan="4" class="text-right">Discount (${Number(quote.discountPercentage).toFixed(1)}%):</td>
+                    <td>-$${(Number(quote.subtotal) * Number(quote.discountPercentage) / 100).toFixed(2)}</td>
                   </tr>
                 ` : ''}
                 ${Number(quote.transportTotal) > 0 ? `
@@ -752,8 +752,8 @@ export function QuoteDetailPage() {
           <Button
             variant={outcomeType === 'WON' ? 'primary' : 'danger'}
             onClick={() => {
-              if (!outcomeCategory.trim()) {
-                showError('Reason category is required');
+              if (outcomeType === 'LOST' && !lossReasonCategory) {
+                showError('Loss reason is required');
                 return;
               }
               outcomeMutation.mutate({ 
