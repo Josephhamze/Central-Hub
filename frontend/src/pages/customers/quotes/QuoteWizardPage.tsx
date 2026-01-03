@@ -1206,8 +1206,6 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
           </Card>
         )}
       </div>
-    
-      </div>
 
       {/* Delivery Terms - Only shown for DELIVERED quotes with items */}
       {quoteData.deliveryMethod === 'DELIVERED' && quoteData.items && quoteData.items.length > 0 && (
@@ -1310,7 +1308,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
           })()}
         </div>
       )}
-</div>
+    </div>
   );
 }
 
