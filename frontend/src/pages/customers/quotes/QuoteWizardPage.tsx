@@ -915,56 +915,40 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           </div>
         </div>
 
-        {/* Delivery Terms - Full Width */}
-        {quoteData.deliveryMethod === 'DELIVERED' && (
-          <div className="space-y-4 pt-4 border-t border-border-default">
-            <h4 className="font-semibold text-content-primary">Delivery Terms</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Delivery Start Date */}
-              <Input
-                label="Delivery Start Date"
-                type="date"
-                value={quoteData.deliveryStartDate ? quoteData.deliveryStartDate.split('T')[0] : ''}
-                onChange={(e) => onUpdate({ ...quoteData, deliveryStartDate: e.target.value ? `${e.target.value}T00:00:00` : undefined })}
-              />
 
-              {/* Loads Per Day */}
-              <Input
-                label="Loads Per Day (Max 5)"
-                type="number"
-                min="1"
-                max="5"
-                value={quoteData.loadsPerDay || ''}
-                onChange={(e) => {
-                  const loads = parseInt(e.target.value, 10);
-                  if (loads >= 1 && loads <= 5) {
-                    onUpdate({ ...quoteData, loadsPerDay: loads });
-                  } else if (e.target.value === '') {
-                    onUpdate({ ...quoteData, loadsPerDay: undefined });
-                  }
-                }}
-                placeholder="1-5"
-              />
-
-              {/* Truck Type */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-content-primary">Truck Type</label>
-                <select
-                  value={quoteData.truckType || ''}
-                  onChange={(e) => onUpdate({ ...quoteData, truckType: e.target.value as any || undefined })}
-                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-                >
-                  <option value="">Select truck type</option>
-                  <option value="TIPPER_42T">Tipper 42t</option>
-                  <option value="CANTER">Canter</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
+}
+
+
+// Helper function to calculate total tonnage from quote items
+function calculateTotalTonnage(items: QuoteItemUI[]): number {
+  let totalTonnage = 0;
+  for (const item of items) {
+    const qty = Number(item.qty);
+    const uom = item.uomSnapshot.toUpperCase();
+    
+    // Convert to tons based on UOM
+    if (uom === 'TON' || uom === 'TONS' || uom === 'T') {
+      totalTonnage += qty;
+    } else if (uom === 'KG' || uom === 'KGS' || uom === 'KILOGRAM' || uom === 'KILOGRAMS') {
+      totalTonnage += qty / 1000; // Convert kg to tons
+    } else if (uom === 'MT' || uom === 'METRIC TON' || uom === 'METRIC TONS') {
+      totalTonnage += qty;
+    } else {
+      // For other UOMs, assume they're already in tons or use quantity as-is
+      totalTonnage += qty;
+    }
+  }
+  return totalTonnage;
+}
+
+// Helper function to calculate required trucks
+function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' | 'CANTER'): number {
+  if (!truckType) return 0;
+  const capacity = truckType === 'TIPPER_42T' ? 42 : 10; // Tipper = 42t, Canter = 10t
+  return Math.ceil(totalTonnage / capacity);
 }
 
 // Step 4: Products
@@ -1222,7 +1206,111 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
           </Card>
         )}
       </div>
-    </div>
+    
+      </div>
+
+      {/* Delivery Terms - Only shown for DELIVERED quotes with items */}
+      {quoteData.deliveryMethod === 'DELIVERED' && quoteData.items && quoteData.items.length > 0 && (
+        <div className="lg:col-span-2 space-y-4 pt-6 border-t border-border-default">
+          <div className="flex items-center gap-2 mb-4">
+            <Truck className="w-5 h-5 text-content-primary" />
+            <h3 className="text-lg font-semibold text-content-primary">Delivery Terms</h3>
+          </div>
+
+          {/* Calculate tonnage and trucks */}
+          {(() => {
+            const totalTonnage = calculateTotalTonnage(quoteData.items);
+            const requiredTrucks = calculateRequiredTrucks(totalTonnage, quoteData.truckType);
+            const truckCapacity = quoteData.truckType === 'TIPPER_42T' ? 42 : quoteData.truckType === 'CANTER' ? 10 : 0;
+            
+            return (
+              <div className="space-y-4">
+                {/* Tonnage Summary */}
+                <Card className="p-4 bg-status-info-bg border-status-info">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-content-secondary mb-1">Total Tonnage</p>
+                      <p className="text-2xl font-bold text-content-primary">{totalTonnage.toFixed(2)} tons</p>
+                    </div>
+                    {quoteData.truckType && (
+                      <div className="text-right">
+                        <p className="text-sm text-content-secondary mb-1">Required Trucks</p>
+                        <p className="text-2xl font-bold text-content-primary">
+                          {requiredTrucks} {requiredTrucks === 1 ? 'truck' : 'trucks'}
+                        </p>
+                        <p className="text-xs text-content-tertiary mt-1">
+                          ({truckCapacity}t capacity per truck)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Truck Type */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-content-primary">Truck Type *</label>
+                    <select
+                      value={quoteData.truckType || ''}
+                      onChange={(e) => {
+                        const truckType = e.target.value as any || undefined;
+                        onUpdate({ ...quoteData, truckType });
+                      }}
+                      className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                      required
+                    >
+                      <option value="">Select truck type</option>
+                      <option value="TIPPER_42T">Tipper 42t (42 tons capacity)</option>
+                      <option value="CANTER">Canter (10 tons capacity)</option>
+                    </select>
+                    {quoteData.truckType && (
+                      <p className="text-xs text-content-tertiary mt-1">
+                        {calculateRequiredTrucks(totalTonnage, quoteData.truckType)} truck{calculateRequiredTrucks(totalTonnage, quoteData.truckType) !== 1 ? 's' : ''} required
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Delivery Start Date */}
+                  <Input
+                    label="Delivery Start Date"
+                    type="date"
+                    value={quoteData.deliveryStartDate ? quoteData.deliveryStartDate.split('T')[0] : ''}
+                    onChange={(e) => onUpdate({ ...quoteData, deliveryStartDate: e.target.value ? `${e.target.value}T00:00:00` : undefined })}
+                  />
+
+                  {/* Loads Per Day */}
+                  <Input
+                    label="Loads Per Day (Max 5)"
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={quoteData.loadsPerDay || ''}
+                    onChange={(e) => {
+                      const loads = parseInt(e.target.value, 10);
+                      if (loads >= 1 && loads <= 5) {
+                        onUpdate({ ...quoteData, loadsPerDay: loads });
+                      } else if (e.target.value === '') {
+                        onUpdate({ ...quoteData, loadsPerDay: undefined });
+                      }
+                    }}
+                    placeholder="1-5"
+                  />
+                </div>
+
+                {/* Validation Message */}
+                {quoteData.truckType && requiredTrucks > 0 && (
+                  <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
+                    <p className="text-sm text-content-secondary">
+                      <strong>Transport Calculation:</strong> {totalTonnage.toFixed(2)} tons ÷ {truckCapacity}t per truck = {requiredTrucks} truck{requiredTrucks !== 1 ? 's' : ''} required
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+</div>
   );
 }
 
