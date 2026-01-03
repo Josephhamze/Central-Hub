@@ -224,8 +224,17 @@ export function StockItemsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this stock item?')) {
-      deleteMutation.mutate(id);
+    if (window.confirm('Are you sure you want to delete this stock item? This action cannot be undone.')) {
+      deleteMutation.mutate(id, {
+        onError: (err: any) => {
+          const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete stock item';
+          if (errorMessage.includes('quote items')) {
+            showError('Cannot delete stock item that is used in quotes. Please remove it from all quotes first.');
+          } else {
+            showError(errorMessage);
+          }
+        },
+      });
     }
   };
 
@@ -262,9 +271,9 @@ export function StockItemsPage() {
               </Button>
             </>
           )}
-          {hasPermission('stock:create') && (
+          {(canCreate || isAdmin) && (
             <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
-              Create Stock Item
+              Add Item
             </Button>
           )}
         </div>
@@ -303,9 +312,9 @@ export function StockItemsPage() {
           <p className="text-content-secondary mb-4">
             {search ? 'Try adjusting your search terms' : 'Get started by creating your first stock item'}
           </p>
-          {canCreate && (
+          {(canCreate || isAdmin) && (
             <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
-              Create Stock Item
+              Add Item
             </Button>
           )}
         </Card>
@@ -332,8 +341,15 @@ export function StockItemsPage() {
                       Edit
                     </Button>
                   )}
-                  {canDelete && (
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(item.id)} leftIcon={<Trash2 className="w-4 h-4" />}>
+                  {(canDelete || isAdmin) && (
+                    <Button 
+                      size="sm" 
+                      variant="danger" 
+                      onClick={() => handleDelete(item.id)} 
+                      leftIcon={<Trash2 className="w-4 h-4" />}
+                      disabled={deleteMutation.isPending}
+                      title="Delete stock item"
+                    >
                       Delete
                     </Button>
                   )}
