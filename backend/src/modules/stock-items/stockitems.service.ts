@@ -44,7 +44,6 @@ export class StockItemsService {
         where, skip, take: limitNum,
         include: { 
           project: { 
-            select: { id: true, name: true, companyId: true },
             include: { company: { select: { id: true, name: true } } }
           }, 
           warehouse: { select: { id: true, name: true } } 
