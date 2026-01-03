@@ -11,7 +11,7 @@ export interface QuoteItem {
   uomSnapshot: string;
   qty: number;
   unitPrice: number;
-  discount: number;
+  discountPercentage: number;
   lineTotal: number;
   stockItem?: { id: string; name: string; sku?: string };
 }
@@ -36,15 +36,20 @@ export interface Quote {
   costPerKmSnapshot?: number;
   tollTotalSnapshot?: number;
   subtotal: number;
-  discountTotal: number;
+  discountPercentage: number;
   transportTotal: number;
   grandTotal: number;
+  validityDays: number;
+  paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
+  deliveryStartDate?: string;
+  loadsPerDay?: number;
+  truckType?: 'TIPPER_42T' | 'CANTER';
   status: QuoteStatus;
   salesRepUserId: string;
   submittedAt?: string;
   approvedAt?: string;
   rejectedAt?: string;
-  outcomeReasonCategory?: string;
+  lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER';
   outcomeReasonNotes?: string;
   createdAt: string;
   updatedAt: string;
@@ -62,7 +67,7 @@ export interface CreateQuoteItemDto {
   stockItemId: string;
   qty: number;
   unitPrice: number;
-  discount: number;
+  discountPercentage?: number;
 }
 
 export interface CreateQuoteDto {
@@ -79,6 +84,11 @@ export interface CreateQuoteDto {
   deliveryState?: string;
   deliveryPostalCode?: string;
   deliveryCountry?: string;
+  validityDays?: number;
+  paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
+  deliveryStartDate?: string;
+  loadsPerDay?: number;
+  truckType?: 'TIPPER_42T' | 'CANTER';
   items: CreateQuoteItemDto[];
 }
 
@@ -103,7 +113,7 @@ export const quotesApi = {
   approve: (id: string, notes?: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/approve`, { notes }),
   reject: (id: string, reason: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/reject`, { reason }),
   withdraw: (id: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/withdraw`),
-  markOutcome: (id: string, outcome: 'WON' | 'LOST', reasonCategory: string, reasonNotes?: string) =>
+  markOutcome: (id: string, outcome: 'WON' | 'LOST', lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER', reasonNotes?: string) =>
     api.post<ApiResponse<Quote>>(`/quotes/${id}/outcome?outcome=${outcome}`, { reasonCategory, reasonNotes }),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/quotes/${id}`),
   getKPIs: (params?: { companyId?: string; projectId?: string; salesRepUserId?: string; startDate?: string; endDate?: string }) =>

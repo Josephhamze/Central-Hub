@@ -3,7 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
-import { QuoteStatus, DeliveryMethod, ApprovalAction } from '@prisma/client';
+import { QuoteStatus, DeliveryMethod, ApprovalAction, PaymentTerms, TruckType, LossReasonCategory } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -73,7 +73,7 @@ export class QuotesService {
   }
 
   // Validate quote item
-  private async validateQuoteItem(stockItemId: string, qty: number, unitPrice: number, discount: number): Promise<{ name: string; uom: string; minUnitPrice: Decimal; minOrderQty: Decimal; truckloadOnly: boolean }> {
+  private async validateQuoteItem(stockItemId: string, qty: number, unitPrice: number, discountPercentage: number): Promise<{ name: string; uom: string; minUnitPrice: Decimal; minOrderQty: Decimal; truckloadOnly: boolean }> {
     const stockItem = await this.prisma.stockItem.findUnique({
       where: { id: stockItemId },
     });
@@ -88,8 +88,9 @@ export class QuotesService {
 
     const qtyDecimal = new Decimal(qty);
     const unitPriceDecimal = new Decimal(unitPrice);
-    const discountDecimal = new Decimal(discount);
-    const finalPrice = unitPriceDecimal.sub(discountDecimal);
+    const discountPercentageDecimal = new Decimal(discountPercentage || 0);
+    const discountAmount = unitPriceDecimal.mul(discountPercentageDecimal).div(100);
+    const finalPrice = unitPriceDecimal.sub(discountAmount);
 
     // Validate min unit price
     if (finalPrice.lt(stockItem.minUnitPrice)) {
@@ -319,16 +320,17 @@ export class QuotesService {
         itemDto.stockItemId,
         itemDto.qty,
         itemDto.unitPrice,
-        itemDto.discount,
+        itemDto.discountPercentage || 0,
       );
 
       const qtyDecimal = new Decimal(itemDto.qty);
       const unitPriceDecimal = new Decimal(itemDto.unitPrice);
-      const discountDecimal = new Decimal(itemDto.discount);
-      const lineTotal = qtyDecimal.mul(unitPriceDecimal.sub(discountDecimal));
+      const discountPercentageDecimal = new Decimal(itemDto.discountPercentage || 0);
+      const discountAmount = unitPriceDecimal.mul(discountPercentageDecimal).div(100);
+      const lineTotal = qtyDecimal.mul(unitPriceDecimal.sub(discountAmount));
 
       subtotal = subtotal.add(qtyDecimal.mul(unitPriceDecimal));
-      discountTotal = discountTotal.add(qtyDecimal.mul(discountDecimal));
+      discountTotal = discountTotal.add(qtyDecimal.mul(discountAmount));
 
       quoteItems.push({
         stockItemId: itemDto.stockItemId,
@@ -336,13 +338,18 @@ export class QuotesService {
         uomSnapshot: validation.uom,
         qty: qtyDecimal,
         unitPrice: unitPriceDecimal,
-        discount: discountDecimal,
+        discountPercentage: discountPercentageDecimal,
         lineTotal,
       });
     }
 
     const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
+
+    // Validate validityDays - default 7, admins can set more
+    const validityDays = dto.validityDays || 7;
+    // Note: Admin check should be done in controller/service based on permissions
+    // For now, we allow any value >= 1, but UI should restrict non-admins to 7
     // Generate quote number
     const quoteNumber = await this.generateQuoteNumber();
 
@@ -366,9 +373,14 @@ export class QuotesService {
         costPerKmSnapshot: transport.costPerKm,
         tollTotalSnapshot: transport.tolls,
         subtotal,
-        discountTotal,
+        discountPercentage: subtotal.gt(0) ? discountTotal.div(subtotal).mul(100) : new Decimal(0),
         transportTotal: transport.total,
         grandTotal,
+        validityDays,
+        paymentTerms: dto.paymentTerms,
+        deliveryStartDate: dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : null,
+        loadsPerDay: dto.loadsPerDay,
+        truckType: dto.truckType,
         status: QuoteStatus.DRAFT,
         salesRepUserId: userId,
         items: {
@@ -425,16 +437,17 @@ export class QuotesService {
           itemDto.stockItemId,
           itemDto.qty,
           itemDto.unitPrice,
-          itemDto.discount,
+          itemDto.discountPercentage || 0,
         );
 
         const qtyDecimal = new Decimal(itemDto.qty);
         const unitPriceDecimal = new Decimal(itemDto.unitPrice);
-        const discountDecimal = new Decimal(itemDto.discount);
-        const lineTotal = qtyDecimal.mul(unitPriceDecimal.sub(discountDecimal));
+        const discountPercentageDecimal = new Decimal(itemDto.discountPercentage || 0);
+        const discountAmount = unitPriceDecimal.mul(discountPercentageDecimal).div(100);
+        const lineTotal = qtyDecimal.mul(unitPriceDecimal.sub(discountAmount));
 
         subtotal = subtotal.add(qtyDecimal.mul(unitPriceDecimal));
-        discountTotal = discountTotal.add(qtyDecimal.mul(discountDecimal));
+        discountTotal = discountTotal.add(qtyDecimal.mul(discountAmount));
 
         quoteItems.push({
           stockItemId: itemDto.stockItemId,
@@ -442,7 +455,7 @@ export class QuotesService {
           uomSnapshot: validation.uom,
           qty: qtyDecimal,
           unitPrice: unitPriceDecimal,
-          discount: discountDecimal,
+          discountPercentage: discountPercentageDecimal,
           lineTotal,
         });
       }
@@ -501,9 +514,14 @@ export class QuotesService {
           data: {
             ...dto,
             subtotal,
-            discountTotal,
+            discountPercentage: subtotal.gt(0) ? discountTotal.div(subtotal).mul(100) : new Decimal(0),
             transportTotal: transport.total,
             grandTotal,
+            validityDays: dto.validityDays !== undefined ? dto.validityDays : undefined,
+            paymentTerms: dto.paymentTerms !== undefined ? dto.paymentTerms : undefined,
+            deliveryStartDate: dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : undefined,
+            loadsPerDay: dto.loadsPerDay !== undefined ? dto.loadsPerDay : undefined,
+            truckType: dto.truckType !== undefined ? dto.truckType : undefined,
             distanceKmSnapshot: transport.distanceKm,
             costPerKmSnapshot: transport.costPerKm,
             tollTotalSnapshot: transport.tolls,
@@ -685,7 +703,7 @@ export class QuotesService {
     ]).then(() => this.findOne(id, userId, ['quotes:view']));
   }
 
-  async markOutcome(id: string, outcome: 'WON' | 'LOST', userId: string, userPermissions: string[], reasonCategory: string, reasonNotes?: string) {
+  async markOutcome(id: string, outcome: 'WON' | 'LOST', userId: string, userPermissions: string[], lossReasonCategory?: LossReasonCategory, reasonNotes?: string) {
     if (!userPermissions.includes('quotes:approve')) {
       throw new ForbiddenException('You do not have permission to mark quote outcomes');
     }
@@ -704,7 +722,7 @@ export class QuotesService {
         where: { id },
         data: {
           status,
-          outcomeReasonCategory: reasonCategory,
+          lossReasonCategory: outcome === 'LOST' ? (lossReasonCategory || null) : null,
           outcomeReasonNotes: reasonNotes,
         },
       }),

@@ -28,7 +28,7 @@ export function QuotesAdminPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  const [outcomeCategory, setOutcomeCategory] = useState('');
+  const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<'quotes' | 'customers' | 'logistics'>('quotes');
 
@@ -79,8 +79,8 @@ export function QuotesAdminPage() {
   });
 
   const outcomeMutation = useMutation({
-    mutationFn: ({ id, outcome, reasonCategory, reasonNotes }: { id: string; outcome: 'WON' | 'LOST'; reasonCategory: string; reasonNotes?: string }) =>
-      quotesApi.markOutcome(id, outcome, reasonCategory, reasonNotes),
+    mutationFn: ({ id, outcome, lossReasonCategory, reasonNotes }: { id: string; outcome: 'WON' | 'LOST'; lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER'; reasonNotes?: string }) =>
+      quotesApi.markOutcome(id, outcome, lossReasonCategory, reasonNotes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
@@ -426,17 +426,40 @@ export function QuotesAdminPage() {
       </Modal>
 
       {/* Outcome Modal */}
-      <Modal isOpen={outcomeModalOpen} onClose={() => { setOutcomeModalOpen(false); setOutcomeCategory(''); setOutcomeNotes(''); }} title={`Mark Quote as ${outcomeType}`} size="md">
-        <Input label="Reason Category" required value={outcomeCategory} onChange={(e) => setOutcomeCategory(e.target.value)} placeholder="e.g., Price, Timing, Competition, etc." />
+      <Modal isOpen={outcomeModalOpen} onClose={() => { setOutcomeModalOpen(false); setLossReasonCategory(''); setOutcomeNotes(''); }} title={`Mark Quote as ${outcomeType}`} size="md">
+        {outcomeType === 'LOST' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2 text-content-primary">Loss Reason *</label>
+            <select
+              value={lossReasonCategory}
+              onChange={(e) => setLossReasonCategory(e.target.value as any)}
+              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              required
+            >
+              <option value="">Select a reason</option>
+              <option value="PRICE_TOO_HIGH">Price Too High</option>
+              <option value="FOUND_BETTER_DEAL">Found Better Deal</option>
+              <option value="PROJECT_CANCELLED">Project Cancelled</option>
+              <option value="DELIVERY_TIMING">Delivery Timing</option>
+              <option value="QUALITY_CONCERNS">Quality Concerns</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        )}
         <Input label="Notes (optional)" value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Add any additional notes..." />
         <ModalFooter>
-          <Button variant="secondary" onClick={() => { setOutcomeModalOpen(false); setOutcomeCategory(''); setOutcomeNotes(''); }}>Cancel</Button>
+          <Button variant="secondary" onClick={() => { setOutcomeModalOpen(false); setLossReasonCategory(''); setOutcomeNotes(''); }}>Cancel</Button>
           <Button variant="primary" onClick={() => {
-            if (!outcomeCategory.trim()) {
-              showError('Reason category is required');
+            if (outcomeType === 'LOST' && !lossReasonCategory) {
+              showError('Loss reason is required');
               return;
             }
-            selectedQuote && outcomeMutation.mutate({ id: selectedQuote.id, outcome: outcomeType, reasonCategory: outcomeCategory, reasonNotes: outcomeNotes || undefined });
+            selectedQuote && outcomeMutation.mutate({ 
+              id: selectedQuote.id, 
+              outcome: outcomeType, 
+              lossReasonCategory: outcomeType === 'LOST' ? lossReasonCategory as any : undefined, 
+              reasonNotes: outcomeNotes || undefined 
+            });
           }}>
             Mark {outcomeType}
           </Button>

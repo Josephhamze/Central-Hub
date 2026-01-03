@@ -198,6 +198,26 @@ enum QuoteStatus {
   LOST
 }
 
+enum PaymentTerms {
+  CASH_ON_DELIVERY
+  DAYS_15
+  DAYS_30
+}
+
+enum TruckType {
+  TIPPER_42T
+  CANTER
+}
+
+enum LossReasonCategory {
+  PRICE_TOO_HIGH
+  FOUND_BETTER_DEAL
+  PROJECT_CANCELLED
+  DELIVERY_TIMING
+  QUALITY_CONCERNS
+  OTHER
+}
+
 enum ApprovalAction {
   SUBMIT
   APPROVE
@@ -416,9 +436,17 @@ model Quote {
   tollTotalSnapshot       Decimal?       @map("toll_total_snapshot") @db.Decimal(10, 2)
   // Totals
   subtotal                Decimal        @db.Decimal(12, 2)
-  discountTotal           Decimal        @default(0) @map("discount_total") @db.Decimal(12, 2)
+  discountPercentage      Decimal        @default(0) @map("discount_percentage") @db.Decimal(5, 2)
   transportTotal          Decimal        @default(0) @map("transport_total") @db.Decimal(12, 2)
   grandTotal              Decimal        @map("grand_total") @db.Decimal(12, 2)
+  // Validity
+  validityDays            Int            @default(7) @map("validity_days")
+  // Payment Terms
+  paymentTerms            PaymentTerms?  @map("payment_terms")
+  // Delivery Terms
+  deliveryStartDate       DateTime?      @map("delivery_start_date")
+  loadsPerDay             Int?          @map("loads_per_day")
+  truckType               TruckType?    @map("truck_type")
   // Status
   status                  QuoteStatus    @default(DRAFT)
   // Sales rep
@@ -429,8 +457,8 @@ model Quote {
   submittedAt             DateTime?      @map("submitted_at")
   approvedAt              DateTime?      @map("approved_at")
   rejectedAt              DateTime?      @map("rejected_at")
-  // Outcome
-  outcomeReasonCategory   String?        @map("outcome_reason_category")
+  // Outcome (only for LOST quotes)
+  lossReasonCategory      LossReasonCategory? @map("loss_reason_category")
   outcomeReasonNotes      String?        @map("outcome_reason_notes")
   createdAt               DateTime       @default(now()) @map("created_at")
   updatedAt               DateTime       @updatedAt @map("updated_at")
@@ -464,7 +492,7 @@ model QuoteItem {
   // Pricing
   qty          Decimal  @db.Decimal(10, 2)
   unitPrice    Decimal  @map("unit_price") @db.Decimal(10, 2)
-  discount     Decimal  @default(0) @db.Decimal(10, 2)
+  discountPercentage Decimal  @default(0) @map("discount_percentage") @db.Decimal(5, 2)
   lineTotal    Decimal  @map("line_total") @db.Decimal(12, 2)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

@@ -16,7 +16,7 @@ import {
   MapPin,
   FolderKanban,
   Info,
-} from 'lucide-react';
+, FileText} from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -43,7 +43,7 @@ export function QuoteDetailPage() {
   const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
   const [outcomeType, setOutcomeType] = useState<'WON' | 'LOST'>('WON');
   const [submitNotes, setSubmitNotes] = useState('');
-  const [outcomeCategory, setOutcomeCategory] = useState('');
+  const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
 
   const { data: quoteData, isLoading } = useQuery({
@@ -115,14 +115,14 @@ export function QuoteDetailPage() {
   });
 
   const outcomeMutation = useMutation({
-    mutationFn: ({ outcome, reasonCategory, reasonNotes }: { outcome: 'WON' | 'LOST'; reasonCategory: string; reasonNotes?: string }) =>
-      quotesApi.markOutcome(id!, outcome, reasonCategory, reasonNotes),
+    mutationFn: ({ outcome, lossReasonCategory, reasonNotes }: { outcome: 'WON' | 'LOST'; lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER'; reasonNotes?: string }) =>
+      quotesApi.markOutcome(id!, outcome, lossReasonCategory, reasonNotes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
-      setOutcomeCategory('');
+      setLossReasonCategory('');
       setOutcomeNotes('');
     },
     onError: (err: any) => {
@@ -482,6 +482,29 @@ export function QuoteDetailPage() {
             </div>
           </div>
         </Card>
+
+        {/* Quote Terms */}
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-content-primary">Quote Terms</h3>
+              <p className="text-sm text-content-secondary">
+                Validity: {quote.validityDays || 7} days
+                {quote.paymentTerms && ` • Payment: ${quote.paymentTerms.replace('_', ' ').replace('CASH ON DELIVERY', 'Cash on Delivery').replace('DAYS', '')}`}
+              </p>
+              {quote.deliveryMethod === 'DELIVERED' && (quote.deliveryStartDate || quote.loadsPerDay || quote.truckType) && (
+                <p className="text-xs text-content-tertiary mt-1">
+                  {quote.deliveryStartDate && `Start: ${new Date(quote.deliveryStartDate).toLocaleDateString()}`}
+                  {quote.loadsPerDay && ` • ${quote.loadsPerDay} load${quote.loadsPerDay !== 1 ? 's' : ''}/day`}
+                  {quote.truckType && ` • ${quote.truckType.replace('_', ' ').replace('TIPPER 42T', 'Tipper 42t')}`}
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Route Information */}
@@ -540,8 +563,8 @@ export function QuoteDetailPage() {
                   </div>
                   <p className="text-sm text-content-secondary mb-1">
                     {Number(item.qty).toFixed(2)} {item.uomSnapshot} × ${Number(item.unitPrice).toFixed(2)}
-                    {item.discount > 0 && (
-                      <span className="text-status-warning ml-2">- ${Number(item.discount).toFixed(2)} discount</span>
+                    {item.discountPercentage > 0 && (
+                      <span className="text-status-warning ml-2">- {Number(item.discountPercentage).toFixed(1)}% discount</span>
                     )}
                   </p>
                   {item.stockItem?.sku && (
@@ -560,10 +583,10 @@ export function QuoteDetailPage() {
             <span>Subtotal:</span>
             <span className="font-semibold">${Number(quote.subtotal).toFixed(2)}</span>
           </div>
-          {Number(quote.discountTotal) > 0 && (
+          {Number(quote.discountPercentage) > 0 && (
             <div className="flex justify-between text-status-warning">
-              <span>Discount:</span>
-              <span className="font-semibold">-${Number(quote.discountTotal).toFixed(2)}</span>
+              <span>Discount ({Number(quote.discountPercentage).toFixed(1)}%):</span>
+              <span className="font-semibold">-${(Number(quote.subtotal) * Number(quote.discountPercentage) / 100).toFixed(2)}</span>
             </div>
           )}
           {Number(quote.transportTotal) > 0 && (
@@ -685,7 +708,7 @@ export function QuoteDetailPage() {
       </Modal>
 
       {/* Outcome Modal */}
-      <Modal isOpen={outcomeModalOpen} onClose={() => setOutcomeModalOpen(false)} title={`Mark Quote as ${outcomeType}`} size="md">
+      <Modal isOpen={outcomeModalOpen} onClose={() => { setOutcomeModalOpen(false); setLossReasonCategory(''); setOutcomeNotes(''); }} title={`Mark Quote as ${outcomeType}`} size="md">
         <div className="space-y-4">
           <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
             <div className="flex items-start gap-2">
@@ -695,13 +718,25 @@ export function QuoteDetailPage() {
               </p>
             </div>
           </div>
-          <Input
-            label="Reason Category *"
-            value={outcomeCategory}
-            onChange={(e) => setOutcomeCategory(e.target.value)}
-            placeholder="e.g., Price, Timing, Competition, etc."
-            required
-          />
+          {outcomeType === 'LOST' && (
+            <div>
+              <label className="block text-sm font-medium mb-2 text-content-primary">Loss Reason *</label>
+              <select
+                value={lossReasonCategory}
+                onChange={(e) => setLossReasonCategory(e.target.value as any)}
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                required
+              >
+                <option value="">Select a reason</option>
+                <option value="PRICE_TOO_HIGH">Price Too High</option>
+                <option value="FOUND_BETTER_DEAL">Found Better Deal</option>
+                <option value="PROJECT_CANCELLED">Project Cancelled</option>
+                <option value="DELIVERY_TIMING">Delivery Timing</option>
+                <option value="QUALITY_CONCERNS">Quality Concerns</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          )}
           <Input
             label="Notes (optional)"
             value={outcomeNotes}
@@ -710,7 +745,7 @@ export function QuoteDetailPage() {
           />
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={() => { setOutcomeModalOpen(false); setOutcomeCategory(''); setOutcomeNotes(''); }}>
+          <Button variant="secondary" onClick={() => { setOutcomeModalOpen(false); setLossReasonCategory(''); setOutcomeNotes(''); }}>
             Cancel
           </Button>
           <Button
@@ -720,7 +755,11 @@ export function QuoteDetailPage() {
                 showError('Reason category is required');
                 return;
               }
-              outcomeMutation.mutate({ outcome: outcomeType, reasonCategory: outcomeCategory.trim(), reasonNotes: outcomeNotes || undefined });
+              outcomeMutation.mutate({ 
+                outcome: outcomeType, 
+                lossReasonCategory: outcomeType === 'LOST' ? (lossReasonCategory as any) : undefined, 
+                reasonNotes: outcomeNotes || undefined 
+              });
             }}
             isLoading={outcomeMutation.isPending}
             leftIcon={outcomeType === 'WON' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}

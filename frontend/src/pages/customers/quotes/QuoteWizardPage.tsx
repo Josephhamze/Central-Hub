@@ -28,6 +28,7 @@ import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
+import { useAuth } from '@contexts/AuthContext';
 import { quotesApi, type CreateQuoteDto, type CreateQuoteItemDto } from '@services/sales/quotes';
 import { companiesApi, type Company } from '@services/sales/companies';
 import { customersApi } from '@services/sales/customers';
@@ -38,9 +39,10 @@ import { stockItemsApi, type StockItem } from '@services/sales/stock-items';
 import { cn } from '@utils/cn';
 
 // Local UI type for quote items (extends DTO with UI-only fields)
-interface QuoteItemUI extends CreateQuoteItemDto {
+interface QuoteItemUI extends Omit<CreateQuoteItemDto, 'discountPercentage'> {
   nameSnapshot: string;
   uomSnapshot: string;
+  discountPercentage: number; // UI uses percentage (0-100)
   lineTotal: number;
 }
 
@@ -48,6 +50,11 @@ interface QuoteItemUI extends CreateQuoteItemDto {
 interface QuoteDataUI extends Omit<Partial<CreateQuoteDto>, 'items'> {
   items?: QuoteItemUI[];
   warehouseId?: string; // UI-only field for warehouse selection
+  validityDays?: number;
+  paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
+  deliveryStartDate?: string;
+  loadsPerDay?: number;
+  truckType?: 'TIPPER_42T' | 'CANTER';
 }
 
 const STEPS = [
@@ -108,13 +115,18 @@ export function QuoteWizardPage() {
         deliveryPostalCode: existingQuote.deliveryPostalCode,
         deliveryCountry: existingQuote.deliveryCountry,
         routeId: existingQuote.routeId,
+        validityDays: existingQuote.validityDays,
+        paymentTerms: existingQuote.paymentTerms,
+        deliveryStartDate: existingQuote.deliveryStartDate,
+        loadsPerDay: existingQuote.loadsPerDay,
+        truckType: existingQuote.truckType,
         items: existingQuote.items?.map(item => ({
           stockItemId: item.stockItemId,
           nameSnapshot: item.nameSnapshot,
           uomSnapshot: item.uomSnapshot,
           qty: Number(item.qty),
           unitPrice: Number(item.unitPrice),
-          discount: Number(item.discount),
+          discountPercentage: Number(item.discountPercentage || 0),
           lineTotal: Number(item.lineTotal),
         })) || [],
       });
@@ -173,7 +185,7 @@ export function QuoteWizardPage() {
       stockItemId: item.stockItemId,
       qty: item.qty,
       unitPrice: item.unitPrice,
-      discount: item.discount,
+      discountPercentage: item.discountPercentage,
     }));
     // Construct DTO with only allowed fields
     const dto: CreateQuoteDto = {
@@ -190,6 +202,11 @@ export function QuoteWizardPage() {
       deliveryPostalCode: quoteData.deliveryPostalCode,
       deliveryCountry: quoteData.deliveryCountry,
       routeId: quoteData.routeId,
+      validityDays: quoteData.validityDays,
+      paymentTerms: quoteData.paymentTerms,
+      deliveryStartDate: quoteData.deliveryStartDate,
+      loadsPerDay: quoteData.loadsPerDay,
+      truckType: quoteData.truckType,
       items: dtoItems,
     };
     createQuoteMutation.mutate(dto);
@@ -639,6 +656,8 @@ function Step2ClientSelection({ quoteData, onUpdate }: { quoteData: QuoteDataUI;
 
 // Step 3: Project & Delivery - Enhanced Two-Column Layout
 function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
+  const { hasRole } = useAuth();
+  const { error: showError } = useToast();
   const { data: projectsData, error: projectsError } = useQuery({
     queryKey: ['projects', companyId],
     queryFn: async () => {
@@ -849,6 +868,101 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           )}
         </div>
       </div>
+
+      {/* Quote Terms - Full Width */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-content-primary" />
+          <h3 className="text-lg font-semibold text-content-primary">Quote Terms</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Validity Days */}
+          <Input
+            label="Quote Validity (Days)"
+            type="number"
+            min="1"
+            max={hasRole('Administrator') || hasRole('Admin') ? undefined : 7}
+            value={quoteData.validityDays || 7}
+            onChange={(e) => {
+              const days = parseInt(e.target.value, 10);
+              if (days >= 1) {
+                const isAdmin = hasRole('Administrator') || hasRole('Admin');
+                if (!isAdmin && days > 7) {
+                  showError('Only administrators can set validity days greater than 7');
+                  return;
+                }
+                onUpdate({ ...quoteData, validityDays: days });
+              }
+            }}
+            placeholder="7"
+            disabled={!hasRole('Administrator') && !hasRole('Admin') && (quoteData.validityDays || 7) >= 7}
+          />
+
+          {/* Payment Terms */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-content-primary">Payment Terms</label>
+            <select
+              value={quoteData.paymentTerms || ''}
+              onChange={(e) => onUpdate({ ...quoteData, paymentTerms: e.target.value as any || undefined })}
+              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+            >
+              <option value="">Select payment terms</option>
+              <option value="CASH_ON_DELIVERY">Cash on Delivery</option>
+              <option value="DAYS_15">15 Days</option>
+              <option value="DAYS_30">30 Days</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Delivery Terms - Full Width */}
+        {quoteData.deliveryMethod === 'DELIVERED' && (
+          <div className="space-y-4 pt-4 border-t border-border-default">
+            <h4 className="font-semibold text-content-primary">Delivery Terms</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Delivery Start Date */}
+              <Input
+                label="Delivery Start Date"
+                type="date"
+                value={quoteData.deliveryStartDate ? quoteData.deliveryStartDate.split('T')[0] : ''}
+                onChange={(e) => onUpdate({ ...quoteData, deliveryStartDate: e.target.value ? `${e.target.value}T00:00:00` : undefined })}
+              />
+
+              {/* Loads Per Day */}
+              <Input
+                label="Loads Per Day (Max 5)"
+                type="number"
+                min="1"
+                max="5"
+                value={quoteData.loadsPerDay || ''}
+                onChange={(e) => {
+                  const loads = parseInt(e.target.value, 10);
+                  if (loads >= 1 && loads <= 5) {
+                    onUpdate({ ...quoteData, loadsPerDay: loads });
+                  } else if (e.target.value === '') {
+                    onUpdate({ ...quoteData, loadsPerDay: undefined });
+                  }
+                }}
+                placeholder="1-5"
+              />
+
+              {/* Truck Type */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-content-primary">Truck Type</label>
+                <select
+                  value={quoteData.truckType || ''}
+                  onChange={(e) => onUpdate({ ...quoteData, truckType: e.target.value as any || undefined })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                >
+                  <option value="">Select truck type</option>
+                  <option value="TIPPER_42T">Tipper 42t</option>
+                  <option value="CANTER">Canter</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -881,7 +995,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
       uomSnapshot: stockItem.uom,
       qty: minOrderQty,
       unitPrice: defaultUnitPrice,
-      discount: 0,
+      discountPercentage: 0,
       lineTotal: defaultUnitPrice * minOrderQty,
     };
     onUpdate({ ...quoteData, items: [...items, newItem] });
@@ -895,9 +1009,11 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
 
     const qty = updates.qty ?? item.qty;
     const unitPrice = updates.unitPrice ?? item.unitPrice;
-    const discount = updates.discount ?? item.discount;
+    const discountPercentage = updates.discountPercentage ?? item.discountPercentage;
+    const discountAmount = (unitPrice * discountPercentage) / 100;
+    const finalPrice = unitPrice - discountAmount;
 
-    if (unitPrice - discount < Number(stockItem.minUnitPrice)) {
+    if (finalPrice < Number(stockItem.minUnitPrice)) {
       showError(`Unit price after discount must be at least $${Number(stockItem.minUnitPrice).toFixed(2)}`);
       return;
     }
@@ -913,7 +1029,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
     items[index] = {
       ...item,
       ...updates,
-      lineTotal: qty * (unitPrice - discount),
+      lineTotal: qty * finalPrice,
     };
     onUpdate({ ...quoteData, items });
   };
@@ -1076,13 +1192,18 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       onChange={(e) => updateItem(index, { unitPrice: Number(e.target.value) })}
                     />
                     <Input
-                      label="Discount"
+                      label="Discount (%)"
                       type="number"
                       step="0.01"
                       min="0"
-                      max={item.unitPrice - (Number(stockItem?.minUnitPrice) || 0)}
-                      value={item.discount}
-                      onChange={(e) => updateItem(index, { discount: Number(e.target.value) })}
+                      max={100}
+                      value={item.discountPercentage}
+                      onChange={(e) => {
+                        const percentage = Number(e.target.value);
+                        if (percentage >= 0 && percentage <= 100) {
+                          updateItem(index, { discountPercentage: percentage });
+                        }
+                      }}
                     />
                   </div>
                   <div className="pt-3 border-t border-border-default flex justify-between items-center">
@@ -1143,7 +1264,10 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
   const project = projectsData?.items.find(p => p.id === quoteData.projectId);
   
   const subtotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
-  const discountTotal = (quoteData.items || []).reduce((sum, item) => sum + (item.qty * item.discount), 0);
+  const discountTotal = (quoteData.items || []).reduce((sum, item) => {
+    const discountAmount = (item.unitPrice * item.discountPercentage) / 100;
+    return sum + (item.qty * discountAmount);
+  }, 0);
   // Transport is calculated server-side, so we don't include it in the preview
   const grandTotal = subtotal - discountTotal;
 
@@ -1223,8 +1347,8 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
                   </div>
                   <p className="text-sm text-content-secondary mb-1">
                     {item.qty} {item.uomSnapshot} × ${item.unitPrice.toFixed(2)}
-                    {item.discount > 0 && (
-                      <span className="text-status-warning ml-2">- ${item.discount.toFixed(2)} discount</span>
+                    {item.discountPercentage > 0 && (
+                      <span className="text-status-warning ml-2">- {item.discountPercentage.toFixed(1)}% discount</span>
                     )}
                   </p>
                   {stockItem && stockItem.sku && (
@@ -1244,7 +1368,7 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
           {discountTotal > 0 && (
             <div className="flex justify-between text-status-warning">
               <span>Discount:</span>
-              <span className="font-semibold">-${discountTotal.toFixed(2)}</span>
+              <span className="font-semibold">-${discountTotal.toFixed(2)} ({((discountTotal / subtotal) * 100).toFixed(1)}%)</span>
             </div>
           )}
           <div className="flex justify-between text-xl font-bold text-content-primary pt-3 border-t border-border-default">

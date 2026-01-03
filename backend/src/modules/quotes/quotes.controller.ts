@@ -167,7 +167,7 @@ export class QuotesController {
     @CurrentUser('id') userId: string,
     @CurrentUser('permissions') userPermissions: string[],
   ) {
-    return this.quotesService.markOutcome(id, outcome, userId, userPermissions, dto.reasonCategory, dto.reasonNotes);
+    return this.quotesService.markOutcome(id, outcome, userId, userPermissions, dto.lossReasonCategory, dto.reasonNotes);
   }
 
   @Delete(':id')
