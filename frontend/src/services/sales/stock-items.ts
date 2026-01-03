@@ -17,7 +17,7 @@ export interface StockItem {
   createdAt: string;
   updatedAt: string;
   company?: { id: string; name: string };
-  project?: { id: string; name: string };
+  project?: { id: string; name: string; companyId?: string; company?: { id: string; name: string } };
   warehouse?: { id: string; name: string };
 }
 

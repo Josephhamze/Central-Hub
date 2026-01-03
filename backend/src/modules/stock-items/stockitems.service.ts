@@ -42,7 +42,13 @@ export class StockItemsService {
     const [items, total] = await Promise.all([
       this.prisma.stockItem.findMany({
         where, skip, take: limitNum,
-        include: { project: { select: { id: true, name: true } }, warehouse: { select: { id: true, name: true } } },
+        include: { 
+          project: { 
+            select: { id: true, name: true, companyId: true },
+            include: { company: { select: { id: true, name: true } } }
+          }, 
+          warehouse: { select: { id: true, name: true } } 
+        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.stockItem.count({ where }),

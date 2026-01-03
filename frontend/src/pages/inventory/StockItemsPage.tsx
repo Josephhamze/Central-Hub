@@ -193,26 +193,41 @@ export function StockItemsPage() {
 
   const handleEdit = (stockItem: StockItem) => {
     setSelectedStockItem(stockItem);
+    // Get companyId from stockItem, project relation, or projectsData
+    let companyId = stockItem.companyId || '';
+    if (!companyId && stockItem.project?.companyId) {
+      companyId = stockItem.project.companyId;
+    } else if (!companyId && stockItem.projectId) {
+      const project = projectsData?.items.find(p => p.id === stockItem.projectId);
+      if (project) {
+        companyId = project.companyId || '';
+      }
+    }
+    
     setFormData({
-      companyId: stockItem.companyId,
+      companyId: companyId,
       projectId: stockItem.projectId || '',
       warehouseId: stockItem.warehouseId || '',
       sku: stockItem.sku || '',
       name: stockItem.name,
       description: stockItem.description || '',
       uom: stockItem.uom,
-      minUnitPrice: stockItem.minUnitPrice,
-      defaultUnitPrice: stockItem.defaultUnitPrice,
-      minOrderQty: stockItem.minOrderQty,
-      truckloadOnly: stockItem.truckloadOnly,
-      isActive: stockItem.isActive,
+      minUnitPrice: Number(stockItem.minUnitPrice),
+      defaultUnitPrice: Number(stockItem.defaultUnitPrice),
+      minOrderQty: Number(stockItem.minOrderQty),
+      truckloadOnly: stockItem.truckloadOnly || false,
+      isActive: stockItem.isActive !== undefined ? stockItem.isActive : true,
     });
     setIsEditModalOpen(true);
   };
 
   const handleUpdate = () => {
-    if (!formData.companyId || !formData.name.trim() || !formData.uom.trim()) {
-      showError('Company, name, and unit of measure are required');
+    if (!formData.name.trim() || !formData.uom.trim()) {
+      showError('Name and unit of measure are required');
+      return;
+    }
+    if (!formData.projectId || !formData.warehouseId) {
+      showError('Project and warehouse are required');
       return;
     }
     if (formData.defaultUnitPrice < formData.minUnitPrice) {
@@ -220,7 +235,10 @@ export function StockItemsPage() {
       return;
     }
     if (!selectedStockItem) return;
-    updateMutation.mutate({ id: selectedStockItem.id, data: formData });
+    
+    // Filter out fields that shouldn't be sent (companyId, description)
+    const { companyId, description, ...updateData } = formData;
+    updateMutation.mutate({ id: selectedStockItem.id, data: updateData });
   };
 
   const handleDelete = (id: string) => {
