@@ -534,9 +534,8 @@ export class QuotesService {
           }
         }
       }
-      const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
       // Calculate transport with items for tonnage
-    const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
+      const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
     const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
       // Update quote and replace items
