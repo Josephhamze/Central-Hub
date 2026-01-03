@@ -17,7 +17,8 @@ import {
   FolderKanban,
   Info,
   FileText,
-, Trash2} from 'lucide-react';
+  Trash2,
+} from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
