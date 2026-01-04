@@ -18,6 +18,9 @@ export class NotificationsController {
   @UseGuards(RbacGuard)
   @ApiOperation({ summary: 'Get all notifications for current user' })
   async findAll(@CurrentUser('id') userId: string) {
+    if (!userId) {
+      return [];
+    }
     return this.notificationsService.findAll(userId);
   }
 
@@ -25,6 +28,9 @@ export class NotificationsController {
   @UseGuards(RbacGuard)
   @ApiOperation({ summary: 'Get unread notification count' })
   async getUnreadCount(@CurrentUser('id') userId: string) {
+    if (!userId) {
+      return { count: 0 };
+    }
     const count = await this.notificationsService.getUnreadCount(userId);
     return { count };
   }
