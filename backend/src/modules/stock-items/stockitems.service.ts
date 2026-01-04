@@ -116,7 +116,7 @@ export class StockItemsService {
   }
 
 
-  async bulkImport(file: Express.Multer.File) {
+  async bulkImport(file: any) {
     const XLSX = require('xlsx');
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];

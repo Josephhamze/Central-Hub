@@ -66,7 +66,7 @@ export class StockItemsController {
     },
   })
   @ApiOperation({ summary: 'Bulk import stock items from Excel file' })
-  async bulkImport(@UploadedFile() file: Express.Multer.File) {
+  async bulkImport(@UploadedFile() file: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
