@@ -144,15 +144,11 @@ export function ProfilePage() {
             <div className="pt-4 border-t border-border-default">
               <p className="text-sm text-content-tertiary mb-2">Roles</p>
               <div className="flex flex-wrap gap-2">
-                {user?.roles?.map((role) => {
-                  const roleName = typeof role === 'string' ? role : role.name;
-                  const roleKey = typeof role === 'string' ? role : role.id;
-                  return (
-                    <Badge key={roleKey} variant="info">
-                      {roleName}
-                    </Badge>
-                  );
-                })}
+                {user?.roles?.map((role: string) => (
+                  <Badge key={role} variant="info">
+                    {role}
+                  </Badge>
+                ))}
               </div>
             </div>
           </div>
@@ -243,3 +239,5 @@ export function ProfilePage() {
     </PageContainer>
   );
 }
+
+

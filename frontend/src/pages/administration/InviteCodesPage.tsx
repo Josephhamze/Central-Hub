@@ -250,7 +250,7 @@ export function InviteCodesPage() {
 
         <ModalFooter>
           <Button
-            variant="default"
+            variant="secondary"
             onClick={() => setIsCreateModalOpen(false)}
           >
             Cancel
