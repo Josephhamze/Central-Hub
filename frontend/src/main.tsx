@@ -21,10 +21,12 @@ const queryClient = new QueryClient({
       },
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+    mutations: {
       onError: (error: any) => {
         // Only log unexpected errors
         if (error?.response?.status !== 401 && error?.response?.status !== 403) {
-          console.error('Query error:', error);
+          console.error('Mutation error:', error);
         }
       },
     },

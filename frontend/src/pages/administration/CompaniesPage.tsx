@@ -33,7 +33,7 @@ export function CompaniesPage() {
     email: '',
   });
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['companies', search],
     queryFn: async () => {
       try {
