@@ -36,6 +36,16 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
+    // Don't log 401/403 errors as they're handled
+    if (error.response?.status !== 401 && error.response?.status !== 403) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
+
     // Handle 401 errors (token expired)
     if (error.response?.status === 401 && originalRequest) {
       // Try to refresh token
@@ -61,6 +71,12 @@ api.interceptors.response.use(
           window.location.href = '/login';
         }
       }
+    }
+
+    // For 404/500 errors, return a more graceful error
+    if (error.response?.status === 404 || error.response?.status === 500) {
+      // Don't crash the app, just reject with error
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
@@ -111,3 +127,5 @@ export function getErrorMessage(error: unknown): string {
   }
   return 'An unknown error occurred';
 }
+
+

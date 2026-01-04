@@ -17,10 +17,7 @@ export class NotificationsController {
   @Get()
   @UseGuards(RbacGuard)
   @ApiOperation({ summary: 'Get all notifications for current user' })
-  async findAll(
-    @CurrentUser('id') userId: string,
-    @CurrentUser('permissions') userPermissions: string[],
-  ) {
+  async findAll(@CurrentUser('id') userId: string) {
     return this.notificationsService.findAll(userId);
   }
 
