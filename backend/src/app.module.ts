@@ -58,6 +58,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     StockItemsModule,
     NotificationsModule,
     InviteCodesModule,
+    CompaniesModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default

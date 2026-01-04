@@ -33,11 +33,16 @@ export function CompaniesPage() {
     email: '',
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['companies', search],
     queryFn: async () => {
-      const res = await companiesApi.findAll(1, 100, search);
-      return res.data.data;
+      try {
+        const res = await companiesApi.findAll(1, 100, search);
+        return res.data.data;
+      } catch (err) {
+        console.error('Failed to load companies:', err);
+        return { items: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } };
+      }
     },
   });
 
