@@ -24,6 +24,7 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 import { StockItemsModule } from './modules/stock-items/stockitems.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { InviteCodesModule } from './modules/invite-codes/invite-codes.module';
+import { CompaniesModule } from './modules/companies/companies.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
