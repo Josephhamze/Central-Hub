@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, Trash2, CheckCircle2, XCircle, Key } from 'lucide-react';
+import { Plus, Copy, Trash2, CheckCircle2, Key } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -33,7 +33,7 @@ export function InviteCodesPage() {
 
   const createMutation = useMutation({
     mutationFn: inviteCodesApi.create,
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invite-codes'] });
       setIsCreateModalOpen(false);
       setFormData({ maxUses: 1, expiresAt: '' });

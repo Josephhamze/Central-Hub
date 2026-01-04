@@ -166,7 +166,7 @@ model InviteCode {
   id          String    @id @default(cuid())
   code        String    @unique
   createdBy   String    @map("created_by") // User ID of admin who created it
-  usedBy      String?   @map("used_by") // User ID who used it (null if unused)
+  usedBy      String?   @unique @map("used_by") // User ID who used it (null if unused) - unique since one user can only use one code
   usedAt      DateTime? @map("used_at")
   expiresAt   DateTime? @map("expires_at") // Optional expiration
   maxUses     Int       @default(1) @map("max_uses") // How many times it can be used
