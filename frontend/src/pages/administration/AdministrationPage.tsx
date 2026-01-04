@@ -73,10 +73,6 @@ export function AdministrationPage() {
         </Card>
 
       </div>
-
-      <Routes>
-        <Route path="invite-codes" element={<InviteCodesPage />} />
-      </Routes>
     </PageContainer>
   );
 }
