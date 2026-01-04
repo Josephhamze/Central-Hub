@@ -52,4 +52,16 @@ export class RegisterDto {
   @MinLength(1)
   @MaxLength(100)
   lastName: string;
+
+  @ApiProperty({
+    description: 'Invite code required for registration',
+    example: 'A1B2C3D4',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(4)
+  @MaxLength(20)
+  inviteCode: string;
 }
+
+

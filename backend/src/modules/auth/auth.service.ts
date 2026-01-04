@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { InviteCodesService } from '../invite-codes/invite-codes.service';
 
 export interface TokenPayload {
   sub: string;
@@ -29,6 +31,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private inviteCodesService: InviteCodesService,
   ) {}
 
   async login(dto: LoginDto): Promise<AuthTokens> {
@@ -56,7 +59,7 @@ export class AuthService {
     }
 
     if (user.accountStatus !== 'ACTIVE') {
-      throw new UnauthorizedException('Account is disabled or pending activation');
+      throw new UnauthorizedException('Account is disabled');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
@@ -74,6 +77,12 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<AuthTokens> {
+    // Validate invite code
+    const validation = await this.inviteCodesService.validate(dto.inviteCode);
+    if (!validation.valid) {
+      throw new BadRequestException(validation.message || 'Invalid invite code');
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -95,7 +104,6 @@ export class AuthService {
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        accountStatus: 'ACTIVE',
         roles: viewerRole
           ? {
               create: {
@@ -105,6 +113,9 @@ export class AuthService {
           : undefined,
       },
     });
+
+    // Mark invite code as used
+    await this.inviteCodesService.markAsUsed(dto.inviteCode, user.id);
 
     return this.generateTokens(user.id, user.email);
   }
@@ -128,7 +139,7 @@ export class AuthService {
     }
 
     if (storedToken.user.accountStatus !== 'ACTIVE') {
-      throw new UnauthorizedException('Account is disabled or pending activation');
+      throw new UnauthorizedException('Account is disabled');
     }
 
     // Revoke the old refresh token
@@ -254,3 +265,5 @@ export class AuthService {
     };
   }
 }
+
+

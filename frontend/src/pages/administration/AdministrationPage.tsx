@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom';
-import { Building2, FolderKanban, Users, Shield } from 'lucide-react';
+import { useNavigate, Routes, Route } from 'react-router-dom';
+import { Building2, FolderKanban, Users, Shield, Key } from 'lucide-react';
+import { InviteCodesPage } from './InviteCodesPage';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 
@@ -59,7 +60,23 @@ export function AdministrationPage() {
           </div>
         </Card>
 
+        <Card className="p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/administration/invite-codes')}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <Key className="w-6 h-6 text-accent-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-content-primary mb-1">Invite Codes</h3>
+              <p className="text-sm text-content-secondary">Generate invite codes for user registration</p>
+            </div>
+          </div>
+        </Card>
+
       </div>
+
+      <Routes>
+        <Route path="invite-codes" element={<InviteCodesPage />} />
+      </Routes>
     </PageContainer>
   );
 }

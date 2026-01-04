@@ -14,8 +14,8 @@ interface User {
   firstName: string;
   lastName: string;
   themePreference: 'LIGHT' | 'DARK' | 'SYSTEM';
-  roles: string[] | Array<{ id: string; name: string }>;
-  permissions: string[] | Array<{ code: string; name: string; module: string }>;
+  roles: string[];
+  permissions: string[];
 }
 
 interface AuthTokens {
@@ -33,7 +33,8 @@ interface AuthContextType {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    inviteCode: string
   ) => Promise<void>;
   logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -90,13 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    inviteCode: string
   ) => {
     const response = await api.post('/auth/register', {
       email,
       password,
       firstName,
       lastName,
+      inviteCode,
     });
     const tokens: AuthTokens = response.data.data;
 
@@ -122,31 +125,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    if (!user?.permissions) return false;
-    // Handle both string array and object array formats
-    if (Array.isArray(user.permissions)) {
-      return user.permissions.some((p) => {
-        if (typeof p === 'string') {
-          return p === permission;
-        }
-        return p.code === permission;
-      });
-    }
-    return false;
+    return user?.permissions.includes(permission) ?? false;
   };
 
   const hasRole = (role: string) => {
-    if (!user?.roles) return false;
-    // Handle both string array and object array formats
-    if (Array.isArray(user.roles)) {
-      return user.roles.some((r) => {
-        if (typeof r === 'string') {
-          return r === role;
-        }
-        return r.name === role;
-      });
-    }
-    return false;
+    return user?.roles.includes(role) ?? false;
   };
 
   return (
@@ -174,3 +157,5 @@ export function useAuth() {
   }
   return context;
 }
+
+

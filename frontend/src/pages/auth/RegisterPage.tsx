@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Key } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
 import { Button } from '@components/ui/Button';
@@ -13,6 +13,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  inviteCode?: string;
 }
 
 export function RegisterPage() {
@@ -25,6 +26,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -56,8 +58,14 @@ export function RegisterPage() {
 
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
+    } else     if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!inviteCode.trim()) {
+      newErrors.inviteCode = 'Invite code is required';
+    } else if (inviteCode.length < 4) {
+      newErrors.inviteCode = 'Invite code must be at least 4 characters';
     }
 
     setErrors(newErrors);
@@ -71,7 +79,7 @@ export function RegisterPage() {
 
     setIsLoading(true);
     try {
-      await register(email, password, firstName, lastName);
+      await register(email, password, firstName, lastName, inviteCode);
       showSuccess('Account created successfully!');
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -133,6 +141,17 @@ export function RegisterPage() {
               placeholder="john@example.com"
               leftIcon={<Mail className="w-4 h-4" />}
               autoComplete="email"
+            />
+
+            <Input
+              label="Invite Code"
+              type="text"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+              error={errors.inviteCode}
+              placeholder="Enter your invite code"
+              leftIcon={<Key className="w-4 h-4" />}
+              hint="You need an invite code from an administrator to register"
             />
 
             <Input
@@ -198,3 +217,5 @@ export function RegisterPage() {
     </div>
   );
 }
+
+
