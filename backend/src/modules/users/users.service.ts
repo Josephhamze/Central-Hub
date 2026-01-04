@@ -3,10 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { ThemePreference } from '@prisma/client';
 
 @Injectable()
@@ -67,7 +68,7 @@ export class UsersService {
         email: true,
         firstName: true,
         lastName: true,
-        isActive: true,
+        accountStatus: true,
         emailVerified: true,
         themePreference: true,
         lastLoginAt: true,
@@ -315,6 +316,79 @@ export class UsersService {
     ]);
 
     return this.findOne(userId);
+  }
+
+  async create(dto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        roles: dto.roleIds && dto.roleIds.length > 0
+          ? {
+              create: dto.roleIds.map((roleId) => ({ roleId })),
+            }
+          : undefined,
+      },
+    });
+
+    return this.findOne(user.id);
+  }
+
+  async assignAdminByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Find Administrator role
+    const adminRole = await this.prisma.role.findFirst({
+      where: {
+        name: {
+          in: ['Administrator', 'Admin'],
+        },
+      },
+    });
+
+    if (!adminRole) {
+      throw new NotFoundException('Administrator role not found');
+    }
+
+    // Check if user already has admin role
+    const existingRole = await this.prisma.userRole.findFirst({
+      where: {
+        userId: user.id,
+        roleId: adminRole.id,
+      },
+    });
+
+    if (existingRole) {
+      return { message: 'User already has Administrator role' };
+    }
+
+    // Assign admin role
+    await this.prisma.userRole.create({
+      data: {
+        userId: user.id,
+        roleId: adminRole.id,
+      },
+    });
+
+    return { message: 'Administrator role assigned successfully' };
   }
 }
 
