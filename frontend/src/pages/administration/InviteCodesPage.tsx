@@ -180,11 +180,11 @@ export function InviteCodesPage() {
                       </td>
                       <td className="p-4">
                         {!inviteCode.isActive ? (
-                          <Badge variant="secondary">Deactivated</Badge>
+                          <Badge variant="default">Deactivated</Badge>
                         ) : isExpired(inviteCode) ? (
-                          <Badge variant="secondary">Expired</Badge>
+                          <Badge variant="default">Expired</Badge>
                         ) : isUsed(inviteCode) ? (
-                          <Badge variant="secondary">Used</Badge>
+                          <Badge variant="default">Used</Badge>
                         ) : (
                           <Badge variant="success">Active</Badge>
                         )}
@@ -250,7 +250,7 @@ export function InviteCodesPage() {
 
         <ModalFooter>
           <Button
-            variant="secondary"
+            variant="default"
             onClick={() => setIsCreateModalOpen(false)}
           >
             Cancel
