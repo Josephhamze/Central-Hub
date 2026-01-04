@@ -52,7 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = useCallback(async () => {
     try {
       const response = await api.get('/users/me');
-      setUser(response.data.data);
+      const userData = response.data.data;
+      // Ensure permissions and roles are always arrays
+      if (userData) {
+        userData.permissions = userData.permissions || [];
+        userData.roles = userData.roles || [];
+      }
+      setUser(userData);
     } catch {
       clearAuthToken();
       localStorage.removeItem(TOKEN_KEY);
@@ -125,11 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    return user?.permissions.includes(permission) ?? false;
+    return user?.permissions?.includes(permission) ?? false;
   };
 
   const hasRole = (role: string) => {
-    return user?.roles.includes(role) ?? false;
+    return user?.roles?.includes(role) ?? false;
   };
 
   return (
