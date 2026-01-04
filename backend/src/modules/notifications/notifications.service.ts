@@ -18,16 +18,21 @@ export class NotificationsService {
   }
 
   async findAll(userId: string, unreadOnly = false) {
-    return this.prisma.notification.findMany({
-      where: {
-        userId,
-        ...(unreadOnly && { read: false }),
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 50,
-    });
+    try {
+      return await this.prisma.notification.findMany({
+        where: {
+          userId,
+          ...(unreadOnly && { read: false }),
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 50,
+      });
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
   }
 
   async markAsRead(userId: string, notificationId: string) {
@@ -57,11 +62,16 @@ export class NotificationsService {
   }
 
   async getUnreadCount(userId: string) {
-    return this.prisma.notification.count({
-      where: {
-        userId,
-        read: false,
-      },
-    });
+    try {
+      return await this.prisma.notification.count({
+        where: {
+          userId,
+          read: false,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      return 0;
+    }
   }
 }
