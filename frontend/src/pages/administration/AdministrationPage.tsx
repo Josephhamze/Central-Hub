@@ -1,4 +1,4 @@
-import { useNavigate, Routes, Route } from 'react-router-dom';
+import { useNavigate, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { Building2, FolderKanban, Users, Shield, Key } from 'lucide-react';
 import { InviteCodesPage } from './InviteCodesPage';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -6,6 +6,12 @@ import { Card } from '@components/ui/Card';
 
 export function AdministrationPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If we're on a sub-route, render the outlet (child routes)
+  if (location.pathname !== '/administration' && location.pathname !== '/administration/') {
+    return <Outlet />;
+  }
 
   return (
     <PageContainer
