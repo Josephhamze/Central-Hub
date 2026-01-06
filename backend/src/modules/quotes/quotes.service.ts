@@ -735,15 +735,20 @@ export class QuotesService {
       }),
     ]);
     
-    // Notify quote creator
+    // Notify quote creator (don't fail if notification fails)
     if (quote.salesRepUserId) {
-      await this.notificationsService.create(
-        quote.salesRepUserId,
-        'quote_approved',
-        'Quote Approved',
-        `Your quote ${quote.quoteNumber} has been approved.`,
-        `/sales/quotes/${id}`,
-      );
+      try {
+        await this.notificationsService.create(
+          quote.salesRepUserId,
+          'quote_approved',
+          'Quote Approved',
+          `Your quote ${quote.quoteNumber} has been approved.`,
+          `/sales/quotes/${id}`,
+        );
+      } catch (error) {
+        // Log but don't fail the approval if notification fails
+        console.error('Failed to create approval notification:', error);
+      }
     }
     
     return this.findOne(id, userId, userPermissions);

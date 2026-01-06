@@ -17,7 +17,7 @@ import {
   FolderKanban,
   Info,
   FileText,
-  Trash2,
+  Trash2
 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -78,7 +78,10 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      success('Quote approved');
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      // Refetch the current quote to get updated data
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
+      success('Quote approved successfully');
       setApproveModalOpen(false);
       setApproveNotes('');
     },

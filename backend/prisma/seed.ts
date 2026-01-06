@@ -41,6 +41,10 @@ async function main() {
     { code: 'system:manage_roles', name: 'Manage Roles', module: 'system' },
     { code: 'system:manage_settings', name: 'Manage Settings', module: 'system' },
     { code: 'system:view_audit_logs', name: 'View Audit Logs', module: 'system' },
+    { code: 'users:create', name: 'Create Users', module: 'users' },
+    { code: 'users:view', name: 'View Users', module: 'users' },
+    { code: 'users:update', name: 'Update Users', module: 'users' },
+    { code: 'users:delete', name: 'Delete Users', module: 'users' },
   );
 
   // Add specific logistics permissions for Routes & Tolls system
@@ -55,6 +59,17 @@ async function main() {
     { code: 'logistics:toll_payments:create', name: 'Create Toll Payments', module: 'logistics' },
     { code: 'logistics:toll_payments:approve', name: 'Approve Toll Payments', module: 'logistics' },
     { code: 'logistics:toll_payments:post', name: 'Post Toll Payments', module: 'logistics' },
+  );
+
+  // Add quotes-specific permissions
+  permissions.push(
+    { code: 'quotes:view', name: 'View Quotes', module: 'quotes' },
+    { code: 'quotes:create', name: 'Create Quotes', module: 'quotes' },
+    { code: 'quotes:update', name: 'Update Quotes', module: 'quotes' },
+    { code: 'quotes:delete', name: 'Delete Quotes', module: 'quotes' },
+    { code: 'quotes:submit', name: 'Submit Quotes', module: 'quotes' },
+    { code: 'quotes:approve', name: 'Approve Quotes', module: 'quotes' },
+    { code: 'quotes:reject', name: 'Reject Quotes', module: 'quotes' },
   );
 
   for (const perm of permissions) {

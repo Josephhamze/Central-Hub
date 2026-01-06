@@ -58,13 +58,21 @@ export function QuotesAdminPage() {
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-      success('Quote approved');
+      queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
+      // Refresh the page data
+      queryClient.refetchQueries({ queryKey: ['quotes', filters] });
+      success('Quote approved successfully');
       setApproveModalOpen(false);
+      setApproveNotes('');
+      setSelectedQuote(null);
     },
-    onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to approve quote'),
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to approve quote';
+      showError(errorMessage);
+    },
   });
 
   const rejectMutation = useMutation({
