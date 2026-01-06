@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MapPin, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, MapPin, DollarSign, Edit, Trash2, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -20,6 +20,9 @@ export function TollStationsPage() {
   const [selectedStation, setSelectedStation] = useState<TollStation | null>(null);
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<TollRate | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadResults, setUploadResults] = useState<{ success: Array<{ row: number; name: string; ratesCreated: number }>; errors: Array<{ row: number; error: string }> } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['toll-stations', search, isActiveFilter],
@@ -43,9 +46,25 @@ export function TollStationsPage() {
             <p className="text-content-secondary mt-1">Manage toll stations and rates by vehicle type</p>
           </div>
           {canManage && (
-            <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
-              New Station
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={downloadTemplate}
+                leftIcon={<Download />}
+              >
+                Download Template
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setIsUploadModalOpen(true)}
+                leftIcon={<Upload />}
+              >
+                Upload Excel
+              </Button>
+              <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
+                New Station
+              </Button>
+            </div>
           )}
         </div>
 
@@ -131,6 +150,109 @@ export function TollStationsPage() {
           }}
         />
       )}
+
+      {/* Upload Modal */}
+      <Modal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setUploadFile(null);
+          setUploadResults(null);
+        }}
+        title="Upload Toll Stations from Excel"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
+            <div className="flex items-start gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-status-info mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-content-secondary">
+                <p className="font-medium mb-1">Excel Format Requirements:</p>
+                <p>Columns: Name (required), City/Area (optional), Code (optional), Is Active (Yes/No), FLATBED Rate (optional), TIPPER Rate (optional), Currency (optional, default USD), Effective From (optional date), Effective To (optional date)</p>
+                <p className="mt-2">
+                  <button onClick={downloadTemplate} className="text-accent-primary hover:underline">
+                    Download template
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-content-primary mb-2">
+              Select Excel File (.xlsx, .xls)
+            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileSelect}
+              className="block w-full text-sm text-content-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent-primary file:text-white hover:file:bg-accent-primary-hover"
+            />
+            {uploadFile && (
+              <p className="mt-2 text-sm text-content-secondary">
+                Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(2)} KB)
+              </p>
+            )}
+          </div>
+
+          {uploadResults && (
+            <div className="space-y-3">
+              {uploadResults.success.length > 0 && (
+                <div className="p-3 bg-status-success-bg border border-status-success rounded-lg">
+                  <p className="text-sm font-medium text-status-success mb-2">
+                    Successfully imported {uploadResults.success.length} toll station(s):
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.success.map((item, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {item.row}: {item.name} ({item.ratesCreated} rate{item.ratesCreated !== 1 ? 's' : ''} created)
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uploadResults.errors.length > 0 && (
+                <div className="p-3 bg-status-error-bg border border-status-error rounded-lg">
+                  <p className="text-sm font-medium text-status-error mb-2">
+                    {uploadResults.errors.length} error(s) occurred:
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.errors.map((error, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {error.row}: {error.error}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setIsUploadModalOpen(false);
+              setUploadFile(null);
+              setUploadResults(null);
+            }}
+          >
+            {uploadResults ? 'Close' : 'Cancel'}
+          </Button>
+          {!uploadResults && (
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              isLoading={bulkImportMutation.isPending}
+              disabled={!uploadFile}
+              leftIcon={<Upload />}
+            >
+              Upload & Import
+            </Button>
+          )}
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   );
 }

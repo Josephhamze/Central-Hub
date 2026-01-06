@@ -4,6 +4,8 @@ import { CreateTollStationDto } from './dto/create-toll-station.dto';
 import { UpdateTollStationDto } from './dto/update-toll-station.dto';
 import { CreateTollRateDto } from './dto/create-toll-rate.dto';
 import { UpdateTollRateDto } from './dto/update-toll-rate.dto';
+import { VehicleType } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class TollStationsService {
@@ -175,5 +177,174 @@ export class TollStationsService {
       where,
       orderBy: [{ vehicleType: 'asc' }, { effectiveFrom: 'desc' }],
     });
+  }
+
+  async bulkImport(file: any) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Invalid file: file buffer is missing');
+    }
+    
+    let XLSX;
+    try {
+      XLSX = require('xlsx');
+    } catch (error) {
+      throw new BadRequestException('xlsx package is not installed. Please install it: pnpm add xlsx');
+    }
+    
+    let workbook;
+    try {
+      workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    } catch (error: any) {
+      throw new BadRequestException(`Failed to read Excel file: ${error.message}`);
+    }
+    
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (data.length < 2) {
+      throw new BadRequestException('Excel file must contain at least a header row and one data row');
+    }
+
+    // Expected headers: Name, City/Area, Code, Is Active, FLATBED Rate, TIPPER Rate, Currency, Effective From, Effective To
+    const headers = data[0] as string[];
+    const expectedHeaders = ['Name', 'City/Area', 'Code', 'Is Active', 'FLATBED Rate', 'TIPPER Rate', 'Currency', 'Effective From', 'Effective To'];
+    
+    // Validate headers (case-insensitive)
+    const normalizedHeaders = headers.map(h => h?.toString().trim());
+    const headerMap: Record<string, number> = {};
+    expectedHeaders.forEach((expected) => {
+      const foundIdx = normalizedHeaders.findIndex(h => h?.toLowerCase() === expected.toLowerCase());
+      if (foundIdx !== -1) {
+        headerMap[expected] = foundIdx;
+      }
+    });
+
+    // Validate required headers
+    if (headerMap['Name'] === undefined) {
+      throw new BadRequestException('Missing required column: Name');
+    }
+
+    const results = {
+      success: [] as Array<{ row: number; name: string; ratesCreated: number }>,
+      errors: [] as Array<{ row: number; error: string }>,
+    };
+
+    // Process each row
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] as any[];
+      if (!row || row.every(cell => !cell || cell.toString().trim() === '')) continue; // Skip empty rows
+
+      try {
+        const name = row[headerMap['Name']]?.toString().trim();
+        const cityOrArea = row[headerMap['City/Area']]?.toString().trim() || undefined;
+        const code = row[headerMap['Code']]?.toString().trim() || undefined;
+        const isActiveStr = row[headerMap['Is Active']]?.toString().trim().toLowerCase() || 'yes';
+        const flatbedRateStr = row[headerMap['FLATBED Rate']]?.toString().trim() || undefined;
+        const tipperRateStr = row[headerMap['TIPPER Rate']]?.toString().trim() || undefined;
+        const currency = row[headerMap['Currency']]?.toString().trim() || 'USD';
+        const effectiveFromStr = row[headerMap['Effective From']]?.toString().trim() || undefined;
+        const effectiveToStr = row[headerMap['Effective To']]?.toString().trim() || undefined;
+
+        // Validation
+        if (!name) throw new Error('Name is required');
+
+        const isActive = isActiveStr === 'yes' || isActiveStr === 'true' || isActiveStr === '1';
+
+        // Check for duplicate code
+        if (code) {
+          const existing = await this.prisma.tollStation.findUnique({ where: { code } });
+          if (existing) {
+            throw new Error(`Toll station code "${code}" already exists`);
+          }
+        }
+
+        // Parse rates
+        const flatbedRate = flatbedRateStr ? parseFloat(flatbedRateStr.replace(/[^0-9.]/g, '')) : undefined;
+        const tipperRate = tipperRateStr ? parseFloat(tipperRateStr.replace(/[^0-9.]/g, '')) : undefined;
+
+        if (flatbedRateStr && (isNaN(flatbedRate!) || flatbedRate! < 0)) {
+          throw new Error('FLATBED Rate must be a valid non-negative number');
+        }
+        if (tipperRateStr && (isNaN(tipperRate!) || tipperRate! < 0)) {
+          throw new Error('TIPPER Rate must be a valid non-negative number');
+        }
+
+        // Parse dates
+        let effectiveFrom: Date | null = null;
+        let effectiveTo: Date | null = null;
+        
+        if (effectiveFromStr) {
+          effectiveFrom = new Date(effectiveFromStr);
+          if (isNaN(effectiveFrom.getTime())) {
+            throw new Error('Effective From must be a valid date (YYYY-MM-DD)');
+          }
+        }
+        
+        if (effectiveToStr) {
+          effectiveTo = new Date(effectiveToStr);
+          if (isNaN(effectiveTo.getTime())) {
+            throw new Error('Effective To must be a valid date (YYYY-MM-DD)');
+          }
+        }
+
+        if (effectiveFrom && effectiveTo && effectiveFrom > effectiveTo) {
+          throw new Error('Effective From date must be before Effective To date');
+        }
+
+        // Create toll station
+        const station = await this.prisma.tollStation.create({
+          data: {
+            name,
+            cityOrArea,
+            code,
+            isActive,
+          },
+        });
+
+        let ratesCreated = 0;
+
+        // Create FLATBED rate if provided
+        if (flatbedRate !== undefined) {
+          await this.prisma.tollRate.create({
+            data: {
+              tollStationId: station.id,
+              vehicleType: VehicleType.FLATBED,
+              amount: new Decimal(flatbedRate),
+              currency,
+              effectiveFrom,
+              effectiveTo,
+              isActive: true,
+            },
+          });
+          ratesCreated++;
+        }
+
+        // Create TIPPER rate if provided
+        if (tipperRate !== undefined) {
+          await this.prisma.tollRate.create({
+            data: {
+              tollStationId: station.id,
+              vehicleType: VehicleType.TIPPER,
+              amount: new Decimal(tipperRate),
+              currency,
+              effectiveFrom,
+              effectiveTo,
+              isActive: true,
+            },
+          });
+          ratesCreated++;
+        }
+
+        results.success.push({ row: i + 1, name, ratesCreated });
+      } catch (error: any) {
+        results.errors.push({
+          row: i + 1,
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return results;
   }
 }

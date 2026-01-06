@@ -44,6 +44,11 @@ export interface CreateTollRateDto {
   isActive?: boolean;
 }
 
+export interface BulkImportResult {
+  success: Array<{ row: number; name: string; ratesCreated: number }>;
+  errors: Array<{ row: number; error: string }>;
+}
+
 export const tollStationsApi = {
   findAll: (page = 1, limit = 100, filters?: { isActive?: boolean; search?: string }) =>
     api.get<ApiResponse<PaginatedResponse<TollStation>>>('/toll-stations', { params: { page, limit, ...filters } }),
@@ -57,4 +62,13 @@ export const tollStationsApi = {
   updateRate: (id: string, rateId: string, data: Partial<CreateTollRateDto>) =>
     api.put<ApiResponse<TollRate>>(`/toll-stations/${id}/rates/${rateId}`, data),
   removeRate: (id: string, rateId: string) => api.delete<ApiResponse<{ message: string }>>(`/toll-stations/${id}/rates/${rateId}`),
+  bulkImport: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<BulkImportResult>>('/toll-stations/bulk-import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

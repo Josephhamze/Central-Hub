@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { TollStationsService } from './toll-stations.service';
 import { CreateTollStationDto } from './dto/create-toll-station.dto';
 import { UpdateTollStationDto } from './dto/update-toll-station.dto';
@@ -50,6 +51,33 @@ export class TollStationsController {
   @ApiOperation({ summary: 'Create a new toll station' })
   async create(@Body() dto: CreateTollStationDto) {
     return this.tollStationsService.create(dto);
+  }
+
+  @Post('bulk-import')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:tolls:manage')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Bulk import toll stations with rates from Excel file' })
+  async bulkImport(@UploadedFile() file: any) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    if (!file.mimetype.includes('spreadsheet') && !file.mimetype.includes('excel') && !file.originalname.endsWith('.xlsx') && !file.originalname.endsWith('.xls')) {
+      throw new BadRequestException('File must be an Excel file (.xlsx or .xls)');
+    }
+    return this.tollStationsService.bulkImport(file);
   }
 
   @Put(':id')
