@@ -50,6 +50,11 @@ export interface SetRouteStationsDto {
   stations: Array<{ tollStationId: string; sortOrder: number }>;
 }
 
+export interface BulkImportResult {
+  success: Array<{ row: number; fromCity: string; toCity: string }>;
+  errors: Array<{ row: number; error: string }>;
+}
+
 export const routesApi = {
   findAll: (page = 1, limit = 100, filters?: { fromCity?: string; toCity?: string; isActive?: boolean; search?: string }) =>
     api.get<ApiResponse<PaginatedResponse<Route>>>('/routes', { params: { page, limit, ...filters } }),
@@ -64,4 +69,13 @@ export const routesApi = {
       params: { vehicleType },
     }),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/routes/${id}`),
+  bulkImport: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<BulkImportResult>>('/routes/bulk-import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

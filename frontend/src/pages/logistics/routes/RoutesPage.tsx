@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MapPin, Clock, Truck, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, MapPin, Clock, Truck, Edit, Trash2, Eye, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -23,6 +23,9 @@ export function RoutesPage() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<Route | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadResults, setUploadResults] = useState<{ success: Array<{ row: number; fromCity: string; toCity: string }>; errors: Array<{ row: number; error: string }> } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['routes', search, fromCity, toCity, isActiveFilter],
@@ -57,6 +60,66 @@ export function RoutesPage() {
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to deactivate route'),
   });
 
+  const bulkImportMutation = useMutation({
+    mutationFn: (file: File) => routesApi.bulkImport(file),
+    onSuccess: (response) => {
+      const results = response.data.data;
+      setUploadResults(results);
+      queryClient.invalidateQueries({ queryKey: ['routes'] });
+      if (results.errors.length === 0) {
+        success(`Successfully imported ${results.success.length} route(s)`);
+        setTimeout(() => {
+          setIsUploadModalOpen(false);
+          setUploadFile(null);
+          setUploadResults(null);
+        }, 3000);
+      } else {
+        showError(`Imported ${results.success.length} route(s), but ${results.errors.length} error(s) occurred. Check details below.`);
+      }
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to import routes');
+    },
+  });
+
+  const downloadTemplate = () => {
+    // Create Excel-like CSV template
+    const headers = ['From City', 'To City', 'Distance (km)', 'Time (hours)', 'Cost Per Km', 'Notes', 'Is Active'];
+    const exampleRow = ['LUBUMBASHI TOWN', 'GCK LIKASI', '140', '5', '0.11', 'Main route via Kasumbalesa', 'Yes'];
+    
+    const csvContent = [headers, exampleRow].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'routes_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    success('Template downloaded. You can open it in Excel and save as .xlsx format.');
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+        showError('Please select an Excel file (.xlsx, .xls) or CSV file');
+        return;
+      }
+      setUploadFile(file);
+      setUploadResults(null);
+    }
+  };
+
+  const handleUpload = () => {
+    if (!uploadFile) {
+      showError('Please select a file');
+      return;
+    }
+    bulkImportMutation.mutate(uploadFile);
+  };
+
   const canManage = hasPermission('logistics:routes:manage');
 
   return (
@@ -68,9 +131,25 @@ export function RoutesPage() {
             <p className="text-content-secondary mt-1">Manage delivery routes and toll stations</p>
           </div>
           {canManage && (
-            <Button onClick={() => navigate('/logistics/routes/new')} leftIcon={<Plus />}>
-              New Route
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={downloadTemplate}
+                leftIcon={<Download />}
+              >
+                Download Template
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setIsUploadModalOpen(true)}
+                leftIcon={<Upload />}
+              >
+                Upload Excel
+              </Button>
+              <Button onClick={() => navigate('/logistics/routes/new')} leftIcon={<Plus />}>
+                New Route
+              </Button>
+            </div>
           )}
         </div>
 
@@ -261,6 +340,109 @@ export function RoutesPage() {
           >
             Delete
           </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Upload Modal */}
+      <Modal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setUploadFile(null);
+          setUploadResults(null);
+        }}
+        title="Upload Routes from Excel"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
+            <div className="flex items-start gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-status-info mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-content-secondary">
+                <p className="font-medium mb-1">Excel Format Requirements:</p>
+                <p>Columns: From City, To City, Distance (km), Time (hours) (optional), Cost Per Km (optional), Notes (optional), Is Active (Yes/No)</p>
+                <p className="mt-2">
+                  <button onClick={downloadTemplate} className="text-accent-primary hover:underline">
+                    Download template
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-content-primary mb-2">
+              Select Excel File (.xlsx, .xls)
+            </label>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileSelect}
+              className="block w-full text-sm text-content-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent-primary file:text-white hover:file:bg-accent-primary-hover"
+            />
+            {uploadFile && (
+              <p className="mt-2 text-sm text-content-secondary">
+                Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(2)} KB)
+              </p>
+            )}
+          </div>
+
+          {uploadResults && (
+            <div className="space-y-3">
+              {uploadResults.success.length > 0 && (
+                <div className="p-3 bg-status-success-bg border border-status-success rounded-lg">
+                  <p className="text-sm font-medium text-status-success mb-2">
+                    Successfully imported {uploadResults.success.length} route(s):
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.success.map((item, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {item.row}: {item.fromCity} → {item.toCity}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uploadResults.errors.length > 0 && (
+                <div className="p-3 bg-status-error-bg border border-status-error rounded-lg">
+                  <p className="text-sm font-medium text-status-error mb-2">
+                    {uploadResults.errors.length} error(s) occurred:
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {uploadResults.errors.map((error, idx) => (
+                      <p key={idx} className="text-xs text-content-secondary">
+                        Row {error.row}: {error.error}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setIsUploadModalOpen(false);
+              setUploadFile(null);
+              setUploadResults(null);
+            }}
+          >
+            {uploadResults ? 'Close' : 'Cancel'}
+          </Button>
+          {!uploadResults && (
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              isLoading={bulkImportMutation.isPending}
+              disabled={!uploadFile}
+              leftIcon={<Upload />}
+            >
+              Upload & Import
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     </PageContainer>

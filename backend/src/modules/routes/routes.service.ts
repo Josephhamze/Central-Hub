@@ -220,4 +220,111 @@ export class RoutesService {
     if (!toll) throw new NotFoundException('Toll not found');
     return this.prisma.toll.delete({ where: { id } });
   }
+
+  async bulkImport(file: any, userId?: string) {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (data.length < 2) {
+      throw new BadRequestException('Excel file must contain at least a header row and one data row');
+    }
+
+    // Expected headers: From City, To City, Distance (km), Time (hours), Cost Per Km (optional), Notes (optional), Is Active
+    const headers = data[0] as string[];
+    const expectedHeaders = ['From City', 'To City', 'Distance (km)', 'Time (hours)', 'Cost Per Km', 'Notes', 'Is Active'];
+    
+    // Validate headers (case-insensitive)
+    const normalizedHeaders = headers.map(h => h?.toString().trim());
+    const headerMap: Record<string, number> = {};
+    expectedHeaders.forEach((expected) => {
+      const foundIdx = normalizedHeaders.findIndex(h => h?.toLowerCase() === expected.toLowerCase());
+      if (foundIdx !== -1) {
+        headerMap[expected] = foundIdx;
+      }
+    });
+
+    // Validate required headers
+    if (headerMap['From City'] === undefined || headerMap['To City'] === undefined || headerMap['Distance (km)'] === undefined) {
+      throw new BadRequestException('Missing required columns: From City, To City, Distance (km)');
+    }
+
+    const results = {
+      success: [] as Array<{ row: number; fromCity: string; toCity: string }>,
+      errors: [] as Array<{ row: number; error: string }>,
+    };
+
+    // Process each row
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] as any[];
+      if (!row || row.every(cell => !cell || cell.toString().trim() === '')) continue; // Skip empty rows
+
+      try {
+        const fromCity = row[headerMap['From City']]?.toString().trim();
+        const toCity = row[headerMap['To City']]?.toString().trim();
+        const distanceKmStr = row[headerMap['Distance (km)']]?.toString().trim();
+        const timeHoursStr = row[headerMap['Time (hours)']]?.toString().trim() || undefined;
+        const costPerKmStr = row[headerMap['Cost Per Km']]?.toString().trim() || undefined;
+        const notes = row[headerMap['Notes']]?.toString().trim() || undefined;
+        const isActiveStr = row[headerMap['Is Active']]?.toString().trim().toLowerCase() || 'yes';
+
+        // Validation
+        if (!fromCity) throw new Error('From City is required');
+        if (!toCity) throw new Error('To City is required');
+        if (!distanceKmStr) throw new Error('Distance (km) is required');
+        
+        const distanceKm = parseFloat(distanceKmStr.replace(/[^0-9.]/g, ''));
+        if (isNaN(distanceKm) || distanceKm <= 0) throw new Error('Distance (km) must be a valid positive number');
+
+        const timeHours = timeHoursStr ? parseFloat(timeHoursStr.replace(/[^0-9.]/g, '')) : undefined;
+        if (timeHoursStr && (isNaN(timeHours!) || timeHours! <= 0)) {
+          throw new Error('Time (hours) must be a valid positive number');
+        }
+
+        const costPerKm = costPerKmStr ? parseFloat(costPerKmStr.replace(/[^0-9.]/g, '')) : undefined;
+        if (costPerKmStr && (isNaN(costPerKm!) || costPerKm! < 0)) {
+          throw new Error('Cost Per Km must be a valid non-negative number');
+        }
+
+        const isActive = isActiveStr === 'yes' || isActiveStr === 'true' || isActiveStr === '1';
+
+        // Check for duplicate route
+        const existingRoute = await this.prisma.route.findFirst({
+          where: {
+            fromCity: { equals: fromCity, mode: 'insensitive' },
+            toCity: { equals: toCity, mode: 'insensitive' },
+          },
+        });
+
+        if (existingRoute) {
+          throw new Error(`Route from "${fromCity}" to "${toCity}" already exists`);
+        }
+
+        // Create route
+        const route = await this.prisma.route.create({
+          data: {
+            fromCity,
+            toCity,
+            distanceKm: new Decimal(distanceKm),
+            timeHours: timeHours ? new Decimal(timeHours) : undefined,
+            costPerKm: costPerKm ? new Decimal(costPerKm) : undefined,
+            notes,
+            isActive,
+            createdByUserId: userId,
+          },
+        });
+
+        results.success.push({ row: i + 1, fromCity, toCity });
+      } catch (error: any) {
+        results.errors.push({
+          row: i + 1,
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
 }

@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -74,6 +75,33 @@ export class RoutesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.routesService.create(dto, userId);
+  }
+
+  @Post('bulk-import')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:manage')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Bulk import routes from Excel file' })
+  async bulkImport(@UploadedFile() file: any, @CurrentUser('id') userId: string) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    if (!file.mimetype.includes('spreadsheet') && !file.mimetype.includes('excel') && !file.originalname.endsWith('.xlsx') && !file.originalname.endsWith('.xls')) {
+      throw new BadRequestException('File must be an Excel file (.xlsx or .xls)');
+    }
+    return this.routesService.bulkImport(file, userId);
   }
 
   @Put(':id')
