@@ -8,7 +8,7 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
-import { routesApi, type Route, type CreateRouteDto } from '@services/logistics/routes';
+import { routesApi, type CreateRouteDto } from '@services/logistics/routes';
 
 export function RouteFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +92,7 @@ export function RouteFormPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/logistics/routes')} icon={ArrowLeft}>
+            <Button variant="ghost" onClick={() => navigate('/logistics/routes')} leftIcon={<ArrowLeft />}>
               Back
             </Button>
             <div>
@@ -179,8 +179,8 @@ export function RouteFormPage() {
             <div className="flex items-center gap-2 pt-4 border-t border-border-default">
               <Button
                 onClick={() => (isEdit ? updateMutation.mutate() : createMutation.mutate())}
-                loading={createMutation.isPending || updateMutation.isPending}
-                icon={Save}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+                leftIcon={<Save />}
               >
                 {isEdit ? 'Update Route' : 'Create Route'}
               </Button>

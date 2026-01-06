@@ -18,6 +18,7 @@ export interface Route {
   tollStations?: Array<{
     id: string;
     sortOrder: number;
+    isActive: boolean;
     tollStation: {
       id: string;
       name: string;

@@ -1,6 +1,8 @@
 import { api, type ApiResponse, type PaginatedResponse } from '../api';
 import type { VehicleType } from './routes';
 
+export type { VehicleType };
+
 export type TollPaymentStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'POSTED';
 
 export interface TollPayment {

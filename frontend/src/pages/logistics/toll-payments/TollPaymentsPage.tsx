@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Calendar, Truck, DollarSign, FileText, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -15,9 +15,8 @@ import { tollStationsApi } from '@services/logistics/toll-stations';
 import { cn } from '@utils/cn';
 
 export function TollPaymentsPage() {
-  const { success, error: showError } = useToast();
+  const { error: showError } = useToast();
   const { hasPermission } = useAuth();
-  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<{
     startDate?: string;
     endDate?: string;
@@ -69,8 +68,8 @@ export function TollPaymentsPage() {
   const canApprove = hasPermission('logistics:toll_payments:approve');
   const canPost = hasPermission('logistics:toll_payments:post');
 
-  const statusColors: Record<TollPaymentStatus, 'default' | 'success' | 'warning' | 'secondary'> = {
-    DRAFT: 'secondary',
+  const statusColors: Record<TollPaymentStatus, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
+    DRAFT: 'default',
     SUBMITTED: 'warning',
     APPROVED: 'default',
     POSTED: 'success',
@@ -85,11 +84,11 @@ export function TollPaymentsPage() {
             <p className="text-content-secondary mt-1">Record and reconcile actual toll payments</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setReconcileModalOpen(true)} icon={TrendingUp}>
+            <Button variant="secondary" onClick={() => setReconcileModalOpen(true)} leftIcon={<TrendingUp />}>
               Reconcile
             </Button>
             {canCreate && (
-              <Button onClick={() => setCreateModalOpen(true)} icon={Plus}>
+              <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
                 New Payment
               </Button>
             )}
@@ -148,7 +147,7 @@ export function TollPaymentsPage() {
             <p className="text-lg font-semibold text-content-primary mb-2">No payments found</p>
             <p className="text-content-secondary mb-4">Record your first toll payment to get started</p>
             {canCreate && (
-              <Button onClick={() => setCreateModalOpen(true)} icon={Plus}>
+              <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
                 Record Payment
               </Button>
             )}
@@ -282,17 +281,17 @@ function PaymentRow({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {payment.status === 'DRAFT' && (
-            <Button variant="ghost" size="sm" onClick={() => submitMutation.mutate()} loading={submitMutation.isPending}>
+            <Button variant="ghost" size="sm" onClick={() => submitMutation.mutate()} isLoading={submitMutation.isPending}>
               Submit
             </Button>
           )}
           {payment.status === 'SUBMITTED' && canApprove && (
-            <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate()} loading={approveMutation.isPending}>
+            <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate()} isLoading={approveMutation.isPending}>
               Approve
             </Button>
           )}
           {(payment.status === 'APPROVED' || payment.status === 'DRAFT') && canPost && (
-            <Button variant="ghost" size="sm" onClick={() => postMutation.mutate()} loading={postMutation.isPending}>
+            <Button variant="ghost" size="sm" onClick={() => postMutation.mutate()} isLoading={postMutation.isPending}>
               Post
             </Button>
           )}
@@ -429,7 +428,7 @@ function PaymentModal({
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending}>
+        <Button onClick={() => createMutation.mutate()} isLoading={createMutation.isPending}>
           Record Payment
         </Button>
       </ModalFooter>

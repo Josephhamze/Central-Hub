@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, MapPin, Clock, Truck, DollarSign, History, Edit, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Truck, Edit, Plus, Trash2, GripVertical } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
-import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { routesApi, type Route, type VehicleType } from '@services/logistics/routes';
@@ -20,7 +19,6 @@ export function RouteDetailPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const { hasPermission } = useAuth();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [expectedTollVehicleType, setExpectedTollVehicleType] = useState<VehicleType>('FLATBED');
 
@@ -82,7 +80,7 @@ export function RouteDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/logistics/routes')} icon={ArrowLeft}>
+            <Button variant="ghost" onClick={() => navigate('/logistics/routes')} leftIcon={<ArrowLeft />}>
               Back
             </Button>
             <div>
@@ -93,7 +91,7 @@ export function RouteDetailPage() {
             </div>
           </div>
           {canManage && (
-            <Button onClick={() => navigate(`/logistics/routes/${id}/edit`)} icon={Edit}>
+            <Button onClick={() => navigate(`/logistics/routes/${id}/edit`)} leftIcon={<Edit />}>
               Edit Route
             </Button>
           )}
@@ -161,7 +159,7 @@ export function RouteDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-content-secondary">Status:</span>
-                  <Badge variant={route.isActive ? 'success' : 'secondary'}>
+                  <Badge variant={route.isActive ? 'success' : 'default'}>
                     {route.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
@@ -282,7 +280,7 @@ function RouteStationsTab({
           {canManage && (
             <Button
               onClick={() => setStationsMutation.mutate(selectedStations)}
-              loading={setStationsMutation.isPending}
+              isLoading={setStationsMutation.isPending}
             >
               Save Order
             </Button>
@@ -331,7 +329,7 @@ function RouteStationsTab({
                       >
                         ↓
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => removeStation(selected.tollStationId)} icon={Trash2}>
+                      <Button variant="ghost" size="sm" onClick={() => removeStation(selected.tollStationId)} leftIcon={<Trash2 />}>
                         Remove
                       </Button>
                     </div>
@@ -360,7 +358,7 @@ function RouteStationsTab({
                       <div className="text-sm text-content-secondary">{station.cityOrArea}</div>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => addStation(station.id)} icon={Plus}>
+                  <Button variant="ghost" size="sm" onClick={() => addStation(station.id)} leftIcon={<Plus />}>
                     Add
                   </Button>
                 </div>
@@ -372,7 +370,7 @@ function RouteStationsTab({
   );
 }
 
-function RouteCostingTab({ route }: { route: Route }) {
+function RouteCostingTab(_props: { route: Route }) {
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold text-content-primary mb-4">Route Costing</h3>

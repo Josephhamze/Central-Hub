@@ -86,7 +86,7 @@ export class QuotesService {
     }
 
     const distanceKm = new Decimal(route.distanceKm);
-    const costPerKm = new Decimal(route.costPerKm); // This is the "set $ amount"
+    const costPerKm = route.costPerKm ? new Decimal(route.costPerKm) : new Decimal(0); // This is the "set $ amount" (legacy, optional)
     
     // Calculate total tonnage from items
     // Convert all quantities to tons (assuming UOM is in tons, kg, or other units)

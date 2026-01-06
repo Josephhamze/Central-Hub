@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MapPin, DollarSign, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, MapPin, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -10,12 +10,10 @@ import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { tollStationsApi, type TollStation, type TollRate, type VehicleType } from '@services/logistics/toll-stations';
-import { cn } from '@utils/cn';
 
 export function TollStationsPage() {
   const { success, error: showError } = useToast();
   const { hasPermission } = useAuth();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -46,7 +44,7 @@ export function TollStationsPage() {
             <p className="text-content-secondary mt-1">Manage toll stations and rates by vehicle type</p>
           </div>
           {canManage && (
-            <Button onClick={() => setCreateModalOpen(true)} icon={Plus}>
+            <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
               New Station
             </Button>
           )}
@@ -59,7 +57,7 @@ export function TollStationsPage() {
               placeholder="Search stations..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              icon={Search}
+              leftIcon={<Search />}
             />
             <select
               value={isActiveFilter === undefined ? '' : isActiveFilter ? 'active' : 'inactive'}
@@ -84,7 +82,7 @@ export function TollStationsPage() {
             <p className="text-lg font-semibold text-content-primary mb-2">No toll stations found</p>
             <p className="text-content-secondary mb-4">Get started by creating your first toll station</p>
             {canManage && (
-              <Button onClick={() => setCreateModalOpen(true)} icon={Plus}>
+              <Button onClick={() => setCreateModalOpen(true)} leftIcon={<Plus />}>
                 Create Station
               </Button>
             )}
@@ -170,12 +168,12 @@ function TollStationCard({
             <p className="text-sm text-content-secondary mb-1">{station.cityOrArea}</p>
           )}
           {station.code && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="default" className="text-xs">
               {station.code}
             </Badge>
           )}
         </div>
-        <Badge variant={station.isActive ? 'success' : 'secondary'}>
+        <Badge variant={station.isActive ? 'success' : 'default'}>
           {station.isActive ? 'Active' : 'Inactive'}
         </Badge>
       </div>
@@ -192,13 +190,13 @@ function TollStationCard({
         </Button>
         {canManage && (
           <>
-            <Button variant="ghost" size="sm" onClick={onEdit} icon={Edit} />
+            <Button variant="ghost" size="sm" onClick={onEdit} leftIcon={<Edit />} />
             <Button
               variant="ghost"
               size="sm"
               onClick={() => deleteMutation.mutate()}
-              icon={Trash2}
-              loading={deleteMutation.isPending}
+              leftIcon={<Trash2 />}
+              isLoading={deleteMutation.isPending}
             />
           </>
         )}
@@ -283,7 +281,7 @@ function StationModal({
         </Button>
         <Button
           onClick={() => (station ? updateMutation.mutate() : createMutation.mutate())}
-          loading={createMutation.isPending || updateMutation.isPending}
+          isLoading={createMutation.isPending || updateMutation.isPending}
         >
           {station ? 'Update' : 'Create'}
         </Button>
@@ -408,15 +406,15 @@ function RatesModal({
                     </Badge>
                     {canManage && (
                       <>
-                        <Button variant="ghost" size="sm" onClick={() => onEditRate(rate)} icon={Edit}>
+                        <Button variant="ghost" size="sm" onClick={() => onEditRate(rate)} leftIcon={<Edit />}>
                           Edit
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteRateMutation.mutate(rate.id)}
-                          icon={Trash2}
-                          loading={deleteRateMutation.isPending}
+                          leftIcon={<Trash2 />}
+                          isLoading={deleteRateMutation.isPending}
                         >
                           Delete
                         </Button>

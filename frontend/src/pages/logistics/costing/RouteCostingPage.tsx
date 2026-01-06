@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Calculator, TrendingUp, DollarSign, Truck, Package, Calendar } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
-import { routesApi, type Route, type VehicleType } from '@services/logistics/routes';
-import { routeCostingApi, type RouteCostProfile, type CostingCalculationResult } from '@services/logistics/route-costing';
-import { cn } from '@utils/cn';
+import { routesApi, type VehicleType } from '@services/logistics/routes';
+import { routeCostingApi, type CostingCalculationResult } from '@services/logistics/route-costing';
 
 export function RouteCostingPage() {
   const { error: showError } = useToast();
@@ -172,9 +171,9 @@ export function RouteCostingPage() {
 
               <Button
                 onClick={() => calculateMutation.mutate()}
-                loading={calculateMutation.isPending}
+                isLoading={calculateMutation.isPending}
                 className="w-full"
-                icon={Calculator}
+                leftIcon={<Calculator />}
                 disabled={!formData.routeId || !formData.costProfileId || !formData.tonsPerTrip}
               >
                 Calculate

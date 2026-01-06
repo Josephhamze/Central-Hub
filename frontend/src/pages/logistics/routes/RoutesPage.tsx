@@ -11,7 +11,6 @@ import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { routesApi, type Route } from '@services/logistics/routes';
-import { cn } from '@utils/cn';
 
 export function RoutesPage() {
   const navigate = useNavigate();
@@ -69,7 +68,7 @@ export function RoutesPage() {
             <p className="text-content-secondary mt-1">Manage delivery routes and toll stations</p>
           </div>
           {canManage && (
-            <Button onClick={() => navigate('/logistics/routes/new')} icon={Plus}>
+            <Button onClick={() => navigate('/logistics/routes/new')} leftIcon={<Plus />}>
               New Route
             </Button>
           )}
@@ -82,7 +81,7 @@ export function RoutesPage() {
               placeholder="Search routes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              icon={Search}
+              leftIcon={<Search />}
             />
             <Input
               placeholder="From city..."
@@ -117,7 +116,7 @@ export function RoutesPage() {
             <p className="text-lg font-semibold text-content-primary mb-2">No routes found</p>
             <p className="text-content-secondary mb-4">Get started by creating your first route</p>
             {canManage && (
-              <Button onClick={() => navigate('/logistics/routes/new')} icon={Plus}>
+              <Button onClick={() => navigate('/logistics/routes/new')} leftIcon={<Plus />}>
                 Create Route
               </Button>
             )}
@@ -172,7 +171,7 @@ export function RoutesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={route.isActive ? 'success' : 'secondary'}>
+                        <Badge variant={route.isActive ? 'success' : 'default'}>
                           {route.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </td>
@@ -182,7 +181,7 @@ export function RoutesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/logistics/routes/${route.id}`)}
-                            icon={Eye}
+                            leftIcon={<Eye />}
                           >
                             View
                           </Button>
@@ -192,7 +191,7 @@ export function RoutesPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => navigate(`/logistics/routes/${route.id}/edit`)}
-                                icon={Edit}
+                                leftIcon={<Edit />}
                               >
                                 Edit
                               </Button>
@@ -201,7 +200,7 @@ export function RoutesPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => deactivateMutation.mutate(route.id)}
-                                  icon={Trash2}
+                                  leftIcon={<Trash2 />}
                                 >
                                   Deactivate
                                 </Button>
@@ -214,7 +213,7 @@ export function RoutesPage() {
                                     setRouteToDelete(route);
                                     setDeleteModalOpen(true);
                                   }}
-                                  icon={Trash2}
+                                  leftIcon={<Trash2 />}
                                 >
                                   Delete
                                 </Button>
@@ -258,7 +257,7 @@ export function RoutesPage() {
           <Button
             variant="danger"
             onClick={() => routeToDelete && deleteMutation.mutate(routeToDelete.id)}
-            loading={deleteMutation.isPending}
+            isLoading={deleteMutation.isPending}
           >
             Delete
           </Button>
