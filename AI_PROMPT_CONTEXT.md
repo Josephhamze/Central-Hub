@@ -1211,3 +1211,278 @@ No new environment variables required. Uses existing:
 
 *Last updated: Sales Quote System implementation*
 *Version: 2.0.0*
+
+---
+
+## 10. Routes & Tolls + Route Costing System
+
+### Overview
+Production-grade Routes & Tolls system with comprehensive costing engine for transport pricing, validation, and reconciliation. Used by Sales Quote Generator, Costing module, and Reporting.
+
+### Database Schema
+
+**Enums**:
+- `VehicleType`: `FLATBED` | `TIPPER`
+- `TollPaymentStatus`: `DRAFT` | `SUBMITTED` | `APPROVED` | `POSTED`
+
+**Models**:
+
+1. **Route** (extended existing model):
+   - `id`, `fromCity`, `toCity`, `distanceKm`, `costPerKm` (legacy, optional)
+   - `timeHours` (Decimal 8,2), `isActive` (Boolean), `notes` (String?), `createdByUserId` (String?)
+   - Relations: `tollStations` (RouteTollStation[]), `costingScenarios` (RouteCostingScenario[]), `tollPayments` (TollPayment[]), `snapshots` (RouteSnapshot[]), `creator` (User?)
+
+2. **TollStation**:
+   - `id`, `name`, `cityOrArea` (String?), `code` (String? unique), `isActive` (Boolean)
+   - Relations: `rates` (TollRate[]), `routeStations` (RouteTollStation[]), `payments` (TollPayment[])
+
+3. **TollRate**:
+   - `id`, `tollStationId`, `vehicleType` (VehicleType), `amount` (Decimal 10,2), `currency` (String default 'USD')
+   - `effectiveFrom` (DateTime?), `effectiveTo` (DateTime?), `isActive` (Boolean)
+   - Relations: `tollStation` (TollStation)
+
+4. **RouteTollStation** (join table):
+   - `id`, `routeId`, `tollStationId`, `sortOrder` (Int), `isActive` (Boolean)
+   - Unique constraint: `[routeId, tollStationId, sortOrder]`
+   - Relations: `route` (Route), `tollStation` (TollStation)
+
+5. **RouteCostProfile**:
+   - `id`, `name`, `vehicleType` (VehicleType), `currency` (String default 'USD'), `isActive` (Boolean)
+   - `configJson` (JSON) - validated schema for cost components
+   - `createdByUserId` (String?)
+   - Relations: `creator` (User?), `scenarios` (RouteCostingScenario[])
+
+6. **RouteCostingScenario**:
+   - `id`, `routeId`, `costProfileId`, `tripsPerMonth` (Decimal 10,2?), `plannedTonnagePerMonth` (Decimal 10,2?), `isActive` (Boolean)
+   - Unique constraint: `[routeId, costProfileId]`
+   - Relations: `route` (Route), `costProfile` (RouteCostProfile)
+
+7. **TollPayment**:
+   - `id`, `paidAt` (DateTime), `vehicleType` (VehicleType), `routeId` (String?), `tollStationId` (String?)
+   - `amount` (Decimal 10,2), `currency` (String default 'USD'), `receiptRef` (String?), `paidByUserId` (String?), `notes` (String?)
+   - `status` (TollPaymentStatus default DRAFT)
+   - Relations: `route` (Route?), `tollStation` (TollStation?), `paidBy` (User?), `attachments` (TollPaymentAttachment[])
+
+8. **TollPaymentAttachment**:
+   - `id`, `tollPaymentId`, `filePath`, `fileName`, `mimeType` (String?)
+
+9. **RouteSnapshot**:
+   - `id`, `routeId`, `snapshotJson` (JSON), `createdAt`
+   - Used for quote immutability - stores route config at time of quote creation
+
+**Migration**: `backend/prisma/migrations/20260106135743_add_routes_tolls_system/`
+
+### API Endpoints
+
+**Base Path**: `/api/v1`
+
+**Routes Module** (`/routes`):
+- `GET /routes` - List routes (filters: fromCity, toCity, isActive, search)
+- `GET /routes/:id` - Get route details with toll stations
+- `GET /routes/:id/expected-toll?vehicleType=` - Get expected toll total by vehicle type
+- `GET /routes/:id/stations` - Get ordered toll stations for route
+- `POST /routes` - Create route (requires `logistics:routes:manage`)
+- `PUT /routes/:id` - Update route (requires `logistics:routes:manage`)
+- `POST /routes/:id/deactivate` - Deactivate route (requires `logistics:routes:manage`)
+- `POST /routes/:id/stations` - Set ordered toll stations (requires `logistics:routes:manage`)
+- `DELETE /routes/:id` - Delete route (requires `logistics:routes:manage`)
+
+**Toll Stations Module** (`/toll-stations`):
+- `GET /toll-stations` - List stations (filters: isActive, search)
+- `GET /toll-stations/:id` - Get station with rates
+- `GET /toll-stations/:id/rates?vehicleType=` - Get rates for station
+- `POST /toll-stations` - Create station (requires `logistics:tolls:manage`)
+- `PUT /toll-stations/:id` - Update station (requires `logistics:tolls:manage`)
+- `DELETE /toll-stations/:id` - Delete station (requires `logistics:tolls:manage`)
+- `POST /toll-stations/:id/rates` - Create rate (requires `logistics:tolls:manage`)
+- `PUT /toll-stations/:id/rates/:rateId` - Update rate (requires `logistics:tolls:manage`)
+- `DELETE /toll-stations/:id/rates/:rateId` - Delete rate (requires `logistics:tolls:manage`)
+
+**Route Costing Module** (`/cost-profiles`, `/costing`):
+- `GET /cost-profiles?vehicleType=` - List cost profiles
+- `GET /cost-profiles/:id` - Get cost profile
+- `POST /cost-profiles` - Create profile (requires `logistics:costing:manage`)
+- `PUT /cost-profiles/:id` - Update profile (requires `logistics:costing:manage`)
+- `POST /cost-profiles/:id/activate` - Activate profile (requires `logistics:costing:manage`)
+- `DELETE /cost-profiles/:id` - Delete profile (requires `logistics:costing:manage`)
+- `POST /costing/calculate` - Calculate route costing (requires `logistics:costing:view`)
+
+**Toll Payments Module** (`/toll-payments`):
+- `GET /toll-payments` - List payments (filters: startDate, endDate, routeId, tollStationId, vehicleType, status, paidByUserId)
+- `GET /toll-payments/:id` - Get payment
+- `POST /toll-payments` - Create payment (requires `logistics:toll_payments:create`)
+- `PUT /toll-payments/:id` - Update payment (requires `logistics:toll_payments:create`)
+- `POST /toll-payments/:id/submit` - Submit for approval (requires `logistics:toll_payments:create`)
+- `POST /toll-payments/:id/approve` - Approve payment (requires `logistics:toll_payments:approve`)
+- `POST /toll-payments/:id/post` - Post payment (requires `logistics:toll_payments:post`)
+- `DELETE /toll-payments/:id` - Delete payment (requires `logistics:toll_payments:create`)
+- `POST /toll-payments/reconcile` - Reconcile expected vs actual (requires `logistics:toll_payments:view`)
+
+### Permissions
+
+**Routes**:
+- `logistics:routes:view` - View routes
+- `logistics:routes:manage` - Create, update, delete routes
+
+**Tolls**:
+- `logistics:tolls:view` - View toll stations and rates
+- `logistics:tolls:manage` - Manage toll stations and rates
+
+**Costing**:
+- `logistics:costing:view` - View cost profiles and use calculator
+- `logistics:costing:manage` - Manage cost profiles
+
+**Toll Payments**:
+- `logistics:toll_payments:view` - View payments and reconcile
+- `logistics:toll_payments:create` - Create and update payments
+- `logistics:toll_payments:approve` - Approve payments
+- `logistics:toll_payments:post` - Post payments (finalize)
+
+### Costing Calculation Formulas
+
+**Inputs**:
+- `routeId`, `vehicleType`, `costProfileId`, `tonsPerTrip`, `tripsPerMonth` (optional), `includeEmptyLeg` (optional), `profitMarginPercentOverride` (optional)
+
+**Toll Calculation**:
+```
+tollPerTrip = sum(activeRate.amount for all stations on route where vehicleType matches)
+tollPerMonth = tollPerTrip × tripsPerMonth (if provided)
+```
+
+**Fuel Cost**:
+```
+If config.fuel.costPerKm:
+  fuelCostPerTrip = costPerKm × distanceKm
+Else if config.fuel.costPerUnit && config.fuel.consumptionPerKm:
+  consumption = consumptionPerKm × distanceKm
+  fuelCostPerTrip = costPerUnit × consumption
+```
+
+**Monthly Fixed Costs**:
+```
+monthlyFixedCosts = communicationsMonthly + laborMonthly + docsGpsMonthly + depreciationMonthly
+fixedCostPerTrip = monthlyFixedCosts ÷ tripsPerMonth (if tripsPerMonth > 0, else 0)
+```
+
+**Base Trip Cost**:
+```
+baseTripCost = fuelCostPerTrip + tollPerTrip + overheadPerTrip + fixedCostPerTrip
+```
+
+**Empty Leg Handling**:
+```
+If includeEmptyLeg:
+  effectiveDistanceKm = distanceKm × (1 + emptyLegFactor)
+  returnFuelCost = fuelCostPerTrip × emptyLegFactor
+  baseTripCost = baseTripCost + returnFuelCost
+  effectiveTonsPerKm = tonsPerTrip × effectiveDistanceKm
+Else:
+  effectiveDistanceKm = distanceKm
+  effectiveTonsPerKm = tonsPerTrip × distanceKm
+```
+
+**Cost Per Ton Per Km**:
+```
+costPerTonPerKm = baseTripCost ÷ effectiveTonsPerKm
+```
+
+**Cost Per Ton Per Km Including Empty Leg** (always calculated with return leg):
+```
+If includeEmptyLeg:
+  costPerTonPerKmIncludingEmptyLeg = costPerTonPerKm
+Else:
+  returnDistanceKm = distanceKm × (1 + emptyLegFactor)
+  returnTonsPerKm = tonsPerTrip × returnDistanceKm
+  returnBaseCost = baseTripCost + (fuelCostPerTrip × emptyLegFactor)
+  costPerTonPerKmIncludingEmptyLeg = returnBaseCost ÷ returnTonsPerKm
+```
+
+**Sales Price**:
+```
+profitMarginPercent = profitMarginPercentOverride || config.profitMarginPercent || 0
+salesPriceWithProfitMargin = baseTripCost × (1 + profitMarginPercent ÷ 100)
+salesPricePerTon = salesPriceWithProfitMargin ÷ tonsPerTrip
+```
+
+**Total Cost Per Month**:
+```
+totalCostPerMonth = baseTripCost × tripsPerMonth (if tripsPerMonth provided)
+```
+
+**Important Notes**:
+- All calculations use `Decimal` type (no floats)
+- Empty leg factor defaults to 1.0 if not specified
+- If `effectiveTonsPerKm` is zero, calculation throws error
+- Profit margin is applied deterministically as documented above
+
+### Frontend Routes
+
+- `/logistics/routes` - Routes list page
+- `/logistics/routes/new` - Create route form
+- `/logistics/routes/:id` - Route detail page (tabs: Overview, Stations, Costing, History)
+- `/logistics/routes/:id/edit` - Edit route form
+- `/logistics/toll-stations` - Toll stations CRUD page
+- `/logistics/toll-payments` - Toll payments ledger page
+- `/logistics/route-costing` - Route costing calculator page
+
+**Navigation**: Routes & Tolls system accessible under "Logistics" section in sidebar
+
+### Frontend Services
+
+**Location**: `frontend/src/services/logistics/`
+
+- `routes.ts` - Routes API service
+- `toll-stations.ts` - Toll stations API service
+- `route-costing.ts` - Cost profiles and calculation API service
+- `toll-payments.ts` - Toll payments API service
+
+### File Paths
+
+**Backend**:
+- Routes module: `backend/src/modules/routes/`
+- Toll stations module: `backend/src/modules/toll-stations/`
+- Route costing module: `backend/src/modules/route-costing/`
+- Toll payments module: `backend/src/modules/toll-payments/`
+- Migration: `backend/prisma/migrations/20260106135743_add_routes_tolls_system/`
+- Seed: `backend/prisma/seed.ts` (permissions added)
+
+**Frontend**:
+- Routes pages: `frontend/src/pages/logistics/routes/`
+- Toll stations page: `frontend/src/pages/logistics/toll-stations/TollStationsPage.tsx`
+- Toll payments page: `frontend/src/pages/logistics/toll-payments/TollPaymentsPage.tsx`
+- Costing calculator: `frontend/src/pages/logistics/costing/RouteCostingPage.tsx`
+- API services: `frontend/src/services/logistics/`
+
+### Integration Hooks
+
+**For Quotes Module**:
+- Use `routesApi.getExpectedToll(routeId, vehicleType)` to get toll total
+- Use `routeCostingApi.calculate()` to compute transport cost
+- Create `RouteSnapshot` when quote is submitted/approved to freeze route config
+- Copy calculated values to quote transport fields
+
+**For Costing Module**:
+- Export route cost breakdown via `/costing/calculate` endpoint
+- Export toll payment ledger items for reconciliation
+- Compare expected vs actual costs
+
+### Reconciliation Logic
+
+**Expected Tolls**:
+- Sum of active toll rates for all stations on active routes
+- Filtered by vehicle type and effective date ranges
+- Calculated from route's toll station assignments
+
+**Actual Tolls**:
+- Sum of posted toll payments in date range
+- Filtered by route, station, vehicle type as specified
+
+**Variance**:
+- `variance = actualTollsTotal - expectedTollsTotal`
+- Calculated per station and overall
+- Positive variance = overpayment, negative = underpayment
+
+---
+
+*Last updated: Routes & Tolls + Route Costing System implementation*
+*Version: 3.0.0*
