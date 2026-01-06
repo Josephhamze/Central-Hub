@@ -235,7 +235,7 @@ function RouteStationsTab({
 }: {
   route: Route;
   canManage: boolean;
-  allStations: TollStationType[];
+  allStations: TollStation[];
 }) {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
