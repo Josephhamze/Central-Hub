@@ -13,7 +13,7 @@ import { getErrorMessage } from '@services/api';
 import { useAuth } from '@contexts/AuthContext';
 
 export function InviteCodesPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -90,7 +90,12 @@ export function InviteCodesPage() {
     return inviteCode.useCount >= inviteCode.maxUses || !!inviteCode.usedBy;
   };
 
-  if (!hasPermission('users:view')) {
+  const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+  const canView = hasPermission('users:view') || isAdmin;
+  const canCreate = hasPermission('users:create') || isAdmin;
+  const canUpdate = hasPermission('users:update') || isAdmin;
+
+  if (!canView) {
     return (
       <PageContainer title="Invite Codes" description="Manage user registration invite codes">
         <Card className="p-6">
@@ -114,7 +119,7 @@ export function InviteCodesPage() {
               Create invite codes that users need to register for an account
             </p>
           </div>
-          {hasPermission('users:create') && (
+          {canCreate && (
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               leftIcon={<Plus className="w-4 h-4" />}
@@ -132,7 +137,7 @@ export function InviteCodesPage() {
             <div className="p-8 text-center">
               <Key className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
               <p className="text-content-secondary mb-4">No invite codes yet</p>
-              {hasPermission('users:create') && (
+              {canCreate && (
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   Generate Your First Invite Code
                 </Button>
@@ -201,7 +206,7 @@ export function InviteCodesPage() {
                           : '-'}
                       </td>
                       <td className="p-4">
-                        {inviteCode.isActive && hasPermission('users:update') && (
+                        {inviteCode.isActive && canUpdate && (
                           <button
                             onClick={() => handleDeactivate(inviteCode.id)}
                             className="p-1 hover:bg-background-hover rounded transition-colors text-content-tertiary hover:text-content-primary"

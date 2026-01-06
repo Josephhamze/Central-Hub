@@ -56,6 +56,18 @@ export class RbacGuard implements CanActivate {
       throw new ForbiddenException('User not found');
     }
 
+    // Check if user is Administrator - admins have all permissions
+    const isAdmin = userWithRoles.roles.some(
+      (userRole) =>
+        userRole.role.name === 'Administrator' ||
+        userRole.role.name === 'Admin' ||
+        userRole.role.name === 'ADMIN',
+    );
+
+    if (isAdmin) {
+      return true; // Admins bypass permission checks
+    }
+
     // Extract all permission codes
     const userPermissions = new Set<string>();
     for (const userRole of userWithRoles.roles) {
@@ -76,3 +88,5 @@ export class RbacGuard implements CanActivate {
     return true;
   }
 }
+
+
