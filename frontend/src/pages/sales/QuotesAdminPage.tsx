@@ -58,7 +58,7 @@ export function QuotesAdminPage() {
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
