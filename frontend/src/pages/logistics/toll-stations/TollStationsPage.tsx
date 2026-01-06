@@ -401,7 +401,7 @@ function RatesModal({
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={rate.isActive ? 'success' : 'secondary'}>
+                    <Badge variant={rate.isActive ? 'success' : 'default'}>
                       {rate.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                     {canManage && (
@@ -489,7 +489,7 @@ function RatesModal({
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => (editingRate ? updateRateMutation.mutate() : createRateMutation.mutate())}
-                  loading={createRateMutation.isPending || updateRateMutation.isPending}
+                  isLoading={createRateMutation.isPending || updateRateMutation.isPending}
                   className="flex-1"
                 >
                   {editingRate ? 'Update Rate' : 'Add Rate'}
