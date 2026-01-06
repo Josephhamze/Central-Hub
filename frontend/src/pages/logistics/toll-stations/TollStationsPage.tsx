@@ -12,7 +12,6 @@ import { useAuth } from '@contexts/AuthContext';
 import { tollStationsApi, type TollStation, type TollRate, type VehicleType } from '@services/logistics/toll-stations';
 
 export function TollStationsPage() {
-  const { error: showError } = useToast();
   const { hasPermission } = useAuth();
   const [search, setSearch] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);

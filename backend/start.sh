@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-# Run migrations
+# Run migrations using pnpm dlx (downloads and runs specific version)
 echo "Running database migrations..."
-pnpm prisma migrate deploy
+pnpm dlx prisma@6.19.1 migrate deploy
 
 # Seed database (upsert, safe to run multiple times)
 echo "Seeding database with permissions..."
-pnpm prisma db seed || echo "Seed completed (some items may already exist)"
+pnpm dlx prisma@6.19.1 db seed || echo "Seed completed (some items may already exist)"
 
 # Start the application
 echo "Starting NestJS application..."

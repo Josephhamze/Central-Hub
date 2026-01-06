@@ -17,7 +17,6 @@ type Tab = 'overview' | 'stations' | 'costing' | 'history';
 export function RouteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { error: showError } = useToast();
   const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [expectedTollVehicleType, setExpectedTollVehicleType] = useState<VehicleType>('FLATBED');
