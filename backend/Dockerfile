@@ -78,8 +78,9 @@ RUN pnpm dlx prisma@6.19.1 generate
 # Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Copy start script
+# Copy start script and make it executable
 COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
 
 # Verify dist was copied correctly
 RUN ls -la dist/ || (echo "Copy failed - dist directory not found" && exit 1)
