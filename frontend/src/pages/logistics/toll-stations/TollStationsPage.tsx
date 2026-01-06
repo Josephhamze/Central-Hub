@@ -13,6 +13,8 @@ import { tollStationsApi, type TollStation, type TollRate, type VehicleType } fr
 
 export function TollStationsPage() {
   const { hasPermission } = useAuth();
+  const { success, error: showError } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
   const [createModalOpen, setCreateModalOpen] = useState(false);
