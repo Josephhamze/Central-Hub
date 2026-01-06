@@ -1365,8 +1365,6 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                     ) : null;
                   })()}
                 </div>
-                  />
-                </div>
 
                 {/* Validation Message */}
                 {quoteData.truckType && requiredTrucks > 0 && (
