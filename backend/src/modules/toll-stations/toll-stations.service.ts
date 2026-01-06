@@ -270,21 +270,49 @@ export class TollStationsService {
           throw new Error('TIPPER Rate must be a valid non-negative number');
         }
 
-        // Parse dates
+        // Parse dates - handle Excel date formats
         let effectiveFrom: Date | null = null;
         let effectiveTo: Date | null = null;
         
+        const parseDate = (dateStr: string): Date | null => {
+          if (!dateStr || dateStr.trim() === '') return null;
+          
+          // Handle Excel serial date numbers (days since 1900-01-01)
+          const numValue = Number(dateStr);
+          if (!isNaN(numValue) && numValue > 0 && numValue < 1000000) {
+            // Excel serial date: days since 1900-01-01, but Excel incorrectly treats 1900 as a leap year
+            // So we need to adjust: Excel epoch is 1899-12-30
+            const excelEpoch = new Date(1899, 11, 30); // December 30, 1899
+            const date = new Date(excelEpoch.getTime() + (numValue - 1) * 24 * 60 * 60 * 1000);
+            if (!isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2100) {
+              return date;
+            }
+          }
+          
+          // Try parsing as ISO date string (YYYY-MM-DD)
+          const isoDate = new Date(dateStr);
+          if (!isNaN(isoDate.getTime())) {
+            // Validate the date is reasonable (between 1900 and 2100)
+            const year = isoDate.getFullYear();
+            if (year >= 1900 && year <= 2100) {
+              return isoDate;
+            }
+          }
+          
+          return null;
+        };
+        
         if (effectiveFromStr) {
-          effectiveFrom = new Date(effectiveFromStr);
-          if (isNaN(effectiveFrom.getTime())) {
-            throw new Error('Effective From must be a valid date (YYYY-MM-DD)');
+          effectiveFrom = parseDate(effectiveFromStr);
+          if (!effectiveFrom) {
+            throw new Error(`Effective From must be a valid date (YYYY-MM-DD). Got: ${effectiveFromStr}`);
           }
         }
         
         if (effectiveToStr) {
-          effectiveTo = new Date(effectiveToStr);
-          if (isNaN(effectiveTo.getTime())) {
-            throw new Error('Effective To must be a valid date (YYYY-MM-DD)');
+          effectiveTo = parseDate(effectiveToStr);
+          if (!effectiveTo) {
+            throw new Error(`Effective To must be a valid date (YYYY-MM-DD). Got: ${effectiveToStr}`);
           }
         }
 
