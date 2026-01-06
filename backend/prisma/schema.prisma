@@ -44,6 +44,9 @@ model User {
   assetHistory     AssetHistory[] @relation("AssetHistoryActors")
   createdInviteCodes InviteCode[] @relation("InviteCodeCreator")
   usedInviteCode     InviteCode?  @relation("InviteCodeUser")
+  createdRoutes      Route[] @relation("RouteCreator")
+  createdCostProfiles RouteCostProfile[] @relation("RouteCostProfileCreator")
+  tollPaymentsPaidBy TollPayment[] @relation("TollPaymentPaidBy")
 
   @@index([accountStatus])
   @@index([emailVerified])
@@ -236,6 +239,11 @@ enum TruckType {
   CANTER
 }
 
+enum VehicleType {
+  FLATBED
+  TIPPER
+}
+
 enum LossReasonCategory {
   PRICE_TOO_HIGH
   FOUND_BETTER_DEAL
@@ -409,22 +417,35 @@ model StockItem {
 
 // Route (Admin-only)
 model Route {
-  id        String    @id @default(cuid())
-  fromCity  String    @map("from_city")
-  toCity    String    @map("to_city")
-  distanceKm Decimal  @map("distance_km") @db.Decimal(10, 2)
-  costPerKm Decimal   @map("cost_per_km") @db.Decimal(10, 2)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(cuid())
+  fromCity        String    @map("from_city")
+  toCity          String    @map("to_city")
+  distanceKm      Decimal   @map("distance_km") @db.Decimal(10, 2)
+  costPerKm       Decimal?  @map("cost_per_km") @db.Decimal(10, 2) // Legacy field, kept for backward compatibility
+  timeHours       Decimal?  @map("time_hours") @db.Decimal(8, 2)
+  isActive        Boolean   @default(true) @map("is_active")
+  notes           String?
+  createdByUserId String?   @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  tolls     Toll[]
-  quotes    Quote[]
+  tolls           Toll[]    // Legacy tolls, kept for backward compatibility
+  quotes          Quote[]
+  tollStations    RouteTollStation[]
+  costingScenarios RouteCostingScenario[]
+  tollPayments    TollPayment[]
+  snapshots       RouteSnapshot[]
+  creator         User?     @relation("RouteCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  @@index([fromCity])
+  @@index([toCity])
+  @@index([isActive])
+  @@index([createdByUserId])
   @@map("routes")
 }
 
-// Toll
+// Toll (Legacy - kept for backward compatibility)
 model Toll {
   id        String    @id @default(cuid())
   routeId   String    @map("route_id")
@@ -438,6 +459,189 @@ model Toll {
 
   @@index([routeId])
   @@map("tolls")
+}
+
+// ============================================================================
+// ROUTES & TOLLS SYSTEM
+// ============================================================================
+
+// Toll Station
+model TollStation {
+  id          String      @id @default(cuid())
+  name        String
+  cityOrArea  String?     @map("city_or_area")
+  code        String?      @unique
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  rates       TollRate[]
+  routeStations RouteTollStation[]
+  payments    TollPayment[]
+
+  @@index([isActive])
+  @@index([code])
+  @@map("toll_stations")
+}
+
+// Toll Rate (per station + vehicle type)
+model TollRate {
+  id            String      @id @default(cuid())
+  tollStationId String      @map("toll_station_id")
+  vehicleType   VehicleType @map("vehicle_type")
+  amount        Decimal     @db.Decimal(10, 2)
+  currency      String      @default("USD")
+  effectiveFrom DateTime?   @map("effective_from")
+  effectiveTo   DateTime?   @map("effective_to")
+  isActive      Boolean     @default(true) @map("is_active")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  tollStation   TollStation @relation(fields: [tollStationId], references: [id], onDelete: Cascade)
+
+  @@index([tollStationId])
+  @@index([vehicleType])
+  @@index([isActive])
+  @@index([effectiveFrom])
+  @@index([effectiveTo])
+  @@map("toll_rates")
+}
+
+// Route Toll Station (join table for ordered stations per route)
+model RouteTollStation {
+  id            String      @id @default(cuid())
+  routeId       String      @map("route_id")
+  tollStationId String      @map("toll_station_id")
+  sortOrder     Int         @map("sort_order")
+  isActive      Boolean     @default(true) @map("is_active")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  route         Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  tollStation   TollStation @relation(fields: [tollStationId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, tollStationId, sortOrder])
+  @@index([routeId])
+  @@index([tollStationId])
+  @@index([isActive])
+  @@map("route_toll_stations")
+}
+
+// Route Cost Profile
+model RouteCostProfile {
+  id            String      @id @default(cuid())
+  name          String
+  vehicleType   VehicleType @map("vehicle_type")
+  currency      String      @default("USD")
+  isActive      Boolean     @default(true) @map("is_active")
+  configJson    Json        @map("config_json") // Validated schema for cost components
+  createdByUserId String?    @map("created_by_user_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  creator       User?       @relation("RouteCostProfileCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  scenarios     RouteCostingScenario[]
+
+  @@index([vehicleType])
+  @@index([isActive])
+  @@index([createdByUserId])
+  @@map("route_cost_profiles")
+}
+
+// Route Costing Scenario
+model RouteCostingScenario {
+  id                    String            @id @default(cuid())
+  routeId               String            @map("route_id")
+  costProfileId         String            @map("cost_profile_id")
+  tripsPerMonth         Decimal?          @map("trips_per_month") @db.Decimal(10, 2)
+  plannedTonnagePerMonth Decimal?          @map("planned_tonnage_per_month") @db.Decimal(10, 2)
+  isActive              Boolean           @default(true) @map("is_active")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  route                 Route             @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  costProfile           RouteCostProfile  @relation(fields: [costProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, costProfileId])
+  @@index([routeId])
+  @@index([costProfileId])
+  @@index([isActive])
+  @@map("route_costing_scenarios")
+}
+
+// Toll Payment Status
+enum TollPaymentStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  POSTED
+}
+
+// Toll Payment
+model TollPayment {
+  id            String            @id @default(cuid())
+  paidAt        DateTime          @map("paid_at")
+  vehicleType   VehicleType       @map("vehicle_type")
+  routeId       String?           @map("route_id")
+  tollStationId String?           @map("toll_station_id")
+  amount        Decimal           @db.Decimal(10, 2)
+  currency      String             @default("USD")
+  receiptRef    String?            @map("receipt_ref")
+  paidByUserId  String?           @map("paid_by_user_id")
+  notes         String?
+  status        TollPaymentStatus  @default(DRAFT)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  route         Route?             @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  tollStation   TollStation?      @relation(fields: [tollStationId], references: [id], onDelete: SetNull)
+  paidBy        User?              @relation("TollPaymentPaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  attachments   TollPaymentAttachment[]
+
+  @@index([paidAt])
+  @@index([vehicleType])
+  @@index([routeId])
+  @@index([tollStationId])
+  @@index([status])
+  @@index([paidByUserId])
+  @@map("toll_payments")
+}
+
+// Toll Payment Attachment
+model TollPaymentAttachment {
+  id            String        @id @default(cuid())
+  tollPaymentId String        @map("toll_payment_id")
+  filePath      String        @map("file_path")
+  fileName      String        @map("file_name")
+  mimeType      String?       @map("mime_type")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  tollPayment   TollPayment   @relation(fields: [tollPaymentId], references: [id], onDelete: Cascade)
+
+  @@index([tollPaymentId])
+  @@map("toll_payment_attachments")
+}
+
+// Route Snapshot (for quoting/immutability)
+model RouteSnapshot {
+  id          String    @id @default(cuid())
+  routeId     String    @map("route_id")
+  snapshotJson Json     @map("snapshot_json") // Contains distance/time/stations + rates + profile config used
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  route       Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([routeId])
+  @@index([createdAt])
+  @@map("route_snapshots")
 }
 
 // Quote
