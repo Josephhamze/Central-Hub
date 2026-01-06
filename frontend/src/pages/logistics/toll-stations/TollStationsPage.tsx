@@ -39,6 +39,66 @@ export function TollStationsPage() {
 
   const canManage = hasPermission('logistics:tolls:manage');
 
+  const bulkImportMutation = useMutation({
+    mutationFn: (file: File) => tollStationsApi.bulkImport(file),
+    onSuccess: (response) => {
+      const results = response.data.data;
+      setUploadResults(results);
+      queryClient.invalidateQueries({ queryKey: ['toll-stations'] });
+      if (results.errors.length === 0) {
+        success(`Successfully imported ${results.success.length} toll station(s)`);
+        setTimeout(() => {
+          setIsUploadModalOpen(false);
+          setUploadFile(null);
+          setUploadResults(null);
+        }, 3000);
+      } else {
+        showError(`Imported ${results.success.length} station(s), but ${results.errors.length} error(s) occurred. Check details below.`);
+      }
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to import toll stations');
+    },
+  });
+
+  const downloadTemplate = () => {
+    // Create Excel-like CSV template
+    const headers = ['Name', 'City/Area', 'Code', 'Is Active', 'FLATBED Rate', 'TIPPER Rate', 'Currency', 'Effective From', 'Effective To'];
+    const exampleRow = ['Kasumbalesa Border', 'Kasumbalesa', 'KAS-001', 'Yes', '25.00', '30.00', 'USD', '2026-01-01', ''];
+    
+    const csvContent = [headers, exampleRow].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'toll_stations_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    success('Template downloaded. You can open it in Excel and save as .xlsx format.');
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+        showError('Please select an Excel file (.xlsx, .xls) or CSV file');
+        return;
+      }
+      setUploadFile(file);
+      setUploadResults(null);
+    }
+  };
+
+  const handleUpload = () => {
+    if (!uploadFile) {
+      showError('Please select a file');
+      return;
+    }
+    bulkImportMutation.mutate(uploadFile);
+  };
+
   return (
     <PageContainer>
       <div className="space-y-6">
