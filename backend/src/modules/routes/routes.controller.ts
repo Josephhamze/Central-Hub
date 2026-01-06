@@ -1,12 +1,15 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { CreateTollDto } from './dto/create-toll.dto';
+import { SetRouteStationsDto } from './dto/set-route-stations.dto';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { VehicleType } from '@prisma/client';
 
 @ApiTags('Routes')
 @ApiBearerAuth('JWT-auth')
@@ -17,39 +20,102 @@ export class RoutesController {
 
   @Get()
   @UseGuards(RbacGuard)
-  @Permissions('routes:view')
+  @Permissions('logistics:routes:view')
   @ApiOperation({ summary: 'Get all routes' })
-  async findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
-    return this.routesService.findAll(+page, +limit);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'fromCity', required: false })
+  @ApiQuery({ name: 'toCity', required: false })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
+  @ApiQuery({ name: 'search', required: false })
+  async findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('fromCity') fromCity?: string,
+    @Query('toCity') toCity?: string,
+    @Query('isActive') isActive?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.routesService.findAll(+page, +limit, {
+      fromCity,
+      toCity,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      search,
+    });
   }
 
   @Get(':id')
   @UseGuards(RbacGuard)
-  @Permissions('routes:view')
+  @Permissions('logistics:routes:view')
   @ApiOperation({ summary: 'Get route by ID' })
   async findOne(@Param('id') id: string) {
     return this.routesService.findOne(id);
   }
 
+  @Get(':id/expected-toll')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:view')
+  @ApiOperation({ summary: 'Get expected toll total for route by vehicle type' })
+  @ApiQuery({ name: 'vehicleType', enum: VehicleType, required: true })
+  async getExpectedToll(
+    @Param('id') id: string,
+    @Query('vehicleType') vehicleType: VehicleType,
+  ) {
+    const total = await this.routesService.getExpectedTollTotal(id, vehicleType);
+    return { routeId: id, vehicleType, total: total.toString() };
+  }
+
   @Post()
   @UseGuards(RbacGuard)
-  @Permissions('routes:create')
+  @Permissions('logistics:routes:manage')
   @ApiOperation({ summary: 'Create a new route' })
-  async create(@Body() dto: CreateRouteDto) {
-    return this.routesService.create(dto);
+  async create(
+    @Body() dto: CreateRouteDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.routesService.create(dto, userId);
   }
 
   @Put(':id')
   @UseGuards(RbacGuard)
-  @Permissions('routes:update')
+  @Permissions('logistics:routes:manage')
   @ApiOperation({ summary: 'Update a route' })
   async update(@Param('id') id: string, @Body() dto: UpdateRouteDto) {
     return this.routesService.update(id, dto);
   }
 
+  @Post(':id/deactivate')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:manage')
+  @ApiOperation({ summary: 'Deactivate a route' })
+  async deactivate(@Param('id') id: string) {
+    return this.routesService.deactivate(id);
+  }
+
+  @Post(':id/stations')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:manage')
+  @ApiOperation({ summary: 'Set ordered toll stations for a route' })
+  async setRouteStations(
+    @Param('id') id: string,
+    @Body() dto: SetRouteStationsDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.routesService.setRouteStations(id, dto, userId);
+  }
+
+  @Get(':id/stations')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:view')
+  @ApiOperation({ summary: 'Get toll stations for a route' })
+  async getRouteStations(@Param('id') id: string) {
+    const route = await this.routesService.findOne(id);
+    return route.tollStations;
+  }
+
   @Delete(':id')
   @UseGuards(RbacGuard)
-  @Permissions('routes:delete')
+  @Permissions('logistics:routes:manage')
   @ApiOperation({ summary: 'Delete a route' })
   async remove(@Param('id') id: string) {
     return this.routesService.remove(id);
@@ -57,16 +123,16 @@ export class RoutesController {
 
   @Post('tolls')
   @UseGuards(RbacGuard)
-  @Permissions('routes:create')
-  @ApiOperation({ summary: 'Add a toll to a route' })
+  @Permissions('logistics:routes:manage')
+  @ApiOperation({ summary: 'Add a toll to a route (legacy)' })
   async addToll(@Body() dto: CreateTollDto) {
     return this.routesService.addToll(dto);
   }
 
   @Delete('tolls/:id')
   @UseGuards(RbacGuard)
-  @Permissions('routes:delete')
-  @ApiOperation({ summary: 'Remove a toll' })
+  @Permissions('logistics:routes:manage')
+  @ApiOperation({ summary: 'Remove a toll (legacy)' })
   async removeToll(@Param('id') id: string) {
     return this.routesService.removeToll(id);
   }
