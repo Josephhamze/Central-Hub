@@ -218,7 +218,7 @@ function PaymentRow({
   payment: TollPayment;
   canApprove: boolean;
   canPost: boolean;
-  statusColors: Record<TollPaymentStatus, 'default' | 'success' | 'warning' | 'secondary'>;
+  statusColors: Record<TollPaymentStatus, 'default' | 'success' | 'warning' | 'error' | 'info'>;
 }) {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();

@@ -44,33 +44,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json ./
 COPY prisma ./prisma/
 
-# Install production dependencies (build scripts will run automatically)
-# Then reinstall bcrypt separately to ensure it builds correctly
-RUN pnpm install --prod --ignore-scripts=false && \
-    echo "Reinstalling bcrypt@5.1.1 to ensure native bindings are built..." && \
-    pnpm remove bcrypt && \
-    pnpm add bcrypt@5.1.1 --save-prod --ignore-scripts=false && \
-    echo "Verifying bcrypt installation..." && \
-    BCrypt_BINDING=$(find /app/node_modules/.pnpm -name "bcrypt_lib.node" -type f 2>/dev/null | head -1) && \
-    if [ -n "$BCrypt_BINDING" ]; then \
-      echo "✓ bcrypt native bindings found at: $BCrypt_BINDING"; \
-      ls -la "$BCrypt_BINDING"; \
-    else \
-      echo "✗ WARNING: bcrypt native bindings not found after install"; \
-      echo "Attempting manual rebuild..."; \
-      BCrypt_DIR=$(find /app/node_modules/.pnpm -type d -path "*/bcrypt@*/node_modules/bcrypt" 2>/dev/null | head -1) && \
-      if [ -n "$BCrypt_DIR" ]; then \
-        cd "$BCrypt_DIR" && \
-        npm rebuild 2>&1 || node-gyp rebuild 2>&1 || true; \
-      fi && \
-      BCrypt_BINDING=$(find /app/node_modules/.pnpm -name "bcrypt_lib.node" -type f 2>/dev/null | head -1) && \
-      if [ -z "$BCrypt_BINDING" ]; then \
-        echo "✗ ERROR: bcrypt native bindings still missing"; \
-        exit 1; \
-      else \
-        echo "✓ bcrypt native bindings found after rebuild at: $BCrypt_BINDING"; \
-      fi; \
-    fi
+# Install production dependencies
+RUN pnpm install --prod --ignore-scripts=false
 
 # Generate Prisma client using pnpm dlx (downloads and runs specific version)
 RUN pnpm dlx prisma@6.19.1 generate
