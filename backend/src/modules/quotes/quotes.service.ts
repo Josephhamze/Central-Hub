@@ -42,11 +42,38 @@ export class QuotesService {
     });
   }
 
+  // Calculate service end date based on delivery start date, loads per day, and total tonnage
+  private calculateServiceEndDate(
+    deliveryStartDate: Date | null | undefined,
+    loadsPerDay: number | null | undefined,
+    truckType: string | null | undefined,
+    totalTonnage: Decimal,
+  ): Date | null {
+    if (!deliveryStartDate || !loadsPerDay || !truckType) {
+      return null;
+    }
+
+    // Truck capacity in tons
+    const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons
+
+    // Calculate number of loads needed
+    const numberOfLoads = Math.ceil(totalTonnage.toNumber() / truckCapacity);
+
+    // Calculate number of days needed
+    const numberOfDays = Math.ceil(numberOfLoads / loadsPerDay);
+
+    // Calculate service end date
+    const endDate = new Date(deliveryStartDate);
+    endDate.setDate(endDate.getDate() + numberOfDays);
+
+    return endDate;
+  }
+
   // Calculate transport cost
   // Formula: (set $ amount * distance * total tonnage) + tolls
-  private async calculateTransport(routeId: string | null | undefined, items: Array<{ qty: Decimal; uomSnapshot: string }> = []): Promise<{ base: Decimal; tolls: Decimal; total: Decimal; distanceKm: Decimal; costPerKm: Decimal }> {
+  private async calculateTransport(routeId: string | null | undefined, items: Array<{ qty: Decimal; uomSnapshot: string }> = []): Promise<{ base: Decimal; tolls: Decimal; total: Decimal; distanceKm: Decimal; costPerKm: Decimal; totalTonnage: Decimal }> {
     if (!routeId) {
-      return { base: new Decimal(0), tolls: new Decimal(0), total: new Decimal(0), distanceKm: new Decimal(0), costPerKm: new Decimal(0) };
+      return { base: new Decimal(0), tolls: new Decimal(0), total: new Decimal(0), distanceKm: new Decimal(0), costPerKm: new Decimal(0), totalTonnage: new Decimal(0) };
     }
 
     const route = await this.prisma.route.findUnique({
@@ -98,6 +125,7 @@ export class QuotesService {
       total: transportTotal,
       distanceKm,
       costPerKm,
+      totalTonnage,
     };
   }
 
@@ -376,6 +404,14 @@ export class QuotesService {
     const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
     const grandTotal = subtotal.sub(discountTotal).add(transport.total);
 
+    // Calculate service end date based on delivery start date, loads per day, and total tonnage
+    const deliveryStartDate = dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : null;
+    const serviceEndDate = this.calculateServiceEndDate(
+      deliveryStartDate,
+      dto.loadsPerDay || null,
+      dto.truckType || null,
+      transport.totalTonnage,
+    );
 
     // Validate validityDays - default 7, admins can set more
     const validityDays = dto.validityDays || 7;
@@ -409,7 +445,8 @@ export class QuotesService {
         grandTotal,
         validityDays,
         paymentTerms: dto.paymentTerms,
-        deliveryStartDate: dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : null,
+        deliveryStartDate: deliveryStartDate,
+        serviceEndDate: serviceEndDate,
         loadsPerDay: dto.loadsPerDay,
         truckType: dto.truckType,
         status: QuoteStatus.DRAFT,
@@ -536,7 +573,18 @@ export class QuotesService {
       }
       // Calculate transport with items for tonnage
       const transport = await this.calculateTransport(routeId, quoteItems.map(item => ({ qty: item.qty, uomSnapshot: item.uomSnapshot })));
-    const grandTotal = subtotal.sub(discountTotal).add(transport.total);
+      const grandTotal = subtotal.sub(discountTotal).add(transport.total);
+
+      // Calculate service end date based on delivery start date, loads per day, and total tonnage
+      const deliveryStartDate = dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : (quote.deliveryStartDate || null);
+      const loadsPerDay = dto.loadsPerDay !== undefined ? dto.loadsPerDay : quote.loadsPerDay;
+      const truckType = dto.truckType !== undefined ? dto.truckType : quote.truckType;
+      const serviceEndDate = this.calculateServiceEndDate(
+        deliveryStartDate,
+        loadsPerDay,
+        truckType,
+        transport.totalTonnage,
+      );
 
       // Update quote and replace items
       return this.prisma.$transaction([
@@ -551,6 +599,7 @@ export class QuotesService {
             grandTotal,
             validityDays: dto.validityDays !== undefined ? dto.validityDays : undefined,
             paymentTerms: dto.paymentTerms !== undefined ? dto.paymentTerms : undefined,
+            serviceEndDate: serviceEndDate,
             deliveryStartDate: dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : undefined,
             loadsPerDay: dto.loadsPerDay !== undefined ? dto.loadsPerDay : undefined,
             truckType: dto.truckType !== undefined ? dto.truckType : undefined,
@@ -570,10 +619,47 @@ export class QuotesService {
         }),
       ]).then(([, updated]) => updated);
     } else {
-      // Just update quote fields
+      // Just update quote fields - but recalculate serviceEndDate if delivery terms changed
+      const deliveryStartDate = dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : (quote.deliveryStartDate || null);
+      const loadsPerDay = dto.loadsPerDay !== undefined ? dto.loadsPerDay : quote.loadsPerDay;
+      const truckType = dto.truckType !== undefined ? dto.truckType : quote.truckType;
+      
+      // Get existing items to calculate tonnage
+      const existingItems = await this.prisma.quoteItem.findMany({
+        where: { quoteId: id },
+      });
+      
+      // Calculate total tonnage from existing items
+      let totalTonnage = new Decimal(0);
+      for (const item of existingItems) {
+        const qty = new Decimal(item.qty);
+        const uom = item.uomSnapshot.toUpperCase();
+        
+        if (uom === 'TON' || uom === 'TONS' || uom === 'T') {
+          totalTonnage = totalTonnage.add(qty);
+        } else if (uom === 'KG' || uom === 'KGS' || uom === 'KILOGRAM' || uom === 'KILOGRAMS') {
+          totalTonnage = totalTonnage.add(qty.div(1000));
+        } else if (uom === 'MT' || uom === 'METRIC TON' || uom === 'METRIC TONS') {
+          totalTonnage = totalTonnage.add(qty);
+        } else {
+          totalTonnage = totalTonnage.add(qty);
+        }
+      }
+      
+      const serviceEndDate = this.calculateServiceEndDate(
+        deliveryStartDate,
+        loadsPerDay,
+        truckType,
+        totalTonnage,
+      );
+      
       return this.prisma.quote.update({
         where: { id },
-        data: dto as any,
+        data: {
+          ...dto,
+          serviceEndDate: serviceEndDate !== undefined ? serviceEndDate : undefined,
+          deliveryStartDate: dto.deliveryStartDate ? new Date(dto.deliveryStartDate) : undefined,
+        } as any,
         include: {
           company: true,
           project: true,

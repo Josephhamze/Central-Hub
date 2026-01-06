@@ -53,7 +53,6 @@ interface QuoteDataUI extends Omit<Partial<CreateQuoteDto>, 'items'> {
   validityDays?: number;
   paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
   deliveryStartDate?: string;
-  serviceEndDate?: string;
   loadsPerDay?: number;
   truckType?: 'TIPPER_42T' | 'CANTER';
 }
@@ -120,7 +119,6 @@ export function QuoteWizardPage() {
         paymentTerms: existingQuote.paymentTerms,
         deliveryStartDate: existingQuote.deliveryStartDate,
         loadsPerDay: existingQuote.loadsPerDay,
-        serviceEndDate: existingQuote.serviceEndDate,
         truckType: existingQuote.truckType,
         items: existingQuote.items?.map(item => ({
           stockItemId: item.stockItemId,
@@ -948,42 +946,6 @@ function calculateTotalTonnage(items: QuoteItemUI[]): number {
 
 // Helper function to calculate required trucks
 function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' | 'CANTER'): number {
-
-// Calculate service end date based on delivery start date, loads per day, and total tonnage
-function calculateServiceEndDate(
-  deliveryStartDate: string | undefined,
-  loadsPerDay: number | undefined,
-  truckType: 'TIPPER_42T' | 'CANTER' | undefined,
-  totalTonnage: number,
-): Date | null {
-  if (!deliveryStartDate || !loadsPerDay || !truckType) {
-    return null;
-  }
-
-  // Truck capacity in tons
-  const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons
-
-  // Calculate number of loads needed
-  const numberOfLoads = Math.ceil(totalTonnage / truckCapacity);
-
-  // Calculate number of days needed
-  const numberOfDays = Math.ceil(numberOfLoads / loadsPerDay);
-
-  // Calculate service end date
-  const startDate = new Date(deliveryStartDate);
-  const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + numberOfDays);
-
-  return endDate;
-}
-
-// Calculate duration in days
-function calculateDuration(startDate: string | undefined, endDate: Date | null): number | null {
-  if (!startDate || !endDate) return null;
-  const start = new Date(startDate);
-  const diffTime = endDate.getTime() - start.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
   if (!truckType) return 0;
   const capacity = truckType === 'TIPPER_42T' ? 42 : 10; // Tipper = 42t, Canter = 10t
   return Math.ceil(totalTonnage / capacity);
@@ -1330,41 +1292,6 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       }
                     }}
                     placeholder="1-5"
-                  </div>
-
-                  {/* Service End Date - Calculated and Display Only */}
-                  {(() => {
-                    const calculatedEndDate = calculateServiceEndDate(
-                      quoteData.deliveryStartDate,
-                      quoteData.loadsPerDay,
-                      quoteData.truckType,
-                      totalTonnage
-                    );
-                    const duration = calculateDuration(quoteData.deliveryStartDate, calculatedEndDate);
-                    return calculatedEndDate ? (
-                      <div className="md:col-span-3">
-                        <Card className="p-4 bg-status-success-bg border-status-success">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-content-secondary mb-1">Service End Date</p>
-                              <p className="text-lg font-semibold text-content-primary">
-                                {calculatedEndDate.toLocaleDateString()}
-                              </p>
-                            </div>
-                            {duration !== null && (
-                              <div className="text-right">
-                                <p className="text-sm text-content-secondary mb-1">Duration</p>
-                                <p className="text-lg font-semibold text-content-primary">
-                                  {duration} day{duration !== 1 ? 's' : ''}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
                   />
                 </div>
 

@@ -472,6 +472,7 @@ model Quote {
   paymentTerms            PaymentTerms?  @map("payment_terms")
   // Delivery Terms
   deliveryStartDate       DateTime?      @map("delivery_start_date")
+  serviceEndDate          DateTime?      @map("service_end_date")
   loadsPerDay             Int?          @map("loads_per_day")
   truckType               TruckType?    @map("truck_type")
   // Status
