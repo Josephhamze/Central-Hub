@@ -42,6 +42,7 @@ export interface Quote {
   validityDays: number;
   paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
   deliveryStartDate?: string;
+  serviceEndDate?: string;
   loadsPerDay?: number;
   truckType?: 'TIPPER_42T' | 'CANTER';
   status: QuoteStatus;
@@ -87,6 +88,7 @@ export interface CreateQuoteDto {
   validityDays?: number;
   paymentTerms?: 'CASH_ON_DELIVERY' | 'DAYS_15' | 'DAYS_30';
   deliveryStartDate?: string;
+  serviceEndDate?: string;
   loadsPerDay?: number;
   truckType?: 'TIPPER_42T' | 'CANTER';
   items: CreateQuoteItemDto[];
