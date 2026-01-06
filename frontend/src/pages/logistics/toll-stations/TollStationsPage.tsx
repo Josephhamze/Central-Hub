@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, MapPin, DollarSign, Edit, Trash2, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -400,11 +400,31 @@ function StationModal({
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    name: station?.name || '',
-    cityOrArea: station?.cityOrArea || '',
-    code: station?.code || '',
-    isActive: station?.isActive !== undefined ? station.isActive : true,
+    name: '',
+    cityOrArea: '',
+    code: '',
+    isActive: true,
   });
+
+  // Update form data when station prop changes
+  useEffect(() => {
+    if (station) {
+      setFormData({
+        name: station.name || '',
+        cityOrArea: station.cityOrArea || '',
+        code: station.code || '',
+        isActive: station.isActive !== undefined ? station.isActive : true,
+      });
+    } else {
+      // Reset form when creating new station
+      setFormData({
+        name: '',
+        cityOrArea: '',
+        code: '',
+        isActive: true,
+      });
+    }
+  }, [station]);
 
   const createMutation = useMutation({
     mutationFn: () => tollStationsApi.create(formData),
