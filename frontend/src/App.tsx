@@ -38,7 +38,11 @@ import { CustomersManagementPage } from '@pages/customers/CustomersManagementPag
 import { ContactsPage } from '@pages/customers/ContactsPage';
 import { WarehousesPage } from '@pages/inventory/WarehousesPage';
 import { StockItemsPage } from '@pages/inventory/StockItemsPage';
-import { RoutesPage } from '@pages/logistics/RoutesPage';
+import { RoutesPage } from '@pages/logistics/routes/RoutesPage';
+import { RouteDetailPage } from '@pages/logistics/routes/RouteDetailPage';
+import { TollStationsPage } from '@pages/logistics/toll-stations/TollStationsPage';
+import { TollPaymentsPage } from '@pages/logistics/toll-payments/TollPaymentsPage';
+import { RouteCostingPage } from '@pages/logistics/costing/RouteCostingPage';
 import { OperationsProductionPage } from '@pages/operations-production/OperationsProductionPage';
 import { FinanceReportingPage } from '@pages/finance-reporting/FinanceReportingPage';
 import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
@@ -109,6 +113,11 @@ function App() {
         <Route path="assets/depreciation" element={<DepreciationPage />} />
         <Route path="logistics/*" element={<LogisticsPage />} />
         <Route path="logistics/routes" element={<RoutesPage />} />
+        <Route path="logistics/routes/:id" element={<RouteDetailPage />} />
+        <Route path="logistics/routes/:id/edit" element={<RouteDetailPage />} />
+        <Route path="logistics/toll-stations" element={<TollStationsPage />} />
+        <Route path="logistics/toll-payments" element={<TollPaymentsPage />} />
+        <Route path="logistics/route-costing" element={<RouteCostingPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
         <Route path="customers/customers" element={<CustomersManagementPage />} />
         <Route path="customers/contacts" element={<ContactsPage />} />
