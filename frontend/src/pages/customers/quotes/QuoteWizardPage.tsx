@@ -1257,7 +1257,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
           {(() => {
             const totalTonnage = calculateTotalTonnage(quoteData.items);
             const requiredTrucks = calculateRequiredTrucks(totalTonnage, quoteData.truckType);
-            const truckCapacity = quoteData.truckType === 'TIPPER_42T' ? 42 : quoteData.truckType === 'CANTER' ? 10 : 0;
+            const truckCapacity = quoteData.truckType === 'TIPPER_42T' ? 42 : quoteData.truckType === 'CANTER' ? 3 : 0;
             
             return (
               <div className="space-y-4">
@@ -1330,7 +1330,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                       }
                     }}
                     placeholder="1-5"
-                  </div>
+                  />
 
                   {/* Service End Date - Calculated and Display Only */}
                   {(() => {
