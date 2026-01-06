@@ -319,6 +319,17 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(dto.email)) {
+      throw new BadRequestException('Invalid email format');
+    }
+
+    // Validate password strength
+    if (dto.password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters long');
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -327,14 +338,24 @@ export class UsersService {
       throw new BadRequestException('Email already in use');
     }
 
+    // Validate role IDs if provided
+    if (dto.roleIds && dto.roleIds.length > 0) {
+      const validRoles = await this.prisma.role.findMany({
+        where: { id: { in: dto.roleIds } },
+      });
+      if (validRoles.length !== dto.roleIds.length) {
+        throw new BadRequestException('One or more role IDs are invalid');
+      }
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email: dto.email.trim().toLowerCase(),
         passwordHash,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
         roles: dto.roleIds && dto.roleIds.length > 0
           ? {
               create: dto.roleIds.map((roleId) => ({ roleId })),

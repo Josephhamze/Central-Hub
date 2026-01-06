@@ -45,11 +45,14 @@ export function UsersManagementPage() {
     onSuccess: () => {
       success('User created successfully');
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.refetchQueries({ queryKey: ['users', page] });
       setIsCreateModalOpen(false);
       resetForm();
     },
     onError: (err: any) => {
-      showError(err.response?.data?.error?.message || 'Failed to create user');
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create user';
+      showError(errorMessage);
+      console.error('User creation error:', err.response?.data);
     },
   });
 
@@ -104,7 +107,12 @@ export function UsersManagementPage() {
       showError('All fields are required');
       return;
     }
-    createMutation.mutate(formData);
+    // Ensure roleIds is an array (even if empty)
+    const dataToSend = {
+      ...formData,
+      roleIds: formData.roleIds && formData.roleIds.length > 0 ? formData.roleIds : undefined,
+    };
+    createMutation.mutate(dataToSend);
   };
 
   const handleAssignRoles = (user: User) => {
