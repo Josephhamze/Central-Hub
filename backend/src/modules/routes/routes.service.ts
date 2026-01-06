@@ -222,8 +222,23 @@ export class RoutesService {
   }
 
   async bulkImport(file: any, userId?: string) {
-    const XLSX = require('xlsx');
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Invalid file: file buffer is missing');
+    }
+    
+    let XLSX;
+    try {
+      XLSX = require('xlsx');
+    } catch (error) {
+      throw new BadRequestException('xlsx package is not installed. Please install it: pnpm add xlsx');
+    }
+    
+    let workbook;
+    try {
+      workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    } catch (error: any) {
+      throw new BadRequestException(`Failed to read Excel file: ${error.message}`);
+    }
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
