@@ -508,7 +508,18 @@ function RatesModal({
   });
 
   const createRateMutation = useMutation({
-    mutationFn: () => tollStationsApi.createRate(station.id, rateForm),
+    mutationFn: () => {
+      // Prepare data: convert empty strings to undefined for optional fields
+      const rateData = {
+        vehicleType: rateForm.vehicleType,
+        amount: Number(rateForm.amount),
+        currency: rateForm.currency || 'USD',
+        effectiveFrom: rateForm.effectiveFrom || undefined,
+        effectiveTo: rateForm.effectiveTo || undefined,
+        isActive: rateForm.isActive,
+      };
+      return tollStationsApi.createRate(station.id, rateData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['toll-station-rates', station.id] });
       queryClient.invalidateQueries({ queryKey: ['toll-stations'] });
@@ -526,7 +537,18 @@ function RatesModal({
   });
 
   const updateRateMutation = useMutation({
-    mutationFn: () => tollStationsApi.updateRate(station.id, editingRate!.id, rateForm),
+    mutationFn: () => {
+      // Prepare data: convert empty strings to undefined for optional fields
+      const rateData = {
+        vehicleType: rateForm.vehicleType,
+        amount: Number(rateForm.amount),
+        currency: rateForm.currency || 'USD',
+        effectiveFrom: rateForm.effectiveFrom || undefined,
+        effectiveTo: rateForm.effectiveTo || undefined,
+        isActive: rateForm.isActive,
+      };
+      return tollStationsApi.updateRate(station.id, editingRate!.id, rateData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['toll-station-rates', station.id] });
       queryClient.invalidateQueries({ queryKey: ['toll-stations'] });
@@ -634,8 +656,12 @@ function RatesModal({
                 label="Amount *"
                 type="number"
                 step="0.01"
+                min="0"
                 value={rateForm.amount}
-                onChange={(e) => setRateForm({ ...rateForm, amount: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRateForm({ ...rateForm, amount: value === '' ? 0 : parseFloat(value) || 0 });
+                }}
                 required
               />
               <Input
