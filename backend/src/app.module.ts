@@ -28,6 +28,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
+import { RoutesModule } from './modules/routes/routes.module';
 import { TollStationsModule } from './modules/toll-stations/toll-stations.module';
 import { RouteCostingModule } from './modules/route-costing/route-costing.module';
 import { TollPaymentsModule } from './modules/toll-payments/toll-payments.module';
@@ -69,6 +70,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     WarehousesModule,
     ProjectsModule,
     ContactsModule,
+    RoutesModule,
     TollStationsModule,
     RouteCostingModule,
     TollPaymentsModule,
