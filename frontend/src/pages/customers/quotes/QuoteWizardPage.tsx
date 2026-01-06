@@ -948,6 +948,10 @@ function calculateTotalTonnage(items: QuoteItemUI[]): number {
 
 // Helper function to calculate required trucks
 function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' | 'CANTER'): number {
+  if (!truckType) return 0;
+  const capacity = truckType === 'TIPPER_42T' ? 42 : 3; // Tipper = 42t, Canter = 3t (matching backend)
+  return Math.ceil(totalTonnage / capacity);
+}
 
 // Calculate service end date based on delivery start date, loads per day, and total tonnage
 function calculateServiceEndDate(
@@ -983,10 +987,6 @@ function calculateDuration(startDate: string | undefined, endDate: Date | null):
   const start = new Date(startDate);
   const diffTime = endDate.getTime() - start.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-  if (!truckType) return 0;
-  const capacity = truckType === 'TIPPER_42T' ? 42 : 3; // Tipper = 42t, Canter = 3t (matching backend)
-  return Math.ceil(totalTonnage / capacity);
 }
 
 // Step 4: Products
