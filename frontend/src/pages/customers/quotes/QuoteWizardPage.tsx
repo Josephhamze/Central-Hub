@@ -961,7 +961,7 @@ function calculateServiceEndDate(
   }
 
   // Truck capacity in tons
-  const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons
+  const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons (matching backend)
 
   // Calculate number of loads needed
   const numberOfLoads = Math.ceil(totalTonnage / truckCapacity);
@@ -985,7 +985,7 @@ function calculateDuration(startDate: string | undefined, endDate: Date | null):
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
   if (!truckType) return 0;
-  const capacity = truckType === 'TIPPER_42T' ? 42 : 10; // Tipper = 42t, Canter = 10t
+  const capacity = truckType === 'TIPPER_42T' ? 42 : 3; // Tipper = 42t, Canter = 3t (matching backend)
   return Math.ceil(totalTonnage / capacity);
 }
 
@@ -1297,7 +1297,7 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                     >
                       <option value="">Select truck type</option>
                       <option value="TIPPER_42T">Tipper 42t (42 tons capacity)</option>
-                      <option value="CANTER">Canter (10 tons capacity)</option>
+                      <option value="CANTER">Canter (3 tons capacity)</option>
                     </select>
                     {quoteData.truckType && (
                       <p className="text-xs text-content-tertiary mt-1">
