@@ -6,6 +6,7 @@ import {
   Calculator,
   Warehouse,
   FileText,
+  Truck,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const navigation: NavItem[] = [
   { name: 'Operations & Production', path: '/operations-production', icon: Factory },
   { name: 'Finance & Reporting', path: '/finance-reporting', icon: Calculator },
   { name: 'Inventory & Assets', path: '/inventory-assets', icon: Warehouse },
+  { name: 'Logistics', path: '/logistics', icon: Truck },
   { name: 'Quotes', path: '/sales/quotes', icon: FileText },
 ];
 
