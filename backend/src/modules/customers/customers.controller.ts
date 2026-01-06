@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { RbacGuard } from '../../common/guards/rbac.guard';
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { CustomerType } from '@prisma/client';
 
 @ApiTags('Customers')
@@ -19,7 +19,16 @@ export class CustomersController {
   @UseGuards(RbacGuard)
   @Permissions('customers:view')
   @ApiOperation({ summary: 'Get all customers' })
-  async findAll(@Query('type') type?: CustomerType, @Query('page') page = 1, @Query('limit') limit = 20, @Query('search') search?: string) {
+  @ApiQuery({ name: 'type', required: false, enum: CustomerType })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async findAll(
+    @Query('type') type?: CustomerType,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('search') search?: string,
+  ) {
     return this.customersService.findAll(type, +page, +limit, search);
   }
 
@@ -55,3 +64,5 @@ export class CustomersController {
     return this.customersService.remove(id);
   }
 }
+
+

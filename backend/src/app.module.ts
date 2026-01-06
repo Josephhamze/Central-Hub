@@ -26,6 +26,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { InviteCodesModule } from './modules/invite-codes/invite-codes.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { ContactsModule } from './modules/contacts/contacts.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -62,6 +64,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     InviteCodesModule,
     CompaniesModule,
     WarehousesModule,
+    ProjectsModule,
+    ContactsModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default
