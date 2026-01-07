@@ -136,13 +136,43 @@ export class RoutesService {
     const route = await this.prisma.route.findUnique({ where: { id: routeId } });
     if (!route) throw new NotFoundException('Route not found');
 
+    // Validate stations array
+    if (!dto.stations || !Array.isArray(dto.stations)) {
+      throw new BadRequestException('Stations must be an array');
+    }
+
+    if (dto.stations.length === 0) {
+      // Allow empty array to clear all stations
+      await this.prisma.routeTollStation.updateMany({
+        where: { routeId },
+        data: { isActive: false },
+      });
+      return this.findOne(routeId);
+    }
+
     // Validate all toll stations exist
-    const stationIds = dto.stations.map((s) => s.tollStationId);
+    const stationIds = dto.stations.map((s) => s.tollStationId).filter(Boolean);
+    if (stationIds.length === 0) {
+      throw new BadRequestException('No valid toll station IDs provided');
+    }
+
     const stations = await this.prisma.tollStation.findMany({
       where: { id: { in: stationIds } },
     });
     if (stations.length !== stationIds.length) {
-      throw new BadRequestException('One or more toll stations not found');
+      const foundIds = new Set(stations.map((s) => s.id));
+      const missingIds = stationIds.filter((id) => !foundIds.has(id));
+      throw new BadRequestException(`One or more toll stations not found: ${missingIds.join(', ')}`);
+    }
+
+    // Validate sortOrder values
+    for (const station of dto.stations) {
+      if (typeof station.sortOrder !== 'number' || station.sortOrder < 1) {
+        throw new BadRequestException(`Invalid sortOrder for station ${station.tollStationId}: must be a positive number`);
+      }
+      if (!station.tollStationId || typeof station.tollStationId !== 'string') {
+        throw new BadRequestException('Each station must have a valid tollStationId');
+      }
     }
 
     return this.prisma.$transaction(async (tx) => {

@@ -243,13 +243,26 @@ function RouteStationsTab({
   );
 
   const setStationsMutation = useMutation({
-    mutationFn: (stations: Array<{ tollStationId: string; sortOrder: number }>) =>
-      routesApi.setStations(route.id, { stations }),
+    mutationFn: (stations: Array<{ tollStationId: string; sortOrder: number }>) => {
+      // Ensure all stations have valid data
+      const validStations = stations
+        .filter((s) => s.tollStationId && typeof s.sortOrder === 'number')
+        .map((s) => ({
+          tollStationId: String(s.tollStationId),
+          sortOrder: Number(s.sortOrder),
+        }));
+      return routesApi.setStations(route.id, { stations: validStations });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['route', route.id] });
-      success('Route stations updated');
+      queryClient.refetchQueries({ queryKey: ['route', route.id] });
+      success('Route stations updated successfully');
     },
-    onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to update stations'),
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update stations';
+      showError(errorMessage);
+      console.error('Failed to save stations:', err.response?.data);
+    },
   });
 
   const addStation = (stationId: string) => {
