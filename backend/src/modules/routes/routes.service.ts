@@ -49,6 +49,7 @@ export class RoutesService {
             include: { tollStation: { include: { rates: { where: { isActive: true } } } } },
             orderBy: { sortOrder: 'asc' },
           },
+          warehouse: { select: { id: true, name: true, locationCity: true } },
           _count: { select: { quotes: true } },
           creator: { select: { id: true, firstName: true, lastName: true, email: true } },
         },
@@ -75,6 +76,7 @@ export class RoutesService {
           },
           orderBy: { sortOrder: 'asc' },
         },
+        warehouse: { select: { id: true, name: true, locationCity: true } },
         _count: { select: { quotes: true } },
         creator: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
@@ -209,6 +211,16 @@ export class RoutesService {
   }
 
   async create(dto: CreateRouteDto, userId?: string) {
+    // Validate warehouse if provided
+    if (dto.warehouseId) {
+      const warehouse = await this.prisma.warehouse.findUnique({
+        where: { id: dto.warehouseId },
+      });
+      if (!warehouse) {
+        throw new BadRequestException('Warehouse not found');
+      }
+    }
+
     return this.prisma.route.create({
       data: {
         ...dto,
@@ -216,6 +228,7 @@ export class RoutesService {
         isActive: dto.isActive !== undefined ? dto.isActive : true,
       },
       include: {
+        warehouse: { select: { id: true, name: true, locationCity: true } },
         creator: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
     });
@@ -224,6 +237,19 @@ export class RoutesService {
   async update(id: string, dto: UpdateRouteDto) {
     const route = await this.prisma.route.findUnique({ where: { id } });
     if (!route) throw new NotFoundException('Route not found');
+    
+    // Validate warehouse if provided
+    if (dto.warehouseId !== undefined) {
+      if (dto.warehouseId) {
+        const warehouse = await this.prisma.warehouse.findUnique({
+          where: { id: dto.warehouseId },
+        });
+        if (!warehouse) {
+          throw new BadRequestException('Warehouse not found');
+        }
+      }
+    }
+    
     return this.prisma.route.update({ where: { id }, data: dto });
   }
 

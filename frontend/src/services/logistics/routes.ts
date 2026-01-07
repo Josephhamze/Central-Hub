@@ -9,6 +9,7 @@ export interface Route {
   distanceKm: number;
   costPerKm?: number;
   timeHours?: number;
+  warehouseId?: string;
   isActive: boolean;
   notes?: string;
   createdByUserId?: string;
@@ -32,6 +33,7 @@ export interface Route {
       }>;
     };
   }>;
+  warehouse?: { id: string; name: string; locationCity?: string };
   creator?: { id: string; firstName: string; lastName: string; email: string };
   _count?: { quotes: number };
 }
@@ -42,6 +44,7 @@ export interface CreateRouteDto {
   distanceKm: number;
   timeHours?: number;
   costPerKm?: number;
+  warehouseId?: string;
   isActive?: boolean;
   notes?: string;
 }

@@ -9,6 +9,7 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { routesApi, type CreateRouteDto } from '@services/logistics/routes';
+import { warehousesApi } from '@services/sales/warehouses';
 
 export function RouteFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,8 +34,17 @@ export function RouteFormPage() {
     distanceKm: 0,
     timeHours: undefined,
     costPerKm: undefined,
+    warehouseId: undefined,
     isActive: true,
     notes: '',
+  });
+
+  const { data: warehousesData } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: async () => {
+      const res = await warehousesApi.findAll(undefined, undefined, 1, 100);
+      return res.data.data;
+    },
   });
 
   useEffect(() => {
@@ -45,6 +55,7 @@ export function RouteFormPage() {
         distanceKm: existingRoute.distanceKm,
         timeHours: existingRoute.timeHours,
         costPerKm: existingRoute.costPerKm,
+        warehouseId: existingRoute.warehouseId,
         isActive: existingRoute.isActive,
         notes: existingRoute.notes || '',
       });
@@ -143,15 +154,35 @@ export function RouteFormPage() {
               />
             </div>
 
-            <Input
-              label="Cost Per Km (legacy, optional)"
-              type="number"
-              step="0.01"
-              value={formData.costPerKm || ''}
-              onChange={(e) =>
-                setFormData({ ...formData, costPerKm: e.target.value ? parseFloat(e.target.value) : undefined })
-              }
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Rate Per Km *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.costPerKm || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, costPerKm: e.target.value ? parseFloat(e.target.value) : undefined })
+                }
+                hint="Used for transport calculation: (total tonnage × rate per km × distance)"
+                required
+              />
+              <div>
+                <label className="block text-sm font-medium mb-2 text-content-primary">Warehouse (optional)</label>
+                <select
+                  value={formData.warehouseId || ''}
+                  onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value || undefined })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                >
+                  <option value="">No warehouse</option>
+                  {warehousesData?.items.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name} {warehouse.locationCity ? `(${warehouse.locationCity})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium mb-1 text-content-primary">Notes</label>

@@ -8,6 +8,7 @@ export class CreateRouteDto {
   @ApiProperty() @Type(() => Number) @IsNumber() distanceKm: number;
   @ApiPropertyOptional() @Type(() => Number) @IsNumber() @IsOptional() timeHours?: number;
   @ApiPropertyOptional() @Type(() => Number) @IsNumber() @IsOptional() costPerKm?: number;
+  @ApiPropertyOptional() @IsString() @IsOptional() warehouseId?: string;
   @ApiPropertyOptional() @IsBoolean() @IsOptional() isActive?: boolean;
   @ApiPropertyOptional() @IsString() @IsOptional() notes?: string;
 }

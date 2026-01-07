@@ -168,6 +168,22 @@ export function RouteDetailPage() {
                     <p className="text-content-primary mt-1">{route.notes}</p>
                   </div>
                 )}
+                {route.warehouse && (
+                  <div className="flex justify-between">
+                    <span className="text-content-secondary">Warehouse:</span>
+                    <span className="text-content-primary">
+                      {route.warehouse.name} {route.warehouse.locationCity ? `(${route.warehouse.locationCity})` : ''}
+                    </span>
+                  </div>
+                )}
+                {route.costPerKm && (
+                  <div className="flex justify-between">
+                    <span className="text-content-secondary">Rate Per Km:</span>
+                    <span className="text-content-primary">
+                      ${Number(route.costPerKm).toFixed(2)}/km
+                    </span>
+                  </div>
+                )}
                 {route.creator && (
                   <div className="flex justify-between">
                     <span className="text-content-secondary">Created by:</span>

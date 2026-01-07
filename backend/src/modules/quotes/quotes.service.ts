@@ -114,8 +114,9 @@ export class QuotesService {
       totalTonnage = new Decimal(1);
     }
     
-    // New formula: (set $ amount * distance * total tonnage) + tolls
-    const transportBase = costPerKm.mul(distanceKm).mul(totalTonnage);
+    // Formula: (total tonnage * route rate per km * km) + tolls
+    // If costPerKm is not set, default to 0 (transport will be 0 + tolls)
+    const transportBase = totalTonnage.mul(costPerKm).mul(distanceKm);
     const tollTotal = route.tolls.reduce((sum, toll) => sum.add(new Decimal(toll.cost)), new Decimal(0));
     const transportTotal = transportBase.add(tollTotal);
 

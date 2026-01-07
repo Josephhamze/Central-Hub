@@ -1532,12 +1532,19 @@ function Step5Review({ quoteData }: { quoteData: QuoteDataUI }) {
             <span>Grand Total:</span>
             <span>${grandTotal.toFixed(2)}</span>
           </div>
-          <div className="mt-4 p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
-            <p className="text-xs text-content-secondary">
-              <Info className="w-4 h-4 inline mr-1" />
-              Note: Transport costs will be calculated and added by the system
-            </p>
-          </div>
+          {quoteData.routeId && quoteData.items && quoteData.items.length > 0 && (
+            <div className="mt-4 p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
+              <p className="text-xs text-content-secondary">
+                <Info className="w-4 h-4 inline mr-1" />
+                <strong>Transport Calculation:</strong> Total Tonnage × Rate Per Km × Distance = Transport Cost
+                {quoteData.routeId && (
+                  <span className="block mt-1">
+                    (Calculated automatically based on route and total tonnage)
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
