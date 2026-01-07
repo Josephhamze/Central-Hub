@@ -605,7 +605,6 @@ export function QuoteDetailPage() {
                           }
                           return sum + tons;
                         }, 0);
-                        const base = totalTonnage * Number(quote.costPerKmSnapshot) * Number(quote.distanceKmSnapshot || 0);
                         const tolls = Number(quote.tollTotalSnapshot || 0);
                         return `${totalTonnage.toFixed(2)} tons × $${Number(quote.costPerKmSnapshot).toFixed(2)}/km × ${Number(quote.distanceKmSnapshot || 0).toFixed(2)} km${tolls > 0 ? ` + $${tolls.toFixed(2)} tolls` : ''} = $${Number(quote.transportTotal).toFixed(2)}`;
                       })()}
