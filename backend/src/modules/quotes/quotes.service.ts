@@ -86,7 +86,12 @@ export class QuotesService {
     }
 
     const distanceKm = new Decimal(route.distanceKm);
-    const costPerKm = route.costPerKm ? new Decimal(route.costPerKm) : new Decimal(0); // This is the "set $ amount" (legacy, optional)
+    
+    // Route rate per km is required for transport calculation
+    if (!route.costPerKm || route.costPerKm.eq(0)) {
+      throw new BadRequestException('Route rate per km (costPerKm) is required for transport calculation. Please set the rate per km on the route.');
+    }
+    const costPerKm = new Decimal(route.costPerKm);
     
     // Calculate total tonnage from items
     // Convert all quantities to tons (assuming UOM is in tons, kg, or other units)
@@ -115,7 +120,7 @@ export class QuotesService {
     }
     
     // Formula: (total tonnage * route rate per km * km) + tolls
-    // If costPerKm is not set, default to 0 (transport will be 0 + tolls)
+    // Exact formula: total tonnage × route rate per km × distance km
     const transportBase = totalTonnage.mul(costPerKm).mul(distanceKm);
     const tollTotal = route.tolls.reduce((sum, toll) => sum.add(new Decimal(toll.cost)), new Decimal(0));
     const transportTotal = transportBase.add(tollTotal);
