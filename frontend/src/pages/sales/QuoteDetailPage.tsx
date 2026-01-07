@@ -567,6 +567,54 @@ export function QuoteDetailPage() {
               </p>
             </div>
           </div>
+          {quote.costPerKmSnapshot && (
+            <div className="mt-4 pt-4 border-t border-border-default">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-content-secondary mb-1">Rate Per Km</p>
+                  <p className="font-medium text-content-primary">
+                    ${Number(quote.costPerKmSnapshot).toFixed(2)}/km
+                  </p>
+                </div>
+                {quote.tollTotalSnapshot && Number(quote.tollTotalSnapshot) > 0 && (
+                  <div>
+                    <p className="text-sm text-content-secondary mb-1">Tolls</p>
+                    <p className="font-medium text-content-primary">
+                      ${Number(quote.tollTotalSnapshot).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {quote.items && quote.items.length > 0 && (
+                <div className="mt-4 p-3 bg-status-info-bg rounded-lg border-l-4 border-status-info">
+                  <p className="text-xs text-content-secondary">
+                    <Info className="w-4 h-4 inline mr-1" />
+                    <strong>Transport Calculation:</strong>
+                    <span className="block mt-1">
+                      {(() => {
+                        const totalTonnage = quote.items.reduce((sum, item) => {
+                          const qty = Number(item.qty);
+                          const uom = item.uomSnapshot.toUpperCase();
+                          let tons = 0;
+                          if (uom === 'TON' || uom === 'TONS' || uom === 'T' || uom === 'MT' || uom === 'METRIC TON' || uom === 'METRIC TONS') {
+                            tons = qty;
+                          } else if (uom === 'KG' || uom === 'KGS' || uom === 'KILOGRAM' || uom === 'KILOGRAMS') {
+                            tons = qty / 1000;
+                          } else {
+                            tons = qty;
+                          }
+                          return sum + tons;
+                        }, 0);
+                        const base = totalTonnage * Number(quote.costPerKmSnapshot) * Number(quote.distanceKmSnapshot || 0);
+                        const tolls = Number(quote.tollTotalSnapshot || 0);
+                        return `${totalTonnage.toFixed(2)} tons × $${Number(quote.costPerKmSnapshot).toFixed(2)}/km × ${Number(quote.distanceKmSnapshot || 0).toFixed(2)} km${tolls > 0 ? ` + $${tolls.toFixed(2)} tolls` : ''} = $${Number(quote.transportTotal).toFixed(2)}`;
+                      })()}
+                    </span>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           {quote.route.tolls && quote.route.tolls.length > 0 && (
             <div className="mt-4 pt-4 border-t border-border-default">
               <p className="text-sm text-content-secondary mb-2">Tolls:</p>
