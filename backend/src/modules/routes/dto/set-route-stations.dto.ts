@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsNumber, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class RouteStationItem {
   @ApiProperty() @IsString() tollStationId: string;
-  @ApiProperty() @Type(() => Number) sortOrder: number;
+  @ApiProperty() @Type(() => Number) @IsNumber() @Min(1) sortOrder: number;
 }
 
 export class SetRouteStationsDto {
