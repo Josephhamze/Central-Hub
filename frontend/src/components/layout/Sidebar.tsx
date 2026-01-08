@@ -8,12 +8,15 @@ import {
   FileText,
   Truck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 interface NavItem {
@@ -31,16 +34,37 @@ const navigation: NavItem[] = [
   { name: 'Quotes', path: '/sales/quotes', icon: FileText },
 ];
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
+  const handleLinkClick = () => {
+    // Close mobile sidebar when a link is clicked
+    if (onMobileClose && window.innerWidth < 1024) {
+      onMobileClose();
+    }
+  };
+
   return (
-    <aside
-      className={clsx(
-        'fixed left-0 top-0 h-full z-40',
-        'bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]',
-        'transition-all duration-300 ease-in-out',
-        collapsed ? 'w-[72px]' : 'w-64'
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
       )}
-    >
+
+      <aside
+        className={clsx(
+          'fixed left-0 top-0 h-full z-50',
+          'bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]',
+          'transition-all duration-300 ease-in-out',
+          // Mobile: overlay from left, hidden by default
+          'lg:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          // Desktop: width based on collapsed state
+          collapsed ? 'w-[72px]' : 'w-64'
+        )}
+      >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--sidebar-border)]">
         <div className="flex items-center gap-3">
@@ -53,6 +77,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </span>
           )}
         </div>
+        {/* Mobile close button */}
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--sidebar-item-hover)] transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5 text-content-secondary" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -61,11 +93,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={handleLinkClick}
             className={({ isActive }) =>
               clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg',
                 'transition-all duration-200',
                 'group',
+                'touch-manipulation', // Better touch handling on mobile
                 collapsed && 'justify-center',
                 isActive
                   ? 'bg-[var(--sidebar-item-active)] text-[var(--sidebar-item-active-text)]'
@@ -88,14 +122,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="p-3 border-t border-[var(--sidebar-border)]">
+      {/* Collapse toggle - hidden on mobile */}
+      <div className="hidden lg:block p-3 border-t border-[var(--sidebar-border)]">
         <button
           onClick={onToggle}
           className={clsx(
             'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg',
             'text-content-tertiary hover:bg-[var(--sidebar-item-hover)] hover:text-content-primary',
-            'transition-all duration-200',
+            'transition-all duration-200 touch-manipulation',
             collapsed && 'justify-center'
           )}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -111,5 +145,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

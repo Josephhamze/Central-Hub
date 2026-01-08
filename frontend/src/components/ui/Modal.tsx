@@ -41,12 +41,16 @@ export function Modal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
         <div
           className={clsx(
             'relative w-full bg-background-elevated rounded-xl shadow-elevation-5',
             'pointer-events-auto animate-scale-in',
-            sizes[size]
+            'max-h-[calc(100vh-2rem)] overflow-y-auto',
+            'sm:max-w-sm',
+            size === 'md' && 'sm:max-w-md',
+            size === 'lg' && 'sm:max-w-lg',
+            size === 'xl' && 'sm:max-w-xl'
           )}
           role="dialog"
           aria-modal="true"
@@ -56,7 +60,7 @@ export function Modal({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-6 pb-0">
+            <div className="flex items-start justify-between p-4 sm:p-6 pb-0">
               <div>
                 {title && (
                   <h2
@@ -78,7 +82,7 @@ export function Modal({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-2 -mt-1 -mr-2 rounded-lg hover:bg-background-hover transition-colors"
+                  className="p-2 -mt-1 -mr-2 rounded-lg hover:bg-background-hover transition-colors touch-manipulation"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5 text-content-tertiary" />
@@ -88,7 +92,7 @@ export function Modal({
           )}
 
           {/* Content */}
-          <div className="p-6">{children}</div>
+          <div className="p-4 sm:p-6">{children}</div>
         </div>
       </div>
     </Fragment>,
@@ -105,7 +109,7 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border-default',
+        'flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 mt-4 border-t border-border-default',
         className
       )}
     >

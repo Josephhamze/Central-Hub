@@ -11,7 +11,8 @@ import {
   Building2,
   FolderKanban,
   Users as UsersIcon,
-  Shield
+  Shield,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { notificationsApi, type Notification } from '@services/notifications/notifications';
@@ -19,6 +20,7 @@ import { ThemeToggle } from '@components/ui/ThemeToggle';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
+  onMobileMenuToggle?: () => void;
 }
 
 const pageTitles: Record<string, string> = {
@@ -39,7 +41,7 @@ const pageTitles: Record<string, string> = {
   '/profile': 'Profile',
 };
 
-export function Header({ sidebarCollapsed }: HeaderProps) {
+export function Header({ sidebarCollapsed, onMobileMenuToggle }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -137,28 +139,38 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-background-primary/80 backdrop-blur-md border-b border-border-default">
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Breadcrumb */}
-        <div className="flex items-center gap-2">
+      <div className="h-full px-4 lg:px-6 flex items-center justify-between">
+        {/* Left: Mobile menu button + Breadcrumb */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Mobile menu toggle */}
+          <button
+            onClick={onMobileMenuToggle}
+            className="lg:hidden p-2 rounded-lg hover:bg-background-hover transition-colors touch-manipulation flex-shrink-0"
+            aria-label="Toggle menu"
+          >
+            <Menu className="w-5 h-5 text-content-secondary" />
+          </button>
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden">
           {breadcrumbs.map((crumb, index) => (
-            <div key={crumb.path} className="flex items-center">
+            <div key={crumb.path} className="flex items-center flex-shrink-0">
               {index > 0 && (
-                <ChevronRight className="w-4 h-4 mx-2 text-content-muted" />
+                <ChevronRight className="w-4 h-4 mx-1 sm:mx-2 text-content-muted flex-shrink-0" />
               )}
               {index === breadcrumbs.length - 1 ? (
-                <h1 className="text-lg font-semibold text-content-primary">
+                <h1 className="text-base sm:text-lg font-semibold text-content-primary truncate">
                   {crumb.title}
                 </h1>
               ) : (
                 <Link
                   to={crumb.path}
-                  className="text-sm text-content-tertiary hover:text-content-primary transition-colors"
+                  className="text-xs sm:text-sm text-content-tertiary hover:text-content-primary transition-colors truncate hidden sm:inline"
                 >
                   {crumb.title}
                 </Link>
               )}
             </div>
           ))}
+          </div>
         </div>
 
         {/* Right: Actions */}
@@ -168,7 +180,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <button
               onClick={() => setNotificationMenuOpen(!notificationMenuOpen)}
               className={clsx(
-                'relative p-2 rounded-lg transition-colors',
+                'relative p-2 rounded-lg transition-colors touch-manipulation',
                 'hover:bg-background-hover',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40'
               )}
@@ -185,7 +197,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             {notificationMenuOpen && (
               <div
                 className={clsx(
-                  'absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto',
+                  'absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-h-96 overflow-y-auto',
                   'bg-background-elevated border border-border-default rounded-lg shadow-elevation-3',
                   'animate-scale-in origin-top-right'
                 )}
@@ -253,7 +265,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className={clsx(
-                'flex items-center gap-3 p-2 rounded-lg transition-colors',
+                'flex items-center gap-3 p-2 rounded-lg transition-colors touch-manipulation',
                 'hover:bg-background-hover',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40'
               )}
@@ -267,7 +279,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
                 </span>
               </div>
               {!sidebarCollapsed && (
-                <div className="hidden md:block text-left">
+                <div className="hidden lg:block text-left">
                   <p className="text-sm font-medium text-content-primary">
                     {user?.firstName} {user?.lastName}
                   </p>
@@ -281,7 +293,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             {userMenuOpen && (
               <div
                 className={clsx(
-                  'absolute right-0 mt-2 w-56 py-1',
+                  'absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] py-1',
                   'bg-background-elevated border border-border-default rounded-lg shadow-elevation-3',
                   'animate-scale-in origin-top-right'
                 )}

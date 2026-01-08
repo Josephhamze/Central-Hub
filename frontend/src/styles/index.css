@@ -113,12 +113,19 @@
       'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS text size adjustment */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: contain;
+    /* Better touch scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Focus styles */
@@ -126,6 +133,44 @@
     @apply outline-none ring-2 ring-offset-2;
     --tw-ring-color: var(--focus-ring);
     --tw-ring-offset-color: var(--bg-primary);
+  }
+
+  /* Touch-friendly interactive elements */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    /* Minimum touch target size (44x44px recommended by Apple) */
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better touch handling */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Remove tap highlight on iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on buttons and interactive elements */
+  button,
+  [role="button"],
+  a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Better scrolling on mobile */
+  @media (max-width: 1023px) {
+    body {
+      overflow-x: hidden;
+    }
   }
 
   /* Selection */
@@ -213,6 +258,13 @@
     border: 1px solid var(--border-default);
     border-radius: 0.5rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+    /* Prevent iOS zoom on input focus */
+    font-size: 16px;
+  }
+  @media (min-width: 768px) {
+    .input {
+      font-size: 0.875rem;
+    }
   }
   .input::placeholder {
     color: var(--text-muted);
@@ -298,5 +350,45 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Mobile-specific utilities */
+  @media (max-width: 1023px) {
+    /* Ensure tables are scrollable on mobile */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    /* Better spacing on mobile */
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Hide on mobile */
+    .mobile-hide {
+      display: none;
+    }
+  }
+
+  /* Show on mobile only */
+  @media (min-width: 1024px) {
+    .mobile-only {
+      display: none;
+    }
+  }
+
+  /* Responsive text sizes */
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
   }
 }
