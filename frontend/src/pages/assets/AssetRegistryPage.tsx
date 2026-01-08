@@ -1,29 +1,140 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Eye, Edit, Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, Plus, Eye, Edit, Package, X } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
-import { assetsApi } from '@services/assets/assets';
+import { Modal, ModalFooter } from '@components/ui/Modal';
+import { assetsApi, type CreateAssetDto } from '@services/assets/assets';
 import { useAuth } from '@contexts/AuthContext';
+import { useToast } from '@contexts/ToastContext';
+import { companiesApi } from '@services/sales/companies';
+import { projectsApi } from '@services/sales/projects';
+import { warehousesApi } from '@services/sales/warehouses';
 
 export function AssetRegistryPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission } = useAuth();
+  const { success, error: showError } = useToast();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [formData, setFormData] = useState<CreateAssetDto>({
+    assetTag: '',
+    name: '',
+    category: '',
+    manufacturer: '',
+    model: '',
+    serialNumber: '',
+    acquisitionDate: new Date().toISOString().split('T')[0],
+    acquisitionCost: 0,
+    currentValue: 0,
+    status: 'OPERATIONAL',
+    location: '',
+    projectId: '',
+    warehouseId: '',
+    assignedTo: '',
+    criticality: 'MEDIUM',
+    expectedLifeYears: undefined,
+    notes: '',
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['assets', 'list', search, statusFilter],
     queryFn: () => assetsApi.findAll(1, 50, search || undefined, statusFilter || undefined),
   });
 
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const res = await companiesApi.findAll(1, 100);
+      return res.data.data;
+    },
+  });
+
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects', formData.projectId ? 'all' : ''],
+    queryFn: async () => {
+      const res = await projectsApi.findAll(undefined, 1, 100);
+      return res.data.data;
+    },
+  });
+
+  const { data: warehousesData } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: async () => {
+      const res = await warehousesApi.findAll(undefined, undefined, 1, 100);
+      return res.data.data;
+    },
+  });
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'create') {
+      setIsCreateModalOpen(true);
+    }
+  }, [searchParams]);
+
   const canCreate = hasPermission('assets:create');
   const canUpdate = hasPermission('assets:update');
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateAssetDto) => assetsApi.create(data),
+    onSuccess: () => {
+      success('Asset created successfully');
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setIsCreateModalOpen(false);
+      setSearchParams({});
+      setFormData({
+        assetTag: '',
+        name: '',
+        category: '',
+        manufacturer: '',
+        model: '',
+        serialNumber: '',
+        acquisitionDate: new Date().toISOString().split('T')[0],
+        acquisitionCost: 0,
+        currentValue: 0,
+        status: 'OPERATIONAL',
+        location: '',
+        projectId: '',
+        warehouseId: '',
+        assignedTo: '',
+        criticality: 'MEDIUM',
+        expectedLifeYears: undefined,
+        notes: '',
+      });
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || 'Failed to create asset');
+    },
+  });
+
+  const handleCreate = () => {
+    if (!formData.assetTag.trim() || !formData.name.trim() || !formData.category.trim()) {
+      showError('Asset tag, name, and category are required');
+      return;
+    }
+    const submitData: CreateAssetDto = {
+      ...formData,
+      manufacturer: formData.manufacturer || undefined,
+      model: formData.model || undefined,
+      serialNumber: formData.serialNumber || undefined,
+      location: formData.location || undefined,
+      projectId: formData.projectId || undefined,
+      warehouseId: formData.warehouseId || undefined,
+      assignedTo: formData.assignedTo || undefined,
+      expectedLifeYears: formData.expectedLifeYears || undefined,
+      notes: formData.notes || undefined,
+    };
+    createMutation.mutate(submitData);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -174,9 +285,207 @@ export function AssetRegistryPage() {
                 </div>
               </div>
             </Card>
-          ))}
+          )          )}
         </div>
       )}
+
+      {/* Create Asset Modal */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setSearchParams({});
+        }}
+        title="Create Asset"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Asset Tag *"
+              value={formData.assetTag}
+              onChange={(e) => setFormData({ ...formData, assetTag: e.target.value })}
+              required
+            />
+            <Input
+              label="Name *"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Category *"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              required
+            />
+            <Input
+              label="Manufacturer"
+              value={formData.manufacturer}
+              onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Model"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+            />
+            <Input
+              label="Serial Number"
+              value={formData.serialNumber}
+              onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Acquisition Date *"
+              type="date"
+              value={formData.acquisitionDate}
+              onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
+              required
+            />
+            <div>
+              <label className="block text-sm font-medium mb-1 text-content-primary">Status *</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              >
+                <option value="OPERATIONAL">Operational</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="BROKEN">Broken</option>
+                <option value="RETIRED">Retired</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Acquisition Cost *"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.acquisitionCost}
+              onChange={(e) => setFormData({ ...formData, acquisitionCost: parseFloat(e.target.value) || 0 })}
+              required
+            />
+            <Input
+              label="Current Value *"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.currentValue}
+              onChange={(e) => setFormData({ ...formData, currentValue: parseFloat(e.target.value) || 0 })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Location"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            />
+            <div>
+              <label className="block text-sm font-medium mb-1 text-content-primary">Criticality</label>
+              <select
+                value={formData.criticality}
+                onChange={(e) => setFormData({ ...formData, criticality: e.target.value as any })}
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              >
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-content-primary">Project</label>
+              <select
+                value={formData.projectId}
+                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              >
+                <option value="">No project</option>
+                {projectsData?.items.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-content-primary">Warehouse</label>
+              <select
+                value={formData.warehouseId}
+                onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              >
+                <option value="">No warehouse</option>
+                {warehousesData?.items.map((warehouse) => (
+                  <option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <Input
+            label="Assigned To"
+            value={formData.assignedTo}
+            onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+            placeholder="Operator or department"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Expected Life (years)"
+              type="number"
+              min="1"
+              value={formData.expectedLifeYears || ''}
+              onChange={(e) => setFormData({ ...formData, expectedLifeYears: e.target.value ? parseInt(e.target.value) : undefined })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1 text-content-primary">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setIsCreateModalOpen(false);
+              setSearchParams({});
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCreate}
+            isLoading={createMutation.isPending}
+          >
+            Create Asset
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   );
 }
