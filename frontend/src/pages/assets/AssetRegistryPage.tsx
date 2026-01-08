@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Eye, Edit, Package, X } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -11,7 +11,6 @@ import { Modal, ModalFooter } from '@components/ui/Modal';
 import { assetsApi, type CreateAssetDto } from '@services/assets/assets';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
-import { companiesApi } from '@services/sales/companies';
 import { projectsApi } from '@services/sales/projects';
 import { warehousesApi } from '@services/sales/warehouses';
 
@@ -48,14 +47,6 @@ export function AssetRegistryPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['assets', 'list', search, statusFilter],
     queryFn: () => assetsApi.findAll(1, 50, search || undefined, statusFilter || undefined),
-  });
-
-  const { data: companiesData } = useQuery({
-    queryKey: ['companies'],
-    queryFn: async () => {
-      const res = await companiesApi.findAll(1, 100);
-      return res.data.data;
-    },
   });
 
   const { data: projectsData } = useQuery({
