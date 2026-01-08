@@ -2,46 +2,53 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
+
+// Use require for CommonJS module (compression doesn't have proper ES module exports)
+const compression = require('compression');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security middleware
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false,
-  }));
+  // Compression middleware (MUST be before other middleware)
+  app.use(compression());
 
-  // CORS configuration
+  // Caching headers middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Cache static assets for 1 year
+    if (req.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache API GET responses for 5 minutes (except auth and docs)
+    else if (req.method === 'GET' && !req.url.includes('/auth/') && !req.url.includes('/docs') && !req.url.includes('/api/v1/health')) {
+      res.setHeader('Cache-Control', 'public, max-age=300');
+    }
+    next();
+  });
+
+  // Security middleware
+  app.use(helmet());
+
+  // CORS configuration - support multiple origins
   const allowedOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-    : ['http://localhost:5173'];
-
-  // Add production domains if not already included
-  const productionOrigins = [
-    'https://initiativehub.org',
-    'https://www.initiativehub.org',
-  ];
-
-  const allOrigins = [...new Set([...allowedOrigins, ...productionOrigins])];
+    : [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://initiativehub.org',
+        'https://www.initiativehub.org',
+      ];
 
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        // In development, allow localhost origins
-        if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -114,3 +121,5 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+
