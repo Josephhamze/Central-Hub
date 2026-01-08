@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
   User,
@@ -71,6 +71,7 @@ export function QuoteWizardPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
   const [quoteData, setQuoteData] = useState<QuoteDataUI>({
     items: [],
@@ -137,7 +138,21 @@ export function QuoteWizardPage() {
 
   const createQuoteMutation = useMutation({
     mutationFn: (data: CreateQuoteDto) => quoteId ? quotesApi.update(quoteId, data) : quotesApi.create(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Invalidate and refetch all quote-related queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['assets', 'overview'] });
+      
+      // Refetch immediately to ensure data is up to date
+      queryClient.refetchQueries({ queryKey: ['quotes'] });
+      queryClient.refetchQueries({ queryKey: ['quotes-kpis'] });
+      
+      // If we created a new quote, also invalidate the specific quote query
+      if (!quoteId && response?.data?.data?.id) {
+        queryClient.invalidateQueries({ queryKey: ['quote', response.data.data.id] });
+      }
+      
       success(quoteId ? 'Quote updated successfully' : 'Quote created successfully');
       navigate(`/sales/quotes`);
     },
