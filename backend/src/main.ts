@@ -2,11 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { Request, Response, NextFunction } from 'express';
+import compression from 'compression';
 import { AppModule } from './app.module';
-
-// Use require for CommonJS module (compression doesn't have proper ES module exports)
-const compression = require('compression');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +12,7 @@ async function bootstrap() {
   app.use(compression());
 
   // Caching headers middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use((req, res, next) => {
     // Cache static assets for 1 year
     if (req.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -28,27 +25,40 @@ async function bootstrap() {
   });
 
   // Security middleware
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  }));
 
-  // CORS configuration - support multiple origins
+  // CORS configuration
   const allowedOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-    : [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'https://initiativehub.org',
-        'https://www.initiativehub.org',
-      ];
+    : ['http://localhost:5173'];
+
+  // Add production domains if not already included
+  const productionOrigins = [
+    'https://initiativehub.org',
+    'https://www.initiativehub.org',
+  ];
+
+  const allOrigins = [...new Set([...allowedOrigins, ...productionOrigins])];
 
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // In development, allow localhost origins
+        if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -121,5 +131,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-
-

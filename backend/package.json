@@ -41,12 +41,10 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "xlsx": "^0.18.5",
     "compression": "^1.7.4",
     "@nestjs/cache-manager": "^2.1.1",
-    "cache-manager": "^5.7.6",
-    "uuid": "^10.0.0",
-    "prisma": "^6.19.1",
-    "xlsx": "^0.18.5"
+    "cache-manager": "^5.7.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
@@ -71,8 +69,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.2",
-    "@types/compression": "^1.7.5",
-    "@types/uuid": "^10.0.0"
+    "@types/multer": "^1.4.12",
+    "@types/compression": "^1.7.5"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

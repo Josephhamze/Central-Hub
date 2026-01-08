@@ -1,0 +1,56 @@
+name: Deploy Backend to AWS App Runner
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    name: Deploy to App Runner
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Trigger App Runner deployment
+        run: |
+          # App Runner auto-deploys from GitHub, but we can trigger a manual deployment
+          # Get the service ARN
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='ocp-backend'].ServiceArn" --output text)
+          
+          if [ -n "$SERVICE_ARN" ]; then
+            echo "Triggering deployment for service: $SERVICE_ARN"
+            aws apprunner start-deployment --service-arn "$SERVICE_ARN"
+          else
+            echo "Service 'ocp-backend' not found. Please create it manually first."
+          fi
+
+      - name: Wait for deployment
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='ocp-backend'].ServiceArn" --output text)
+          
+          if [ -n "$SERVICE_ARN" ]; then
+            echo "Waiting for deployment to complete..."
+            aws apprunner wait service-deployed --service-arn "$SERVICE_ARN" || true
+          fi
+
+      - name: Health check
+        run: |
+          SERVICE_URL=$(aws apprunner describe-service \
+            --service-arn $(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='ocp-backend'].ServiceArn" --output text) \
+            --query 'Service.ServiceUrl' --output text)
+          
+          echo "Testing health endpoint: $SERVICE_URL/api/v1/health"
+          curl -f "$SERVICE_URL/api/v1/health" || exit 1

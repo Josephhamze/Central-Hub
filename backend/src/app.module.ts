@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 // Core modules
 import { PrismaModule } from './common/prisma/prisma.module';
+import { CacheModule } from './common/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -17,26 +18,29 @@ import { ProductionModule } from './modules/production/production.module';
 import { CostingModule } from './modules/costing/costing.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { AssetsModule } from './modules/assets/assets.module';
+import { MaintenanceSchedulesModule } from './modules/maintenance-schedules/maintenance-schedules.module';
+import { WorkOrdersModule } from './modules/work-orders/work-orders.module';
+import { SparePartsModule } from './modules/spare-parts/spare-parts.module';
+import { DepreciationModule } from './modules/depreciation/depreciation.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
-import { QuotesModule } from './modules/quotes/quotes.module';
-import { StockItemsModule } from './modules/stock-items/stockitems.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
-import { InviteCodesModule } from './modules/invite-codes/invite-codes.module';
+// Sales Quote System modules
 import { CompaniesModule } from './modules/companies/companies.module';
-import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
+import { StockItemsModule } from './modules/stock-items/stockitems.module';
 import { RoutesModule } from './modules/routes/routes.module';
-import { TollStationsModule } from './modules/toll-stations/toll-stations.module';
-import { RouteCostingModule } from './modules/route-costing/route-costing.module';
-import { TollPaymentsModule } from './modules/toll-payments/toll-payments.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RootController } from './root.controller';
 
 @Module({
+  controllers: [RootController],
   imports: [
     // Configuration
     ConfigModule.forRoot({
@@ -46,6 +50,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
     // Core
     PrismaModule,
+    CacheModule, // Optional caching (in-memory by default, Redis if configured)
     AuthModule,
     UsersModule,
     RolesModule,
@@ -59,21 +64,23 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     CostingModule,
     InventoryModule,
     AssetsModule,
+    MaintenanceSchedulesModule,
+    WorkOrdersModule,
+    SparePartsModule,
+    DepreciationModule,
     LogisticsModule,
     CustomersModule,
     ReportingModule,
-    QuotesModule,
-    StockItemsModule,
-    NotificationsModule,
-    InviteCodesModule,
+
+    // Sales Quote System modules
     CompaniesModule,
-    WarehousesModule,
     ProjectsModule,
+    WarehousesModule,
     ContactsModule,
+    StockItemsModule,
     RoutesModule,
-    TollStationsModule,
-    RouteCostingModule,
-    TollPaymentsModule,
+    QuotesModule,
+    NotificationsModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default
@@ -84,5 +91,3 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
   ],
 })
 export class AppModule {}
-
-
