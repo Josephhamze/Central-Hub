@@ -200,23 +200,29 @@ export class MaintenanceSchedulesService {
   }
 
   async getOverdue() {
-    const now = new Date();
-    const overdue = await this.prisma.maintenanceSchedule.findMany({
-      where: {
-        isActive: true,
-        nextDueAt: { 
-          lte: now,
-          not: null,
+    try {
+      const now = new Date();
+      const overdue = await this.prisma.maintenanceSchedule.findMany({
+        where: {
+          isActive: true,
+          nextDueAt: { 
+            lte: now,
+            not: null,
+          },
         },
-      },
-      include: {
-        asset: {
-          select: { id: true, assetTag: true, name: true, status: true },
+        include: {
+          asset: {
+            select: { id: true, assetTag: true, name: true, status: true },
+          },
         },
-      },
-      orderBy: { nextDueAt: 'asc' },
-    });
+        orderBy: { nextDueAt: 'asc' },
+      });
 
-    return overdue;
+      return overdue;
+    } catch (error) {
+      console.error('Error in getOverdue:', error);
+      // Return empty array on error
+      return [];
+    }
   }
 }

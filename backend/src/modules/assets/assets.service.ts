@@ -343,38 +343,54 @@ export class AssetsService {
   }
 
   async getOverview() {
-    const [
-      totalAssets,
-      operationalAssets,
-      maintenanceAssets,
-      brokenAssets,
-      overdueMaintenance,
-      openWorkOrders,
-    ] = await Promise.all([
-      this.prisma.asset.count(),
-      this.prisma.asset.count({ where: { status: 'OPERATIONAL' } }),
-      this.prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
-      this.prisma.asset.count({ where: { status: 'BROKEN' } }),
-      this.prisma.maintenanceSchedule.count({
-        where: {
-          isActive: true,
-          nextDueAt: { lte: new Date() },
-        },
-      }),
-      this.prisma.workOrder.count({
-        where: {
-          status: { in: ['OPEN', 'IN_PROGRESS', 'WAITING_PARTS'] },
-        },
-      }),
-    ]);
+    try {
+      const [
+        totalAssets,
+        operationalAssets,
+        maintenanceAssets,
+        brokenAssets,
+        overdueMaintenance,
+        openWorkOrders,
+      ] = await Promise.all([
+        this.prisma.asset.count().catch(() => 0),
+        this.prisma.asset.count({ where: { status: 'OPERATIONAL' } }).catch(() => 0),
+        this.prisma.asset.count({ where: { status: 'MAINTENANCE' } }).catch(() => 0),
+        this.prisma.asset.count({ where: { status: 'BROKEN' } }).catch(() => 0),
+        this.prisma.maintenanceSchedule.count({
+          where: {
+            isActive: true,
+            nextDueAt: { 
+              lte: new Date(),
+              not: null,
+            },
+          },
+        }).catch(() => 0),
+        this.prisma.workOrder.count({
+          where: {
+            status: { in: ['OPEN', 'IN_PROGRESS', 'WAITING_PARTS'] },
+          },
+        }).catch(() => 0),
+      ]);
 
-    return {
-      totalAssets,
-      operationalAssets,
-      maintenanceAssets,
-      brokenAssets,
-      overdueMaintenance,
-      openWorkOrders,
-    };
+      return {
+        totalAssets,
+        operationalAssets,
+        maintenanceAssets,
+        brokenAssets,
+        overdueMaintenance,
+        openWorkOrders,
+      };
+    } catch (error) {
+      console.error('Error in getOverview:', error);
+      // Return default values on error
+      return {
+        totalAssets: 0,
+        operationalAssets: 0,
+        maintenanceAssets: 0,
+        brokenAssets: 0,
+        overdueMaintenance: 0,
+        openWorkOrders: 0,
+      };
+    }
   }
 }

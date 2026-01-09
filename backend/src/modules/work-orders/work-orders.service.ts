@@ -15,47 +15,61 @@ export class WorkOrdersService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, status?: WorkOrderStatus, assetId?: string) {
-    const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
-    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
-    const skip = (pageNum - 1) * limitNum;
+    try {
+      const pageNum = typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1);
+      const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20);
+      const skip = (pageNum - 1) * limitNum;
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (assetId) where.assetId = assetId;
+      const where: any = {};
+      if (status) where.status = status;
+      if (assetId) where.assetId = assetId;
 
-    const [items, total] = await Promise.all([
-      this.prisma.workOrder.findMany({
-        where,
-        skip,
-        take: limitNum,
-        include: {
-          asset: {
-            select: { id: true, assetTag: true, name: true, status: true },
+      const [items, total] = await Promise.all([
+        this.prisma.workOrder.findMany({
+          where,
+          skip,
+          take: limitNum,
+          include: {
+            asset: {
+              select: { id: true, assetTag: true, name: true, status: true },
+            },
+            schedule: {
+              select: { id: true, type: true },
+            },
+            assignedTo: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+            _count: {
+              select: { partUsages: true },
+            },
           },
-          schedule: {
-            select: { id: true, type: true },
-          },
-          assignedTo: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-          _count: {
-            select: { partUsages: true },
-          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.workOrder.count({ where }),
+      ]);
+
+      return {
+        items,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
         },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.workOrder.count({ where }),
-    ]);
-
-    return {
-      items,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
-    };
+      };
+    } catch (error) {
+      console.error('Error in workOrders.findAll:', error);
+      // Return empty result on error
+      return {
+        items: [],
+        pagination: {
+          page: typeof page === 'string' ? parseInt(page, 10) : (typeof page === 'number' ? page : 1),
+          limit: typeof limit === 'string' ? parseInt(limit, 10) : (typeof limit === 'number' ? limit : 20),
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
   }
 
   async findOne(id: string) {
