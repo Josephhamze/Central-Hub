@@ -43,8 +43,6 @@ export function AssetRegistryPage() {
     expectedLifeYears: undefined,
     notes: '',
   });
-<<<<<<< HEAD
-=======
 
   // Check for action=create in URL params
   useEffect(() => {
@@ -53,21 +51,15 @@ export function AssetRegistryPage() {
       setIsCreateModalOpen(true);
     }
   }, [searchParams]);
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
 
   const { data, isLoading } = useQuery({
     queryKey: ['assets', 'list', search, statusFilter],
     queryFn: () => assetsApi.findAll(1, 50, search || undefined, statusFilter || undefined),
   });
 
-<<<<<<< HEAD
-  const { data: projectsData } = useQuery({
-    queryKey: ['projects', formData.projectId ? 'all' : ''],
-=======
   // Fetch projects and warehouses for dropdowns
   const { data: projectsData } = useQuery({
     queryKey: ['projects'],
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
     queryFn: async () => {
       const res = await projectsApi.findAll(undefined, 1, 100);
       return res.data.data;
@@ -75,22 +67,6 @@ export function AssetRegistryPage() {
   });
 
   const { data: warehousesData } = useQuery({
-<<<<<<< HEAD
-    queryKey: ['warehouses'],
-    queryFn: async () => {
-      const res = await warehousesApi.findAll(undefined, undefined, 1, 100);
-      return res.data.data;
-    },
-  });
-
-  useEffect(() => {
-    const action = searchParams.get('action');
-    if (action === 'create') {
-      setIsCreateModalOpen(true);
-    }
-  }, [searchParams]);
-
-=======
     queryKey: ['warehouses', formData.projectId],
     queryFn: async () => {
       const res = await warehousesApi.findAll(undefined, formData.projectId || undefined, 1, 100);
@@ -99,7 +75,6 @@ export function AssetRegistryPage() {
     enabled: !!formData.projectId || true, // Fetch all warehouses if no project selected
   });
 
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
   const canCreate = hasPermission('assets:create');
   const canUpdate = hasPermission('assets:update');
 
@@ -109,12 +84,8 @@ export function AssetRegistryPage() {
       success('Asset created successfully');
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setIsCreateModalOpen(false);
-<<<<<<< HEAD
-      setSearchParams({});
-=======
       setSearchParams({}); // Clear URL params
       // Reset form
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
       setFormData({
         assetTag: '',
         name: '',
@@ -141,27 +112,6 @@ export function AssetRegistryPage() {
   });
 
   const handleCreate = () => {
-<<<<<<< HEAD
-    if (!formData.assetTag.trim() || !formData.name.trim() || !formData.category.trim()) {
-      showError('Asset tag, name, and category are required');
-      return;
-    }
-    const submitData: CreateAssetDto = {
-      ...formData,
-      manufacturer: formData.manufacturer || undefined,
-      model: formData.model || undefined,
-      serialNumber: formData.serialNumber || undefined,
-      location: formData.location || undefined,
-      projectId: formData.projectId || undefined,
-      warehouseId: formData.warehouseId || undefined,
-      assignedTo: formData.assignedTo || undefined,
-      expectedLifeYears: formData.expectedLifeYears || undefined,
-      notes: formData.notes || undefined,
-    };
-    createMutation.mutate(submitData);
-  };
-
-=======
     // Validate required fields
     if (!formData.assetTag || !formData.name || !formData.category || !formData.acquisitionDate || formData.acquisitionCost === undefined || formData.currentValue === undefined) {
       showError('Please fill in all required fields');
@@ -197,7 +147,6 @@ export function AssetRegistryPage() {
     setSearchParams({}); // Clear URL params
   };
 
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'OPERATIONAL':
@@ -347,24 +296,13 @@ export function AssetRegistryPage() {
                 </div>
               </div>
             </Card>
-          )          )}
+          ))}
         </div>
       )}
 
       {/* Create Asset Modal */}
       <Modal
         isOpen={isCreateModalOpen}
-<<<<<<< HEAD
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setSearchParams({});
-        }}
-        title="Create Asset"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-=======
         onClose={handleCloseModal}
         title="Create Asset"
         description="Add a new asset to the registry"
@@ -372,19 +310,10 @@ export function AssetRegistryPage() {
       >
         <div className="space-y-4 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             <Input
               label="Asset Tag *"
               value={formData.assetTag}
               onChange={(e) => setFormData({ ...formData, assetTag: e.target.value })}
-<<<<<<< HEAD
-              required
-            />
-            <Input
-              label="Name *"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-=======
               placeholder="e.g., ASSET-001"
               required
             />
@@ -393,54 +322,15 @@ export function AssetRegistryPage() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Primary Crusher"
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               required
             />
           </div>
 
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-=======
           <div className="grid grid-cols-2 gap-4">
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             <Input
               label="Category *"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-<<<<<<< HEAD
-              required
-            />
-            <Input
-              label="Manufacturer"
-              value={formData.manufacturer}
-              onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Model"
-              value={formData.model}
-              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-            />
-            <Input
-              label="Serial Number"
-              value={formData.serialNumber}
-              onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Acquisition Date *"
-              type="date"
-              value={formData.acquisitionDate}
-              onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
-              required
-            />
-            <div>
-              <label className="block text-sm font-medium mb-1 text-content-primary">Status *</label>
-=======
               placeholder="e.g., Crusher, Truck, Generator"
               required
             />
@@ -448,7 +338,6 @@ export function AssetRegistryPage() {
               <label className="block text-sm font-medium text-content-primary mb-1">
                 Status *
               </label>
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -462,9 +351,6 @@ export function AssetRegistryPage() {
             </div>
           </div>
 
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-=======
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Manufacturer"
@@ -497,19 +383,14 @@ export function AssetRegistryPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             <Input
               label="Acquisition Cost *"
               type="number"
               step="0.01"
               min="0"
               value={formData.acquisitionCost}
-<<<<<<< HEAD
-              onChange={(e) => setFormData({ ...formData, acquisitionCost: parseFloat(e.target.value) || 0 })}
-=======
               onChange={(e) => setFormData({ ...formData, acquisitionCost: Number(e.target.value) })}
               placeholder="0.00"
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               required
             />
             <Input
@@ -518,37 +399,23 @@ export function AssetRegistryPage() {
               step="0.01"
               min="0"
               value={formData.currentValue}
-<<<<<<< HEAD
-              onChange={(e) => setFormData({ ...formData, currentValue: parseFloat(e.target.value) || 0 })}
-=======
               onChange={(e) => setFormData({ ...formData, currentValue: Number(e.target.value) })}
               placeholder="0.00"
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               required
             />
           </div>
 
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-=======
           <div className="grid grid-cols-2 gap-4">
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             <Input
               label="Location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-<<<<<<< HEAD
-            />
-            <div>
-              <label className="block text-sm font-medium mb-1 text-content-primary">Criticality</label>
-=======
               placeholder="Physical location"
             />
             <div>
               <label className="block text-sm font-medium text-content-primary mb-1">
                 Criticality
               </label>
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               <select
                 value={formData.criticality}
                 onChange={(e) => setFormData({ ...formData, criticality: e.target.value as any })}
@@ -561,17 +428,6 @@ export function AssetRegistryPage() {
             </div>
           </div>
 
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-content-primary">Project</label>
-              <select
-                value={formData.projectId}
-                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-              >
-                <option value="">No project</option>
-=======
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-content-primary mb-1">
@@ -583,7 +439,6 @@ export function AssetRegistryPage() {
                 className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
               >
                 <option value="">None</option>
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
                 {projectsData?.items.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -592,26 +447,13 @@ export function AssetRegistryPage() {
               </select>
             </div>
             <div>
-<<<<<<< HEAD
-              <label className="block text-sm font-medium mb-1 text-content-primary">Warehouse</label>
-=======
               <label className="block text-sm font-medium text-content-primary mb-1">
                 Warehouse
               </label>
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               <select
                 value={formData.warehouseId}
                 onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-<<<<<<< HEAD
-              >
-                <option value="">No warehouse</option>
-                {warehousesData?.items.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-=======
                 disabled={!formData.projectId}
               >
                 <option value="">None</option>
@@ -622,27 +464,10 @@ export function AssetRegistryPage() {
                       {warehouse.name}
                     </option>
                   ))}
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
               </select>
             </div>
           </div>
 
-<<<<<<< HEAD
-          <Input
-            label="Assigned To"
-            value={formData.assignedTo}
-            onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-            placeholder="Operator or department"
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Expected Life (years)"
-              type="number"
-              min="1"
-              value={formData.expectedLifeYears || ''}
-              onChange={(e) => setFormData({ ...formData, expectedLifeYears: e.target.value ? parseInt(e.target.value) : undefined })}
-=======
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Assigned To"
@@ -657,38 +482,10 @@ export function AssetRegistryPage() {
               value={formData.expectedLifeYears || ''}
               onChange={(e) => setFormData({ ...formData, expectedLifeYears: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="Years"
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             />
           </div>
 
           <div>
-<<<<<<< HEAD
-            <label className="block text-sm font-medium mb-1 text-content-primary">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        <ModalFooter>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setIsCreateModalOpen(false);
-              setSearchParams({});
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleCreate}
-            isLoading={createMutation.isPending}
-          >
-=======
             <label className="block text-sm font-medium text-content-primary mb-1">
               Notes
             </label>
@@ -706,7 +503,6 @@ export function AssetRegistryPage() {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleCreate} isLoading={createMutation.isPending}>
->>>>>>> 0cf57fd6 (feat: Implement asset creation functionality in AssetRegistryPage)
             Create Asset
           </Button>
         </ModalFooter>
