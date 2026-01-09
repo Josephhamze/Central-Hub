@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 // Core modules
 import { PrismaModule } from './common/prisma/prisma.module';
+import { CacheModule } from './common/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -46,6 +47,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
     // Core
     PrismaModule,
+    CacheModule, // Optional caching (in-memory by default, Redis if configured)
     AuthModule,
     UsersModule,
     RolesModule,

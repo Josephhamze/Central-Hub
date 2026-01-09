@@ -413,6 +413,9 @@ model StockItem {
 
   @@index([projectId])
   @@index([warehouseId])
+  @@index([name])
+  @@index([isActive])
+  @@index([sku])
   @@map("stock_items")
 }
 

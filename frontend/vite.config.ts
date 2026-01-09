@@ -17,6 +17,18 @@ export default defineConfig({
       '@styles': path.resolve(__dirname, './src/styles'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     port: 5173,
     proxy: {
