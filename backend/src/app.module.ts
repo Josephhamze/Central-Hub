@@ -33,6 +33,10 @@ import { RoutesModule } from './modules/routes/routes.module';
 import { TollStationsModule } from './modules/toll-stations/toll-stations.module';
 import { RouteCostingModule } from './modules/route-costing/route-costing.module';
 import { TollPaymentsModule } from './modules/toll-payments/toll-payments.module';
+import { MaintenanceSchedulesModule } from './modules/maintenance-schedules/maintenance-schedules.module';
+import { WorkOrdersModule } from './modules/work-orders/work-orders.module';
+import { SparePartsModule } from './modules/spare-parts/spare-parts.module';
+import { DepreciationModule } from './modules/depreciation/depreciation.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -76,6 +80,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     TollStationsModule,
     RouteCostingModule,
     TollPaymentsModule,
+    MaintenanceSchedulesModule,
+    WorkOrdersModule,
+    SparePartsModule,
+    DepreciationModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default
