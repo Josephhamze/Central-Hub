@@ -34,7 +34,7 @@ export class MaintenanceSchedulesService {
             select: { workOrders: true },
           },
         },
-        orderBy: { nextDueAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.maintenanceSchedule.count({ where }),
     ]);
@@ -204,7 +204,10 @@ export class MaintenanceSchedulesService {
     const overdue = await this.prisma.maintenanceSchedule.findMany({
       where: {
         isActive: true,
-        nextDueAt: { lte: now },
+        nextDueAt: { 
+          lte: now,
+          not: null,
+        },
       },
       include: {
         asset: {
