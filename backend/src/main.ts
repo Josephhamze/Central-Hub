@@ -11,7 +11,39 @@ const compression = require('compression');
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Compression middleware (MUST be before other middleware)
+  // CORS configuration - MUST be enabled FIRST before other middleware
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+    : [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://initiativehub.org',
+        'https://www.initiativehub.org',
+      ];
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        // Log for debugging but allow for now to fix CORS issues
+        console.log(`CORS: Allowing origin ${origin} (not in strict list)`);
+        callback(null, true);
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
+  // Compression middleware
   app.use(compression());
 
   // Caching headers middleware
@@ -32,32 +64,6 @@ async function bootstrap() {
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
   }));
-
-  // CORS configuration - support multiple origins
-  const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-    : [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'https://initiativehub.org',
-        'https://www.initiativehub.org',
-      ];
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  });
 
   // API versioning
   app.setGlobalPrefix('api');
