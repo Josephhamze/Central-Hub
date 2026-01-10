@@ -720,6 +720,10 @@ export class QuotesService {
     if (quote.items.length === 0) {
       throw new BadRequestException('Cannot submit quote without items');
     }
+    // Check if route is required for DELIVERED quotes
+    if (quote.deliveryMethod === DeliveryMethod.DELIVERED && !quote.routeId) {
+      throw new BadRequestException('A route is required for delivered quotes. Please request a route or select an existing one before submitting.');
+    }
 
     return this.prisma.$transaction([
       this.prisma.quote.update({

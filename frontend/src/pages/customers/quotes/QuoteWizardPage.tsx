@@ -235,6 +235,12 @@ export function QuoteWizardPage() {
       showError('Please complete all required fields. Address is required for delivered quotes.');
       return;
     }
+    
+    // Check if route is required for DELIVERED quotes
+    if (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.routeId) {
+      showError('A route is required for delivered quotes. Please request a route or select an existing one before submitting.');
+      return;
+    }
     // Convert UI items to DTO items (remove UI-only fields)
     const dtoItems: CreateQuoteItemDto[] = quoteData.items.map(item => ({
       stockItemId: item.stockItemId,
@@ -744,6 +750,7 @@ function calculateSimilarity(str1: string, str2: string): number {
 function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const { hasRole } = useAuth();
   const { error: showError, success } = useToast();
+  const queryClient = useQueryClient();
   const [suggestedRoute, setSuggestedRoute] = useState<Route | null>(null);
   const [showRouteConfirmModal, setShowRouteConfirmModal] = useState(false);
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
@@ -781,6 +788,16 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     enabled: !!companyId,
   });
 
+  // Fetch routes for matching - refetch periodically to check for newly approved routes
+  const { data: routesData } = useQuery({
+    queryKey: ['routes'],
+    queryFn: async () => {
+      const res = await routesApi.findAll(1, 200, { isActive: true });
+      return res.data.data;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds to check for new routes
+  });
+
   // Fetch company data to get city
   const { data: companyData } = useQuery({
     queryKey: ['company', quoteData.companyId],
@@ -792,14 +809,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     enabled: !!quoteData.companyId,
   });
 
-  // Fetch routes for matching
-  const { data: routesData } = useQuery({
-    queryKey: ['routes'],
-    queryFn: async () => {
-      const res = await routesApi.findAll(1, 200, { isActive: true });
-      return res.data.data;
-    },
-  });
+  // Routes are fetched at the top level to allow refetching
 
   // Generate address suggestions from routes and existing addresses
   useEffect(() => {
@@ -905,18 +915,22 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
 
   const handleRejectRoute = () => {
     setShowRouteConfirmModal(false);
-    setShowRouteRequestModal(true);
-      // Extract city from address for route request
-      const addressParts = (quoteData.deliveryAddressLine1 || '').split(',').map(p => p.trim());
-      const requestCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1] || quoteData.deliveryAddressLine1 || '';
-      
-      setRouteRequestData({
-        fromCity: fromCity,
-        toCity: requestCity,
-        distanceKm: 0,
-        warehouseId: quoteData.warehouseId,
-      });
     setSuggestedRoute(null);
+    // Don't automatically open route request modal - user can request route manually
+  };
+  
+  const handleRequestRoute = () => {
+    // Extract city from address for route request
+    const addressParts = (quoteData.deliveryAddressLine1 || '').split(',').map(p => p.trim());
+    const requestCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1] || quoteData.deliveryAddressLine1 || '';
+    
+    setRouteRequestData({
+      fromCity: fromCity,
+      toCity: requestCity,
+      distanceKm: 0,
+      warehouseId: quoteData.warehouseId,
+    });
+    setShowRouteRequestModal(true);
   };
 
   const routeRequestMutation = useMutation({
@@ -924,9 +938,11 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
       return routesApi.createRequest(data);
     },
     onSuccess: () => {
-      success('Route creation request submitted. An administrator will review and approve it.');
+      success('Route creation request submitted. An administrator will review and approve it. You can save this quote as draft and submit it for approval once the route is created.');
       setShowRouteRequestModal(false);
       setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0, warehouseId: undefined });
+      // Refetch routes to get any newly approved routes
+      queryClient.invalidateQueries({ queryKey: ['routes'] });
     },
     onError: (err: any) => {
       showError(err.response?.data?.error?.message || 'Failed to submit route request');
@@ -1139,16 +1155,32 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
               </div>
               <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
                 <p className="text-xs text-content-secondary">
-                  <strong>Tip:</strong> The system will automatically suggest routes based on your address. If no route is found, you can request a new one.
+                  <strong>Tip:</strong> The system will automatically suggest existing routes based on your address. If no route is found, you can request a new one.
                 </p>
               </div>
-              {quoteData.routeId && (
+              {quoteData.routeId ? (
                 <div className="p-3 bg-status-success-bg border-l-4 border-status-success rounded-r-lg">
                   <p className="text-xs text-content-secondary">
                     <strong>Route Selected:</strong> {routesData?.items.find(r => r.id === quoteData.routeId)?.fromCity} → {routesData?.items.find(r => r.id === quoteData.routeId)?.toCity}
                   </p>
                 </div>
-              )}
+              ) : quoteData.deliveryMethod === 'DELIVERED' ? (
+                <div className="p-3 bg-status-warning-bg border-l-4 border-status-warning rounded-r-lg">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-content-secondary flex-1">
+                      <strong>No route selected.</strong> You can request a new route or select an existing one. Quotes can be saved as draft without a route, but a route is required before submitting for approval.
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleRequestRoute}
+                      className="ml-2 flex-shrink-0"
+                    >
+                      Request Route
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
