@@ -936,7 +936,8 @@ export class QuotesService {
     }
 
     // Only allow archiving quotes that are WON, LOST, or REJECTED
-    if (![QuoteStatus.WON, QuoteStatus.LOST, QuoteStatus.REJECTED].includes(quote.status)) {
+    const archivableStatuses: QuoteStatus[] = [QuoteStatus.WON, QuoteStatus.LOST, QuoteStatus.REJECTED];
+    if (!archivableStatuses.includes(quote.status)) {
       throw new BadRequestException('Can only archive quotes that are WON, LOST, or REJECTED');
     }
 
