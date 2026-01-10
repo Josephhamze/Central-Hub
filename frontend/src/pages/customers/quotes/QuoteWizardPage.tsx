@@ -855,14 +855,15 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { com
 
   const routeRequestMutation = useMutation({
     mutationFn: async (data: typeof routeRequestData) => {
-      // Filter out undefined values before sending (JSON.stringify omits undefined)
+      // Filter out undefined and empty string values before sending (JSON.stringify omits undefined)
+      // Empty strings are treated as blank fields that admin will fill in
       const requestData: any = {};
-      if (data.fromCity) requestData.fromCity = data.fromCity;
-      if (data.toCity) requestData.toCity = data.toCity;
+      if (data.fromCity && data.fromCity.trim()) requestData.fromCity = data.fromCity.trim();
+      if (data.toCity && data.toCity.trim()) requestData.toCity = data.toCity.trim();
       if (data.distanceKm !== undefined && data.distanceKm !== null) requestData.distanceKm = data.distanceKm;
       if (data.timeHours !== undefined && data.timeHours !== null) requestData.timeHours = data.timeHours;
       if (data.warehouseId) requestData.warehouseId = data.warehouseId;
-      if (data.notes) requestData.notes = data.notes;
+      if (data.notes && data.notes.trim()) requestData.notes = data.notes.trim();
       if (quoteId) requestData.quoteId = quoteId;
       return routesApi.createRequest(requestData);
     },
