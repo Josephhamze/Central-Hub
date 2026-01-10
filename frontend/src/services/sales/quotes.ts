@@ -109,7 +109,7 @@ export interface SalesKPIs {
 }
 
 export const quotesApi = {
-  findAll: (params?: { status?: QuoteStatus; companyId?: string; projectId?: string; salesRepUserId?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) =>
+  findAll: (params?: { status?: QuoteStatus; companyId?: string; projectId?: string; salesRepUserId?: string; startDate?: string; endDate?: string; page?: number; limit?: number; includeArchived?: boolean }) =>
     api.get<ApiResponse<PaginatedResponse<Quote>>>('/quotes', { params }),
   findOne: (id: string) => api.get<ApiResponse<Quote>>(`/quotes/${id}`),
   create: (data: CreateQuoteDto) => api.post<ApiResponse<Quote>>('/quotes', data),

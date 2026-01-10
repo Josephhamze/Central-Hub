@@ -30,7 +30,7 @@ export function QuotesAdminPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
-  const [activeTab, setActiveTab] = useState<'quotes' | 'customers' | 'logistics'>('quotes');
+  const [activeTab, setActiveTab] = useState<'quotes' | 'all-quotes' | 'customers' | 'logistics'>('quotes');
 
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
@@ -49,9 +49,14 @@ export function QuotesAdminPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['quotes', filters],
+    queryKey: ['quotes', filters, activeTab],
     queryFn: async () => {
-      const res = await quotesApi.findAll({ ...filters, page: 1, limit: 50 });
+      const res = await quotesApi.findAll({ 
+        ...filters, 
+        page: 1, 
+        limit: 50,
+        includeArchived: activeTab === 'all-quotes' ? true : undefined
+      });
       return res.data.data;
     },
   });
@@ -216,6 +221,17 @@ export function QuotesAdminPage() {
           )}
         >
           Quotes
+        </button>
+        <button
+          onClick={() => setActiveTab('all-quotes')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            activeTab === 'all-quotes'
+              ? 'border-accent-primary text-accent-primary'
+              : 'border-transparent text-content-secondary hover:text-content-primary'
+          )}
+        >
+          All Quotes
         </button>
         <button
           onClick={() => setActiveTab('customers')}
@@ -424,6 +440,116 @@ export function QuotesAdminPage() {
         </div>
       </Card>
         </>
+      )}
+
+      {/* All Quotes Tab */}
+      {activeTab === 'all-quotes' && (
+        <Card>
+          <CardHeader 
+            title="All Quotes (Including Archived)" 
+            action={
+              <div className="relative">
+                <select
+                  className="px-4 py-2 pr-10 text-sm font-medium rounded-lg border border-border-default bg-background-primary text-content-primary hover:bg-background-hover focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary transition-colors cursor-pointer appearance-none"
+                  value={filters.status || ''}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value as QuoteStatus || undefined })}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="PENDING_APPROVAL">Pending Approval</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="WON">Won</option>
+                  <option value="LOST">Lost</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-tertiary pointer-events-none" />
+              </div>
+            }
+          />
+          <div className="p-6">
+            {isLoading ? (
+              <div className="text-center py-8 text-content-secondary">Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                {data?.items.map((quote) => {
+                  const isCreator = user?.id === quote.salesRepUserId;
+                  return (
+                  <div key={quote.id} className={cn(
+                    "border rounded-lg p-4 flex justify-between items-center hover:bg-background-hover transition-colors",
+                    quote.archived && "opacity-60"
+                  )}>
+                    <div className="flex-1 cursor-pointer" onClick={() => navigate(`/sales/quotes/${quote.id}`)}>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-semibold">{quote.quoteNumber}</span>
+                        {getStatusBadge(quote.status)}
+                        {quote.archived && (
+                          <Badge variant="default" className="bg-gray-500">Archived</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-content-secondary">
+                        {quote.company?.name} • {quote.customer?.companyName || `${quote.customer?.firstName} ${quote.customer?.lastName}`}
+                      </p>
+                      <p className="text-sm text-content-tertiary">Total: ${Number(quote.grandTotal).toFixed(2)}</p>
+                    </div>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      {!quote.archived && canApprove(quote) && (
+                        <>
+                          <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setApproveModalOpen(true); }}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => { setSelectedQuote(quote); setRejectModalOpen(true); }}>
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {!quote.archived && quote.status === 'APPROVED' && isCreator && (
+                        <>
+                          <Button size="sm" variant="primary" onClick={() => { setSelectedQuote(quote); setOutcomeType('WON'); setOutcomeModalOpen(true); }}>
+                            Mark Won
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => { setSelectedQuote(quote); setOutcomeType('LOST'); setOutcomeModalOpen(true); }}>
+                            Mark Lost
+                          </Button>
+                        </>
+                      )}
+                      {/* Show Archive for WON, LOST, REJECTED quotes that aren't archived */}
+                      {!quote.archived && ['WON', 'LOST', 'REJECTED'].includes(quote.status) && (isAdmin || isCreator) && (
+                        <Button 
+                          size="sm" 
+                          variant="secondary" 
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to archive quote ${quote.quoteNumber}?`)) {
+                              archiveMutation.mutate(quote.id);
+                            }
+                          }}
+                          leftIcon={<Archive className="w-4 h-4" />}
+                          disabled={archiveMutation.isPending}
+                          title="Archive quote"
+                        >
+                          Archive
+                        </Button>
+                      )}
+                      {/* Show Delete only for DRAFT quotes */}
+                      {!quote.archived && ((isAdmin) || (isCreator && quote.status === 'DRAFT')) && (
+                        <Button 
+                          size="sm" 
+                          variant="danger" 
+                          onClick={() => handleDelete(quote)}
+                          leftIcon={<Trash2 className="w-4 h-4" />}
+                          disabled={deleteMutation.isPending}
+                          title={isAdmin ? "Delete quote (Admin)" : "Delete draft quote"}
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+                })}
+              </div>
+            )}
+          </div>
+        </Card>
       )}
 
       {/* Customers Tab */}
