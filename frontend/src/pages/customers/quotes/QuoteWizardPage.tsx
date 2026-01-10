@@ -706,7 +706,14 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
   const [suggestedRoute, setSuggestedRoute] = useState<Route | null>(null);
   const [showRouteConfirmModal, setShowRouteConfirmModal] = useState(false);
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
-  const [routeRequestData, setRouteRequestData] = useState<CreateRouteDto>({
+  const [routeRequestData, setRouteRequestData] = useState<{
+    fromCity: string;
+    toCity: string;
+    distanceKm: number;
+    timeHours?: number;
+    warehouseId?: string;
+    notes?: string;
+  }>({
     fromCity: '',
     toCity: '',
     distanceKm: 0,
@@ -815,20 +822,19 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
         fromCity: fromCity,
         toCity: requestCity,
         distanceKm: 0,
+        warehouseId: quoteData.warehouseId,
       });
     setSuggestedRoute(null);
   };
 
   const routeRequestMutation = useMutation({
-    mutationFn: async (data: CreateRouteDto) => {
-      // For now, we'll create the route but mark it as inactive (pending approval)
-      // In a full implementation, this would create a RouteRequest that admins approve
-      return routesApi.create({ ...data, isActive: false });
+    mutationFn: async (data: typeof routeRequestData) => {
+      return routesApi.createRequest(data);
     },
     onSuccess: () => {
       success('Route creation request submitted. An administrator will review and approve it.');
       setShowRouteRequestModal(false);
-      setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+      setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0, warehouseId: undefined });
     },
     onError: (err: any) => {
       showError(err.response?.data?.error?.message || 'Failed to submit route request');
@@ -1090,19 +1096,21 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
       >
         <div className="space-y-4">
           <p className="text-sm text-content-secondary">
-            This route will be submitted for administrator approval. Please provide the route details.
+            This route will be submitted for administrator approval. Please provide the route details. Note: Toll stations and cost per km will be configured by administrators.
           </p>
           <Input
             label="From City *"
             value={routeRequestData.fromCity}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, fromCity: e.target.value })}
             placeholder="Departure city"
+            required
           />
           <Input
             label="To City *"
             value={routeRequestData.toCity}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, toCity: e.target.value })}
             placeholder="Destination city"
+            required
           />
           <Input
             label="Distance (km) *"
@@ -1110,6 +1118,35 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
             value={routeRequestData.distanceKm || ''}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, distanceKm: parseFloat(e.target.value) || 0 })}
             placeholder="Distance in kilometers"
+            required
+          />
+          <Input
+            label="Time (hours)"
+            type="number"
+            value={routeRequestData.timeHours || ''}
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, timeHours: parseFloat(e.target.value) || undefined })}
+            placeholder="Estimated travel time in hours"
+          />
+          <div>
+            <label className="block text-sm font-medium mb-2 text-content-primary">Warehouse</label>
+            <select
+              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+              value={routeRequestData.warehouseId || ''}
+              onChange={(e) => setRouteRequestData({ ...routeRequestData, warehouseId: e.target.value || undefined })}
+            >
+              <option value="">Select warehouse (optional)</option>
+              {warehousesData?.items.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name} {warehouse.locationCity ? `(${warehouse.locationCity})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Notes"
+            value={routeRequestData.notes || ''}
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, notes: e.target.value || undefined })}
+            placeholder="Additional notes about this route (optional)"
           />
         </div>
         <ModalFooter>

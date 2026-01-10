@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MapPin, Clock, Truck, Edit, Trash2, Eye, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, MapPin, Clock, Truck, Edit, Trash2, Eye, Upload, Download, FileSpreadsheet, FileCheck } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -132,6 +132,13 @@ export function RoutesPage() {
           </div>
           {canManage && (
             <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => navigate('/logistics/routes/requests')}
+                leftIcon={<FileCheck />}
+              >
+                Route Requests
+              </Button>
               <Button
                 variant="secondary"
                 onClick={downloadTemplate}

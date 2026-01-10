@@ -41,6 +41,7 @@ import { StockItemsPage } from '@pages/inventory/StockItemsPage';
 import { RoutesPage } from '@pages/logistics/routes/RoutesPage';
 import { RouteDetailPage } from '@pages/logistics/routes/RouteDetailPage';
 import { RouteFormPage } from '@pages/logistics/routes/RouteFormPage';
+import { RouteRequestsPage } from '@pages/logistics/routes/RouteRequestsPage';
 import { TollStationsPage } from '@pages/logistics/toll-stations/TollStationsPage';
 import { TollPaymentsPage } from '@pages/logistics/toll-payments/TollPaymentsPage';
 import { RouteCostingPage } from '@pages/logistics/costing/RouteCostingPage';
@@ -114,6 +115,7 @@ function App() {
         <Route path="assets/depreciation" element={<DepreciationPage />} />
         <Route path="logistics/*" element={<LogisticsPage />} />
         <Route path="logistics/routes" element={<RoutesPage />} />
+        <Route path="logistics/routes/requests" element={<RouteRequestsPage />} />
         <Route path="logistics/routes/new" element={<RouteFormPage />} />
         <Route path="logistics/routes/:id" element={<RouteDetailPage />} />
         <Route path="logistics/routes/:id/edit" element={<RouteFormPage />} />

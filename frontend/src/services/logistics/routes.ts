@@ -58,6 +58,42 @@ export interface BulkImportResult {
   errors: Array<{ row: number; error: string }>;
 }
 
+export type RouteRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface RouteRequest {
+  id: string;
+  fromCity: string;
+  toCity: string;
+  distanceKm: number;
+  timeHours?: number;
+  warehouseId?: string;
+  notes?: string;
+  status: RouteRequestStatus;
+  requestedByUserId: string;
+  reviewedByUserId?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  warehouse?: { id: string; name: string; locationCity?: string };
+  requestedBy?: { id: string; firstName: string; lastName: string; email: string };
+  reviewedBy?: { id: string; firstName: string; lastName: string; email: string };
+}
+
+export interface CreateRouteRequestDto {
+  fromCity: string;
+  toCity: string;
+  distanceKm: number;
+  timeHours?: number;
+  warehouseId?: string;
+  notes?: string;
+}
+
+export interface ReviewRouteRequestDto {
+  status: RouteRequestStatus;
+  rejectionReason?: string;
+}
+
 export const routesApi = {
   findAll: (page = 1, limit = 100, filters?: { fromCity?: string; toCity?: string; isActive?: boolean; search?: string }) =>
     api.get<ApiResponse<PaginatedResponse<Route>>>('/routes', { params: { page, limit, ...filters } }),
@@ -81,4 +117,10 @@ export const routesApi = {
       },
     });
   },
+  // Route Request endpoints
+  createRequest: (data: CreateRouteRequestDto) => api.post<ApiResponse<RouteRequest>>('/routes/requests', data),
+  findAllRequests: (params?: { status?: RouteRequestStatus; page?: number; limit?: number }) =>
+    api.get<ApiResponse<PaginatedResponse<RouteRequest>>>('/routes/requests', { params }),
+  findOneRequest: (id: string) => api.get<ApiResponse<RouteRequest>>(`/routes/requests/${id}`),
+  reviewRequest: (id: string, data: ReviewRouteRequestDto) => api.post<ApiResponse<{ request: RouteRequest; route?: Route }>>(`/routes/requests/${id}/review`, data),
 };

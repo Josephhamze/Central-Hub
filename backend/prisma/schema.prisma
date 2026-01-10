@@ -47,6 +47,8 @@ model User {
   createdRoutes      Route[] @relation("RouteCreator")
   createdCostProfiles RouteCostProfile[] @relation("RouteCostProfileCreator")
   tollPaymentsPaidBy TollPayment[] @relation("TollPaymentPaidBy")
+  routeRequestsRequested RouteRequest[] @relation("RouteRequestRequester")
+  routeRequestsReviewed RouteRequest[] @relation("RouteRequestReviewer")
 
   @@index([accountStatus])
   @@index([emailVerified])
@@ -450,6 +452,40 @@ model Route {
   @@index([createdByUserId])
   @@index([warehouseId])
   @@map("routes")
+}
+
+// Route Request (for user-submitted route requests pending admin approval)
+model RouteRequest {
+  id              String              @id @default(cuid())
+  fromCity        String              @map("from_city")
+  toCity          String              @map("to_city")
+  distanceKm      Decimal             @map("distance_km") @db.Decimal(10, 2)
+  timeHours       Decimal?            @map("time_hours") @db.Decimal(8, 2)
+  warehouseId     String?             @map("warehouse_id")
+  notes           String?
+  status          RouteRequestStatus  @default(PENDING)
+  requestedByUserId String            @map("requested_by_user_id")
+  reviewedByUserId String?            @map("reviewed_by_user_id")
+  reviewedAt      DateTime?           @map("reviewed_at")
+  rejectionReason String?             @map("rejection_reason")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  warehouse       Warehouse?          @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  requestedBy     User                @relation("RouteRequestRequester", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  reviewedBy      User?               @relation("RouteRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([requestedByUserId])
+  @@index([reviewedByUserId])
+  @@map("route_requests")
+}
+
+enum RouteRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // Toll (Legacy - kept for backward compatibility)

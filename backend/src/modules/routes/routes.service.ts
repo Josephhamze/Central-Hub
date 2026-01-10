@@ -4,7 +4,9 @@ import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { CreateTollDto } from './dto/create-toll.dto';
 import { SetRouteStationsDto } from './dto/set-route-stations.dto';
-import { VehicleType } from '@prisma/client';
+import { CreateRouteRequestDto } from './dto/create-route-request.dto';
+import { ReviewRouteRequestDto } from './dto/review-route-request.dto';
+import { VehicleType, RouteRequestStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -397,5 +399,138 @@ export class RoutesService {
     }
 
     return results;
+  }
+
+  // Route Request methods
+  async createRouteRequest(dto: CreateRouteRequestDto, userId: string) {
+    // Validate warehouse if provided
+    if (dto.warehouseId) {
+      const warehouse = await this.prisma.warehouse.findUnique({
+        where: { id: dto.warehouseId },
+      });
+      if (!warehouse) {
+        throw new BadRequestException('Warehouse not found');
+      }
+    }
+
+    return this.prisma.routeRequest.create({
+      data: {
+        ...dto,
+        requestedByUserId: userId,
+        status: RouteRequestStatus.PENDING,
+      },
+      include: {
+        warehouse: { select: { id: true, name: true, locationCity: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+  }
+
+  async findAllRouteRequests(page = 1, limit = 20, status?: RouteRequestStatus) {
+    const skip = (page - 1) * limit;
+    const where = status ? { status } : {};
+
+    const [items, total] = await Promise.all([
+      this.prisma.routeRequest.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          warehouse: { select: { id: true, name: true, locationCity: true } },
+          requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+          reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      }),
+      this.prisma.routeRequest.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOneRouteRequest(id: string) {
+    const request = await this.prisma.routeRequest.findUnique({
+      where: { id },
+      include: {
+        warehouse: { select: { id: true, name: true, locationCity: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Route request not found');
+    }
+
+    return request;
+  }
+
+  async reviewRouteRequest(id: string, dto: ReviewRouteRequestDto, reviewerId: string) {
+    const request = await this.prisma.routeRequest.findUnique({
+      where: { id },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Route request not found');
+    }
+
+    if (request.status !== RouteRequestStatus.PENDING) {
+      throw new BadRequestException('Route request has already been reviewed');
+    }
+
+    // If approved, create the route
+    if (dto.status === RouteRequestStatus.APPROVED) {
+      const route = await this.prisma.route.create({
+        data: {
+          fromCity: request.fromCity,
+          toCity: request.toCity,
+          distanceKm: request.distanceKm,
+          timeHours: request.timeHours,
+          warehouseId: request.warehouseId,
+          notes: request.notes,
+          createdByUserId: request.requestedByUserId,
+          isActive: true,
+        },
+        include: {
+          warehouse: { select: { id: true, name: true, locationCity: true } },
+          creator: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      });
+
+      // Update request status
+      await this.prisma.routeRequest.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          reviewedByUserId: reviewerId,
+          reviewedAt: new Date(),
+          rejectionReason: null,
+        },
+      });
+
+      return { request: await this.findOneRouteRequest(id), route };
+    }
+
+    // If rejected, just update the request
+    return this.prisma.routeRequest.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        reviewedByUserId: reviewerId,
+        reviewedAt: new Date(),
+        rejectionReason: dto.rejectionReason,
+      },
+      include: {
+        warehouse: { select: { id: true, name: true, locationCity: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
   }
 }
