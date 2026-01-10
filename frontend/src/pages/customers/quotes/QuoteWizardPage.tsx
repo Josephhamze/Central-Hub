@@ -751,7 +751,6 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
   });
 
   // Get company city from selected warehouse or company
-  const selectedProject = projectsData?.items.find(p => p.id === quoteData.projectId);
   const selectedWarehouse = warehousesData?.items.find(w => w.id === quoteData.warehouseId);
   const fromCity = selectedWarehouse?.locationCity || (companyData as any)?.city || '';
 
@@ -1069,10 +1068,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
         <ModalFooter>
           <Button
             variant="secondary"
-            onClick={() => {
-              setShowRouteConfirmModal(false);
-              setSuggestedRoute(null);
-            }}
+            onClick={handleRejectRoute}
           >
             No, Create New Route
           </Button>
