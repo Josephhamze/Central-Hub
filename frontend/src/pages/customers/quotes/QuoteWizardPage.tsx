@@ -205,11 +205,7 @@ export function QuoteWizardPage() {
       return;
     }
     
-    // Check if route is required for DELIVERED quotes
-    if (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.routeId) {
-      showError('A route is required for delivered quotes. Please request a route or select an existing one before submitting.');
-      return;
-    }
+    // Note: Route is not required for saving drafts - only required when submitting for approval
     // Convert UI items to DTO items (remove UI-only fields)
     const dtoItems: CreateQuoteItemDto[] = quoteData.items.map(item => ({
       stockItemId: item.stockItemId,

@@ -374,27 +374,25 @@ export class QuotesService {
       }
       
       if (!departureCity) {
-        const locationHint = dto.warehouseId ? 'warehouse' : 'company';
-        throw new BadRequestException(`The selected ${locationHint} does not have a city set. Please set the ${locationHint} city to enable automatic route matching.`);
-      }
-      
-      const matchedRoute = await this.prisma.route.findFirst({
-        where: {
-          fromCity: departureCity,
-          toCity: dto.deliveryCity,
-        },
-      });
-      if (matchedRoute) {
-        routeId = matchedRoute.id;
+        // Don't throw error - allow saving draft without route
+        // Route will be required when submitting for approval
+        routeId = null;
       } else {
-        throw new BadRequestException(`No route found from ${departureCity} to ${dto.deliveryCity}. Please ensure the route exists in the system.`);
+        const matchedRoute = await this.prisma.route.findFirst({
+          where: {
+            fromCity: departureCity,
+            toCity: deliveryCity,
+          },
+        });
+        if (matchedRoute) {
+          routeId = matchedRoute.id;
+        }
+        // If no route found, allow saving as draft - route will be required when submitting for approval
       }
     }
     
-    // Validate that DELIVERED quotes have a route
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
-      throw new BadRequestException('Route is required for delivered quotes. Please ensure a route exists or the warehouse/company has a city set for automatic matching.');
-    }
+    // Note: Route validation for DELIVERED quotes is done in the submit() method, not here
+    // This allows quotes to be saved as drafts without a route
 
     // Calculate transport (will be recalculated after items are processed)
     // We'll calculate it after processing items to get tonnage
