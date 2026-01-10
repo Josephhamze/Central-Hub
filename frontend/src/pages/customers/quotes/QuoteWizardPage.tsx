@@ -198,12 +198,12 @@ export function QuoteWizardPage() {
   };
 
   const handleSubmit = () => {
-    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0 || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1)) {
-      showError('Please complete all required fields. Address is required for delivered quotes.');
+    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0) {
+      showError('Please complete all required fields.');
       return;
     }
     
-    // Note: Route is not required for saving drafts - only required when submitting for approval
+    // Note: Address and route are not required for saving drafts - only required when submitting for approval
     // Convert UI items to DTO items (remove UI-only fields)
     const dtoItems: CreateQuoteItemDto[] = quoteData.items.map(item => ({
       stockItemId: item.stockItemId,
