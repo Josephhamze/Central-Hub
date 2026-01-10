@@ -45,6 +45,17 @@ export function RouteRequestsPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => routesApi.deleteRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['route-requests'] });
+      success('Route request deleted successfully');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || 'Failed to delete route request');
+    },
+  });
+
   const handleReview = (request: RouteRequest, action: 'APPROVE' | 'REJECT') => {
     setSelectedRequest(request);
     setReviewAction(action);
