@@ -1257,7 +1257,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
             variant="secondary"
             onClick={() => {
               setShowRouteRequestModal(false);
-              setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+              setRouteRequestData({ fromCity: undefined, toCity: undefined, distanceKm: undefined });
             }}
           >
             Cancel
