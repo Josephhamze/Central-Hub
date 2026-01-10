@@ -587,7 +587,18 @@ export class QuotesService {
       let departureCity: string | null = null;
       
       if (dto.deliveryMethod === DeliveryMethod.DELIVERED || (!dto.deliveryMethod && quote.deliveryMethod === DeliveryMethod.DELIVERED)) {
-        const deliveryCity = dto.deliveryCity ?? quote.deliveryCity;
+        // Extract city from address if not provided separately
+        let deliveryCity: string | null = dto.deliveryCity ?? quote.deliveryCity;
+        if (!deliveryCity && (dto.deliveryAddressLine1 || quote.deliveryAddressLine1)) {
+          const address = dto.deliveryAddressLine1 || quote.deliveryAddressLine1 || '';
+          const addressParts = address.split(',').map(p => p.trim());
+          if (addressParts.length >= 2) {
+            deliveryCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1];
+          } else {
+            deliveryCity = addressParts[0];
+          }
+        }
+        
         if (deliveryCity && !routeId) {
           // Try to get departure city from warehouse first, then fall back to company city
           const warehouseId = dto.warehouseId ?? (quote as any).warehouseId;
