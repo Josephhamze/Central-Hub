@@ -27,6 +27,7 @@ import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { Input } from '@components/ui/Input';
+import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { quotesApi, type CreateQuoteDto, type CreateQuoteItemDto } from '@services/sales/quotes';
@@ -36,6 +37,7 @@ import { contactsApi } from '@services/sales/contacts';
 import { warehousesApi } from '@services/sales/warehouses';
 import { projectsApi } from '@services/sales/projects';
 import { stockItemsApi, type StockItem } from '@services/sales/stock-items';
+import { routesApi, type Route, type CreateRouteDto } from '@services/logistics/routes';
 import { cn } from '@utils/cn';
 
 // Local UI type for quote items (extends DTO with UI-only fields)
@@ -111,11 +113,6 @@ export function QuoteWizardPage() {
         warehouseId: (existingQuote as any).warehouseId,
         deliveryMethod: existingQuote.deliveryMethod,
         deliveryAddressLine1: existingQuote.deliveryAddressLine1,
-        deliveryAddressLine2: existingQuote.deliveryAddressLine2,
-        deliveryCity: existingQuote.deliveryCity,
-        deliveryState: existingQuote.deliveryState,
-        deliveryPostalCode: existingQuote.deliveryPostalCode,
-        deliveryCountry: existingQuote.deliveryCountry,
         routeId: existingQuote.routeId,
         validityDays: existingQuote.validityDays,
         paymentTerms: existingQuote.paymentTerms,
@@ -173,8 +170,8 @@ export function QuoteWizardPage() {
       showError('Please select a customer');
       return;
     }
-    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryCity))) {
-      showError('Please complete project, delivery method, and delivery city (required for route calculation)');
+    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1))) {
+      showError('Please complete project, delivery method, and delivery address');
       return;
     }
     if (currentStep === 4 && (!quoteData.items || quoteData.items.length === 0)) {
@@ -193,8 +190,8 @@ export function QuoteWizardPage() {
   };
 
   const handleSubmit = () => {
-    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0 || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryCity)) {
-      showError('Please complete all required fields. City is required for delivered quotes.');
+    if (!quoteData.companyId || !quoteData.projectId || !quoteData.customerId || !quoteData.deliveryMethod || !quoteData.items || quoteData.items.length === 0 || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1)) {
+      showError('Please complete all required fields. Address is required for delivered quotes.');
       return;
     }
     // Convert UI items to DTO items (remove UI-only fields)
@@ -213,11 +210,6 @@ export function QuoteWizardPage() {
       warehouseId: quoteData.warehouseId, // Include warehouseId for route calculation
       deliveryMethod: quoteData.deliveryMethod!,
       deliveryAddressLine1: quoteData.deliveryAddressLine1,
-      deliveryAddressLine2: quoteData.deliveryAddressLine2,
-      deliveryCity: quoteData.deliveryCity,
-      deliveryState: quoteData.deliveryState,
-      deliveryPostalCode: quoteData.deliveryPostalCode,
-      deliveryCountry: quoteData.deliveryCountry,
       routeId: quoteData.routeId,
       validityDays: quoteData.validityDays,
       paymentTerms: quoteData.paymentTerms,
@@ -671,10 +663,55 @@ function Step2ClientSelection({ quoteData, onUpdate }: { quoteData: QuoteDataUI;
   );
 }
 
+// Fuzzy string matching function (Levenshtein distance based similarity)
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  
+  if (s1 === s2) return 1.0;
+  if (s1.includes(s2) || s2.includes(s1)) return 0.8;
+  
+  // Simple Levenshtein distance calculation
+  const len1 = s1.length;
+  const len2 = s2.length;
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  
+  const distance = matrix[len1][len2];
+  const maxLen = Math.max(len1, len2);
+  return 1 - distance / maxLen;
+}
+
 // Step 3: Project & Delivery - Enhanced Two-Column Layout
 function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
   const { hasRole } = useAuth();
-  const { error: showError } = useToast();
+  const { error: showError, success } = useToast();
+  const [suggestedRoute, setSuggestedRoute] = useState<Route | null>(null);
+  const [showRouteConfirmModal, setShowRouteConfirmModal] = useState(false);
+  const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
+  const [routeRequestData, setRouteRequestData] = useState<CreateRouteDto>({
+    fromCity: '',
+    toCity: '',
+    distanceKm: 0,
+  });
+  
   const { data: projectsData, error: projectsError } = useQuery({
     queryKey: ['projects', companyId],
     queryFn: async () => {
@@ -692,6 +729,120 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     },
     enabled: !!companyId,
   });
+
+  // Fetch routes for matching
+  const { data: routesData } = useQuery({
+    queryKey: ['routes'],
+    queryFn: async () => {
+      const res = await routesApi.findAll(1, 200, { isActive: true });
+      return res.data.data;
+    },
+  });
+
+  // Fetch company data to get city
+  const { data: companyData } = useQuery({
+    queryKey: ['company', quoteData.companyId],
+    queryFn: async () => {
+      if (!quoteData.companyId) return null;
+      const res = await companiesApi.findOne(quoteData.companyId);
+      return res.data.data;
+    },
+    enabled: !!quoteData.companyId,
+  });
+
+  // Get company city from selected warehouse or company
+  const selectedProject = projectsData?.items.find(p => p.id === quoteData.projectId);
+  const selectedWarehouse = warehousesData?.items.find(w => w.id === quoteData.warehouseId);
+  const fromCity = selectedWarehouse?.locationCity || (companyData as any)?.city || '';
+
+  // Route suggestion logic - extract city from address or use full address
+  useEffect(() => {
+    if (!quoteData.deliveryAddressLine1 || !fromCity || quoteData.routeId) return;
+    
+    const deliveryAddress = quoteData.deliveryAddressLine1.trim();
+    if (deliveryAddress.length < 3) return;
+
+    // Try to extract city from address (usually the last part before country, or a common pattern)
+    // For now, we'll use the full address for matching, but prioritize city-like matches
+    const addressParts = deliveryAddress.split(',').map(p => p.trim());
+    const possibleCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1] || deliveryAddress;
+
+    // Find similar routes
+    const routes = routesData?.items || [];
+    const matches: Array<{ route: Route; similarity: number }> = [];
+
+    for (const route of routes) {
+      // Check if fromCity matches (warehouse city or company city)
+      const fromCityMatch = calculateSimilarity(fromCity, route.fromCity) > 0.7;
+      if (!fromCityMatch) continue;
+
+      // Check if toCity matches delivery address (try both city extraction and full address)
+      const toCitySimilarity = Math.max(
+        calculateSimilarity(possibleCity, route.toCity),
+        calculateSimilarity(deliveryAddress, route.toCity) * 0.7 // Full address match is weighted less
+      );
+      if (toCitySimilarity > 0.6) {
+        matches.push({ route, similarity: toCitySimilarity });
+      }
+    }
+
+    // Sort by similarity and get best match
+    matches.sort((a, b) => b.similarity - a.similarity);
+    const bestMatch = matches[0];
+
+    if (bestMatch && bestMatch.similarity > 0.6) {
+      setSuggestedRoute(bestMatch.route);
+      setShowRouteConfirmModal(true);
+    }
+  }, [quoteData.deliveryCity, fromCity, routesData, quoteData.routeId]);
+
+  const handleConfirmRoute = () => {
+    if (suggestedRoute) {
+      onUpdate({ ...quoteData, routeId: suggestedRoute.id });
+      setShowRouteConfirmModal(false);
+      setSuggestedRoute(null);
+      success(`Route "${suggestedRoute.fromCity} → ${suggestedRoute.toCity}" selected`);
+    }
+  };
+
+  const handleRejectRoute = () => {
+    setShowRouteConfirmModal(false);
+    setShowRouteRequestModal(true);
+      // Extract city from address for route request
+      const addressParts = (quoteData.deliveryAddressLine1 || '').split(',').map(p => p.trim());
+      const requestCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1] || quoteData.deliveryAddressLine1 || '';
+      
+      setRouteRequestData({
+        fromCity: fromCity,
+        toCity: requestCity,
+        distanceKm: 0,
+      });
+    setSuggestedRoute(null);
+  };
+
+  const routeRequestMutation = useMutation({
+    mutationFn: async (data: CreateRouteDto) => {
+      // For now, we'll create the route but mark it as inactive (pending approval)
+      // In a full implementation, this would create a RouteRequest that admins approve
+      return routesApi.create({ ...data, isActive: false });
+    },
+    onSuccess: () => {
+      success('Route creation request submitted. An administrator will review and approve it.');
+      setShowRouteRequestModal(false);
+      setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || 'Failed to submit route request');
+    },
+  });
+
+  const handleSubmitRouteRequest = () => {
+    if (!routeRequestData.fromCity || !routeRequestData.toCity || !routeRequestData.distanceKm) {
+      showError('Please fill in all required fields');
+      return;
+    }
+    routeRequestMutation.mutate(routeRequestData);
+  };
 
   if (!companyId) {
     return (
@@ -857,34 +1008,133 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           {quoteData.deliveryMethod === 'DELIVERED' && (
             <div className="space-y-4">
               <Input
-                label="Delivery Address"
+                label="Address *"
+                required
                 value={quoteData.deliveryAddressLine1 || ''}
                 onChange={(e) => onUpdate({ ...quoteData, deliveryAddressLine1: e.target.value })}
                 placeholder="Enter the full delivery address (e.g., 123 Main Street, Lubumbashi, DRC)"
               />
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="City *"
-                  value={quoteData.deliveryCity || ''}
-                  onChange={(e) => onUpdate({ ...quoteData, deliveryCity: e.target.value })}
-                  placeholder="City"
-                />
-                <Input
-                  label="Postal Code"
-                  value={quoteData.deliveryPostalCode || ''}
-                  onChange={(e) => onUpdate({ ...quoteData, deliveryPostalCode: e.target.value })}
-                  placeholder="Postal Code"
-                />
-              </div>
               <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
                 <p className="text-xs text-content-secondary">
-                  <strong>Tip:</strong> City is required for automatic route calculation. The system will match a route from the project's company city to the delivery city.
+                  <strong>Tip:</strong> The system will automatically suggest routes based on your address. If no route is found, you can request a new one.
                 </p>
               </div>
+              {quoteData.routeId && (
+                <div className="p-3 bg-status-success-bg border-l-4 border-status-success rounded-r-lg">
+                  <p className="text-xs text-content-secondary">
+                    <strong>Route Selected:</strong> {routesData?.items.find(r => r.id === quoteData.routeId)?.fromCity} → {routesData?.items.find(r => r.id === quoteData.routeId)?.toCity}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Route Confirmation Modal */}
+      <Modal
+        isOpen={showRouteConfirmModal}
+        onClose={() => {
+          setShowRouteConfirmModal(false);
+          setSuggestedRoute(null);
+        }}
+        title="Similar Route Found"
+        size="md"
+      >
+        {suggestedRoute && (
+          <div className="space-y-4">
+            <p className="text-sm text-content-secondary">
+              We found a similar route. Is this the route you want to use?
+            </p>
+            <Card className="p-4 bg-background-hover">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-content-primary">From:</span>
+                  <span className="text-sm text-content-secondary">{suggestedRoute.fromCity}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-content-primary">To:</span>
+                  <span className="text-sm text-content-secondary">{suggestedRoute.toCity}</span>
+                </div>
+                {suggestedRoute.distanceKm && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-content-primary">Distance:</span>
+                    <span className="text-sm text-content-secondary">{Number(suggestedRoute.distanceKm).toFixed(2)} km</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowRouteConfirmModal(false);
+              setSuggestedRoute(null);
+            }}
+          >
+            No, Create New Route
+          </Button>
+          <Button variant="primary" onClick={handleConfirmRoute}>
+            Yes, Use This Route
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Route Creation Request Modal */}
+      <Modal
+        isOpen={showRouteRequestModal}
+        onClose={() => {
+          setShowRouteRequestModal(false);
+          setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+        }}
+        title="Create New Route Request"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-content-secondary">
+            This route will be submitted for administrator approval. Please provide the route details.
+          </p>
+          <Input
+            label="From City *"
+            value={routeRequestData.fromCity}
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, fromCity: e.target.value })}
+            placeholder="Departure city"
+          />
+          <Input
+            label="To City *"
+            value={routeRequestData.toCity}
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, toCity: e.target.value })}
+            placeholder="Destination city"
+          />
+          <Input
+            label="Distance (km) *"
+            type="number"
+            value={routeRequestData.distanceKm || ''}
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, distanceKm: parseFloat(e.target.value) || 0 })}
+            placeholder="Distance in kilometers"
+          />
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowRouteRequestModal(false);
+              setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmitRouteRequest}
+            disabled={routeRequestMutation.isPending}
+          >
+            {routeRequestMutation.isPending ? 'Submitting...' : 'Submit for Approval'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Quote Terms - Full Width */}
       <div className="lg:col-span-2 space-y-6">
