@@ -91,6 +91,14 @@ export class RoutesController {
     return this.routesService.reviewRouteRequest(id, dto, reviewerId);
   }
 
+  @Delete('requests/:id')
+  @UseGuards(RbacGuard)
+  @Permissions('logistics:routes:manage')
+  @ApiOperation({ summary: 'Delete a rejected route request' })
+  async deleteRouteRequest(@Param('id') id: string) {
+    return this.routesService.deleteRouteRequest(id);
+  }
+
   @Get(':id')
   @UseGuards(RbacGuard)
   @Permissions('logistics:routes:view')

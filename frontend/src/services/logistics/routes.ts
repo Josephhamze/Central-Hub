@@ -127,4 +127,5 @@ export const routesApi = {
     api.get<ApiResponse<PaginatedResponse<RouteRequest>>>('/routes/requests', { params }),
   findOneRequest: (id: string) => api.get<ApiResponse<RouteRequest>>(`/routes/requests/${id}`),
   reviewRequest: (id: string, data: ReviewRouteRequestDto) => api.post<ApiResponse<{ request: RouteRequest; route?: Route }>>(`/routes/requests/${id}/review`, data),
+  deleteRequest: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/routes/requests/${id}`),
 };

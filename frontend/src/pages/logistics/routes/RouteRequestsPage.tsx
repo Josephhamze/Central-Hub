@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, XCircle, Clock, MapPin, Truck, Building2, User, Calendar } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, MapPin, Truck, Building2, User, Calendar, Trash2 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -220,6 +220,23 @@ export function RouteRequestsPage() {
                         </Button>
                       </div>
                     )}
+                    {request.status === 'REJECTED' && (
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this rejected route request?')) {
+                              deleteMutation.mutate(request.id);
+                            }
+                          }}
+                          leftIcon={<Trash2 className="w-4 h-4" />}
+                          disabled={deleteMutation.isPending}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -277,11 +294,10 @@ export function RouteRequestsPage() {
               </p>
             ) : (
               <Input
-                label="Rejection Reason *"
+                label="Rejection Reason (optional)"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Please provide a reason for rejection"
-                required
+                placeholder="Optional reason for rejection"
               />
             )}
           </div>

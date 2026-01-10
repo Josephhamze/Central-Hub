@@ -557,13 +557,33 @@ export class RoutesService {
         status: dto.status,
         reviewedByUserId: reviewerId,
         reviewedAt: new Date(),
-        rejectionReason: dto.rejectionReason,
+        rejectionReason: dto.rejectionReason || null,
       },
       include: {
         warehouse: { select: { id: true, name: true, locationCity: true } },
         requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
         reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        quote: { select: { id: true, quoteNumber: true } },
       },
+    });
+  }
+
+  async deleteRouteRequest(id: string) {
+    const request = await this.prisma.routeRequest.findUnique({
+      where: { id },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Route request not found');
+    }
+
+    // Only allow deleting rejected requests
+    if (request.status !== RouteRequestStatus.REJECTED) {
+      throw new BadRequestException('Only rejected route requests can be deleted');
+    }
+
+    return this.prisma.routeRequest.delete({
+      where: { id },
     });
   }
 }
