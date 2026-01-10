@@ -376,7 +376,7 @@ export class QuotesService {
       if (!departureCity) {
         // Don't throw error - allow saving draft without route
         // Route will be required when submitting for approval
-        routeId = null;
+        routeId = undefined;
       } else {
         const matchedRoute = await this.prisma.route.findFirst({
           where: {

@@ -210,48 +210,4 @@ export class RoutesController {
   async removeToll(@Param('id') id: string) {
     return this.routesService.removeToll(id);
   }
-
-  // Route Request endpoints
-  @Post('requests')
-  @UseGuards(RbacGuard)
-  @Permissions('quotes:create')
-  @ApiOperation({ summary: 'Create a route request (pending approval)' })
-  async createRouteRequest(
-    @Body() dto: CreateRouteRequestDto,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.routesService.createRouteRequest(dto, userId);
-  }
-
-  @Get('requests')
-  @UseGuards(RbacGuard)
-  @Permissions('logistics:routes:manage')
-  @ApiOperation({ summary: 'Get all route requests (admin only)' })
-  async findAllRouteRequests(
-    @Query('status') status?: RouteRequestStatus,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
-    return this.routesService.findAllRouteRequests(+page, +limit, status);
-  }
-
-  @Get('requests/:id')
-  @UseGuards(RbacGuard)
-  @Permissions('logistics:routes:manage')
-  @ApiOperation({ summary: 'Get a route request by ID (admin only)' })
-  async findOneRouteRequest(@Param('id') id: string) {
-    return this.routesService.findOneRouteRequest(id);
-  }
-
-  @Post('requests/:id/review')
-  @UseGuards(RbacGuard)
-  @Permissions('logistics:routes:manage')
-  @ApiOperation({ summary: 'Approve or reject a route request (admin only)' })
-  async reviewRouteRequest(
-    @Param('id') id: string,
-    @Body() dto: ReviewRouteRequestDto,
-    @CurrentUser('id') reviewerId: string,
-  ) {
-    return this.routesService.reviewRouteRequest(id, dto, reviewerId);
-  }
 }
