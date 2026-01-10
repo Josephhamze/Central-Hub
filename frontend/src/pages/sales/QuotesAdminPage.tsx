@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck, Trash2, Archive } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, ChevronDown, Users, Truck, Trash2, Archive } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
