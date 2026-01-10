@@ -170,9 +170,19 @@ export function QuoteWizardPage() {
       showError('Please select a customer');
       return;
     }
-    if (currentStep === 3 && (!quoteData.projectId || !quoteData.deliveryMethod || (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1))) {
-      showError('Please complete project, delivery method, and delivery address');
-      return;
+    if (currentStep === 3) {
+      if (!quoteData.projectId) {
+        showError('Please select a project');
+        return;
+      }
+      if (!quoteData.deliveryMethod) {
+        showError('Please select a delivery method');
+        return;
+      }
+      if (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1) {
+        showError('Please enter a delivery address');
+        return;
+      }
     }
     if (currentStep === 4 && (!quoteData.items || quoteData.items.length === 0)) {
       showError('Please add at least one product');
