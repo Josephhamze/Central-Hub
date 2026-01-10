@@ -9,4 +9,5 @@ export class CreateRouteRequestDto {
   @ApiPropertyOptional() @Type(() => Number) @IsNumber() @IsOptional() timeHours?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() warehouseId?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() notes?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() quoteId?: string;
 }

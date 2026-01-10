@@ -413,15 +413,32 @@ export class RoutesService {
       }
     }
 
+    // Validate quote if provided
+    if (dto.quoteId) {
+      const quote = await this.prisma.quote.findUnique({
+        where: { id: dto.quoteId },
+      });
+      if (!quote) {
+        throw new BadRequestException('Quote not found');
+      }
+    }
+
     return this.prisma.routeRequest.create({
       data: {
-        ...dto,
+        fromCity: dto.fromCity,
+        toCity: dto.toCity,
+        distanceKm: dto.distanceKm ? new Decimal(dto.distanceKm) : null,
+        timeHours: dto.timeHours ? new Decimal(dto.timeHours) : null,
+        warehouseId: dto.warehouseId,
+        notes: dto.notes,
+        quoteId: dto.quoteId,
         requestedByUserId: userId,
         status: RouteRequestStatus.PENDING,
       },
       include: {
         warehouse: { select: { id: true, name: true, locationCity: true } },
         requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        quote: { select: { id: true, quoteNumber: true } },
       },
     });
   }
@@ -440,6 +457,7 @@ export class RoutesService {
           warehouse: { select: { id: true, name: true, locationCity: true } },
           requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
           reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+          quote: { select: { id: true, quoteNumber: true } },
         },
       }),
       this.prisma.routeRequest.count({ where }),
@@ -461,6 +479,7 @@ export class RoutesService {
         warehouse: { select: { id: true, name: true, locationCity: true } },
         requestedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
         reviewedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        quote: { select: { id: true, quoteNumber: true } },
       },
     });
 
@@ -486,6 +505,11 @@ export class RoutesService {
 
     // If approved, create the route
     if (dto.status === RouteRequestStatus.APPROVED) {
+      // Validate that required fields are present (admin should have filled them in)
+      if (!request.fromCity || !request.toCity || !request.distanceKm) {
+        throw new BadRequestException('Cannot approve route request: fromCity, toCity, and distanceKm must be filled in before approval');
+      }
+
       const route = await this.prisma.route.create({
         data: {
           fromCity: request.fromCity,
@@ -503,7 +527,7 @@ export class RoutesService {
         },
       });
 
-      // Update request status
+      // Update request status and link to approved route
       await this.prisma.routeRequest.update({
         where: { id },
         data: {
@@ -511,8 +535,17 @@ export class RoutesService {
           reviewedByUserId: reviewerId,
           reviewedAt: new Date(),
           rejectionReason: null,
+          approvedRouteId: route.id,
         },
       });
+
+      // If this route request was associated with a quote, automatically apply the route to that quote
+      if (request.quoteId) {
+        await this.prisma.quote.update({
+          where: { id: request.quoteId },
+          data: { routeId: route.id },
+        });
+      }
 
       return { request: await this.findOneRouteRequest(id), route };
     }

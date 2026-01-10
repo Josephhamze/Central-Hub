@@ -123,17 +123,19 @@ export function RouteRequestsPage() {
                       <div className="flex items-center gap-3 mb-3">
                         <MapPin className="w-5 h-5 text-content-primary" />
                         <span className="font-semibold text-content-primary">
-                          {request.fromCity} → {request.toCity}
+                          {request.fromCity || 'Not specified'} → {request.toCity || 'Not specified'}
                         </span>
                         {getStatusBadge(request.status)}
                       </div>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Truck className="w-4 h-4 text-content-tertiary" />
-                          <span className="text-content-secondary">Distance:</span>
-                          <span className="text-content-primary font-medium">{Number(request.distanceKm).toFixed(2)} km</span>
-                        </div>
+                        {request.distanceKm && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Truck className="w-4 h-4 text-content-tertiary" />
+                            <span className="text-content-secondary">Distance:</span>
+                            <span className="text-content-primary font-medium">{Number(request.distanceKm).toFixed(2)} km</span>
+                          </div>
+                        )}
                         {request.timeHours && (
                           <div className="flex items-center gap-2 text-sm">
                             <Clock className="w-4 h-4 text-content-tertiary" />
@@ -157,6 +159,13 @@ export function RouteRequestsPage() {
                         )}
                       </div>
 
+                      {request.quote && (
+                        <div className="mb-3">
+                          <p className="text-sm text-content-secondary">
+                            <strong>Related Quote:</strong> {request.quote.quoteNumber}
+                          </p>
+                        </div>
+                      )}
                       {request.notes && (
                         <div className="mb-3">
                           <p className="text-sm text-content-secondary">
@@ -240,17 +249,24 @@ export function RouteRequestsPage() {
             <div className="p-3 bg-background-hover rounded-lg">
               <p className="text-sm font-medium text-content-primary mb-2">Route Details:</p>
               <p className="text-sm text-content-secondary">
-                <strong>From:</strong> {selectedRequest.fromCity}
+                <strong>From:</strong> {selectedRequest.fromCity || 'Not specified'}
               </p>
               <p className="text-sm text-content-secondary">
-                <strong>To:</strong> {selectedRequest.toCity}
+                <strong>To:</strong> {selectedRequest.toCity || 'Not specified'}
               </p>
-              <p className="text-sm text-content-secondary">
-                <strong>Distance:</strong> {Number(selectedRequest.distanceKm).toFixed(2)} km
-              </p>
+              {selectedRequest.distanceKm && (
+                <p className="text-sm text-content-secondary">
+                  <strong>Distance:</strong> {Number(selectedRequest.distanceKm).toFixed(2)} km
+                </p>
+              )}
               {selectedRequest.timeHours && (
                 <p className="text-sm text-content-secondary">
                   <strong>Time:</strong> {Number(selectedRequest.timeHours).toFixed(1)} hours
+                </p>
+              )}
+              {selectedRequest.quote && (
+                <p className="text-sm text-content-secondary">
+                  <strong>Related Quote:</strong> {selectedRequest.quote.quoteNumber}
                 </p>
               )}
             </div>

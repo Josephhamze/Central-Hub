@@ -62,31 +62,35 @@ export type RouteRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface RouteRequest {
   id: string;
-  fromCity: string;
-  toCity: string;
-  distanceKm: number;
+  fromCity?: string;
+  toCity?: string;
+  distanceKm?: number;
   timeHours?: number;
   warehouseId?: string;
   notes?: string;
+  quoteId?: string;
   status: RouteRequestStatus;
   requestedByUserId: string;
   reviewedByUserId?: string;
   reviewedAt?: string;
   rejectionReason?: string;
+  approvedRouteId?: string;
   createdAt: string;
   updatedAt: string;
   warehouse?: { id: string; name: string; locationCity?: string };
   requestedBy?: { id: string; firstName: string; lastName: string; email: string };
   reviewedBy?: { id: string; firstName: string; lastName: string; email: string };
+  quote?: { id: string; quoteNumber: string };
 }
 
 export interface CreateRouteRequestDto {
-  fromCity: string;
-  toCity: string;
-  distanceKm: number;
+  fromCity?: string;
+  toCity?: string;
+  distanceKm?: number;
   timeHours?: number;
   warehouseId?: string;
   notes?: string;
+  quoteId?: string;
 }
 
 export interface ReviewRouteRequestDto {

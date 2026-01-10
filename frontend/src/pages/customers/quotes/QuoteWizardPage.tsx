@@ -336,7 +336,7 @@ export function QuoteWizardPage() {
           <div>
             {currentStep === 1 && <Step1CompanySelection companies={companiesData?.items || []} selected={quoteData.companyId} onSelect={(id) => setQuoteData({ ...quoteData, companyId: id })} />}
             {currentStep === 2 && <Step2ClientSelection quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} />}
+            {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} quoteId={quoteId} />}
             {currentStep === 4 && <Step4Products companyId={quoteData.companyId} projectId={quoteData.projectId} quoteData={quoteData} onUpdate={setQuoteData} />}
             {currentStep === 5 && <Step5Review quoteData={quoteData} />}
           </div>
@@ -706,16 +706,13 @@ function calculateSimilarity(str1: string, str2: string): number {
 }
 
 // Step 3: Project & Delivery - Enhanced Two-Column Layout
-function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void }) {
+function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void; quoteId?: string }) {
   const { hasRole } = useAuth();
   const { error: showError, success } = useToast();
   const queryClient = useQueryClient();
   const [suggestedRoute, setSuggestedRoute] = useState<Route | null>(null);
   const [showRouteConfirmModal, setShowRouteConfirmModal] = useState(false);
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
-  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [addressInputFocused, setAddressInputFocused] = useState(false);
   const [routeRequestData, setRouteRequestData] = useState<{
     fromCity?: string;
     toCity?: string;
@@ -770,53 +767,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
 
   // Routes are fetched at the top level to allow refetching
 
-  // Generate address suggestions from routes and existing addresses
-  useEffect(() => {
-    if (!quoteData.deliveryAddressLine1 || quoteData.deliveryAddressLine1.length < 2) {
-      setAddressSuggestions([]);
-      setShowAddressSuggestions(false);
-      return;
-    }
-
-    const input = quoteData.deliveryAddressLine1.toLowerCase();
-    const suggestions: string[] = [];
-
-    // Get unique destination cities from routes
-    const routeCities = new Set<string>();
-    routesData?.items.forEach(route => {
-      if (route.toCity.toLowerCase().includes(input)) {
-        routeCities.add(route.toCity);
-      }
-    });
-
-    // Get unique cities from company/project addresses
-    if (companyData?.city && companyData.city.toLowerCase().includes(input)) {
-      suggestions.push(companyData.city);
-    }
-
-    // Add route destination cities
-    routeCities.forEach(city => {
-      if (!suggestions.includes(city)) {
-        suggestions.push(city);
-      }
-    });
-
-    // Add common address patterns if they match
-    const commonPatterns = [
-      `${input}, Lubumbashi, DRC`,
-      `${input}, Kinshasa, DRC`,
-      `${input}, Kolwezi, DRC`,
-    ];
-
-    commonPatterns.forEach(pattern => {
-      if (!suggestions.includes(pattern)) {
-        suggestions.push(pattern);
-      }
-    });
-
-    setAddressSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
-    setShowAddressSuggestions(suggestions.length > 0 && addressInputFocused);
-  }, [quoteData.deliveryAddressLine1, routesData, companyData, addressInputFocused]);
+  // Address suggestions removed - user types address manually
 
   // Get company city from selected warehouse or company
   const selectedWarehouse = warehousesData?.items.find(w => w.id === quoteData.warehouseId);
@@ -894,14 +845,15 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
 
   const routeRequestMutation = useMutation({
     mutationFn: async (data: typeof routeRequestData) => {
-      return routesApi.createRequest(data);
+      return routesApi.createRequest({ ...data, quoteId: quoteId });
     },
     onSuccess: () => {
-      success('Route creation request submitted. An administrator will review and approve it. You can save this quote as draft and submit it for approval once the route is created.');
+      success('Route creation request submitted. An administrator will review and approve it. Once approved, the route will be automatically applied to this quote.');
       setShowRouteRequestModal(false);
       setRouteRequestData({ fromCity: undefined, toCity: undefined, distanceKm: undefined, warehouseId: undefined });
       // Refetch routes to get any newly approved routes
       queryClient.invalidateQueries({ queryKey: ['routes'] });
+      queryClient.invalidateQueries({ queryKey: ['route-requests'] });
     },
     onError: (err: any) => {
       showError(err.response?.data?.error?.message || 'Failed to submit route request');
@@ -1076,39 +1028,13 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           </div>
           {quoteData.deliveryMethod === 'DELIVERED' && (
             <div className="space-y-4">
-              <div className="relative">
-                <Input
-                  label="Address *"
-                  required
-                  value={quoteData.deliveryAddressLine1 || ''}
-                  onChange={(e) => onUpdate({ ...quoteData, deliveryAddressLine1: e.target.value })}
-                  onFocus={() => setAddressInputFocused(true)}
-                  onBlur={() => {
-                    // Delay hiding suggestions to allow click on suggestion
-                    setTimeout(() => setShowAddressSuggestions(false), 200);
-                    setAddressInputFocused(false);
-                  }}
-                  placeholder="Enter the full delivery address (e.g., 123 Main Street, Lubumbashi, DRC)"
-                />
-                {showAddressSuggestions && addressSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-background-primary border border-border-default rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {addressSuggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        className="w-full text-left px-4 py-2 hover:bg-background-hover text-content-primary text-sm"
-                        onClick={() => {
-                          onUpdate({ ...quoteData, deliveryAddressLine1: suggestion });
-                          setShowAddressSuggestions(false);
-                          setAddressInputFocused(false);
-                        }}
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <Input
+                label="Address *"
+                required
+                value={quoteData.deliveryAddressLine1 || ''}
+                onChange={(e) => onUpdate({ ...quoteData, deliveryAddressLine1: e.target.value })}
+                placeholder="Enter the full delivery address (e.g., 123 Main Street, Lubumbashi, DRC)"
+              />
               <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
                 <p className="text-xs text-content-secondary">
                   <strong>Tip:</strong> The system will automatically suggest existing routes based on your address. If no route is found, you can request a new one.
@@ -1195,7 +1121,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
         isOpen={showRouteRequestModal}
         onClose={() => {
           setShowRouteRequestModal(false);
-          setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0 });
+          setRouteRequestData({ fromCity: undefined, toCity: undefined, distanceKm: undefined, warehouseId: undefined });
         }}
         title="Create New Route Request"
         size="md"

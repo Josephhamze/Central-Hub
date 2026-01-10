@@ -446,6 +446,7 @@ model Route {
   snapshots       RouteSnapshot[]
   warehouse       Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   creator         User?     @relation("RouteCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  approvedRouteRequests RouteRequest[] @relation("RouteRequestApprovedRoute")
 
   @@index([fromCity])
   @@index([toCity])
@@ -458,17 +459,19 @@ model Route {
 // Route Request (for user-submitted route requests pending admin approval)
 model RouteRequest {
   id              String              @id @default(cuid())
-  fromCity        String              @map("from_city")
-  toCity          String              @map("to_city")
-  distanceKm      Decimal             @map("distance_km") @db.Decimal(10, 2)
+  fromCity        String?             @map("from_city")
+  toCity          String?             @map("to_city")
+  distanceKm      Decimal?            @map("distance_km") @db.Decimal(10, 2)
   timeHours       Decimal?            @map("time_hours") @db.Decimal(8, 2)
   warehouseId     String?             @map("warehouse_id")
   notes           String?
+  quoteId         String?             @map("quote_id")
   status          RouteRequestStatus  @default(PENDING)
   requestedByUserId String            @map("requested_by_user_id")
   reviewedByUserId String?            @map("reviewed_by_user_id")
   reviewedAt      DateTime?           @map("reviewed_at")
   rejectionReason String?             @map("rejection_reason")
+  approvedRouteId String?            @map("approved_route_id")
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")
 
@@ -476,10 +479,13 @@ model RouteRequest {
   warehouse       Warehouse?          @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   requestedBy     User                @relation("RouteRequestRequester", fields: [requestedByUserId], references: [id], onDelete: Cascade)
   reviewedBy      User?               @relation("RouteRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  quote           Quote?              @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  approvedRoute   Route?              @relation("RouteRequestApprovedRoute", fields: [approvedRouteId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([requestedByUserId])
   @@index([reviewedByUserId])
+  @@index([quoteId])
   @@map("route_requests")
 }
 
@@ -751,6 +757,7 @@ model Quote {
   route       Route?               @relation(fields: [routeId], references: [id], onDelete: SetNull)
   items       QuoteItem[]
   approvals   QuoteApprovalAudit[]
+  routeRequests RouteRequest[]
 
   @@index([companyId])
   @@index([projectId])
