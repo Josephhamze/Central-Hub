@@ -740,6 +740,17 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     enabled: !!companyId,
   });
 
+  // Fetch company data to get city
+  const { data: companyData } = useQuery({
+    queryKey: ['company', quoteData.companyId],
+    queryFn: async () => {
+      if (!quoteData.companyId) return null;
+      const res = await companiesApi.findOne(quoteData.companyId);
+      return res.data.data;
+    },
+    enabled: !!quoteData.companyId,
+  });
+
   // Fetch routes for matching
   const { data: routesData } = useQuery({
     queryKey: ['routes'],
@@ -796,17 +807,6 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     setAddressSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
     setShowAddressSuggestions(suggestions.length > 0 && addressInputFocused);
   }, [quoteData.deliveryAddressLine1, routesData, companyData, addressInputFocused]);
-
-  // Fetch company data to get city
-  const { data: companyData } = useQuery({
-    queryKey: ['company', quoteData.companyId],
-    queryFn: async () => {
-      if (!quoteData.companyId) return null;
-      const res = await companiesApi.findOne(quoteData.companyId);
-      return res.data.data;
-    },
-    enabled: !!quoteData.companyId,
-  });
 
   // Get company city from selected warehouse or company
   const selectedWarehouse = warehousesData?.items.find(w => w.id === quoteData.warehouseId);
