@@ -10,7 +10,6 @@ import { Input } from '@components/ui/Input';
 import { Modal, ModalFooter } from '@components/ui/Modal';
 import { useToast } from '@contexts/ToastContext';
 import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes';
-import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
 import { cn } from '@utils/cn';
 
@@ -30,14 +29,6 @@ export function QuotesAdminPage() {
   const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<'quotes' | 'all-quotes' | 'customers' | 'logistics'>('quotes');
-
-  const { data: companiesData } = useQuery({
-    queryKey: ['companies'],
-    queryFn: async () => {
-      const res = await companiesApi.findAll(1, 100);
-      return res.data.data;
-    },
-  });
 
   const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['quotes-kpis', filters],
