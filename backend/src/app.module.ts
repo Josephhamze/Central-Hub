@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // Core modules
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -48,6 +49,9 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Scheduled tasks
+    ScheduleModule.forRoot(),
 
     // Core
     PrismaModule,

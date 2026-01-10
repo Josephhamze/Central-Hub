@@ -13,6 +13,22 @@ export class QuotesService {
     private notificationsService: NotificationsService,
   ) {}
 
+  /**
+   * Calculate expiresAt based on approvedAt or createdAt + validityDays
+   */
+  private calculateExpiresAt(approvedAt: Date | null, createdAt: Date, validityDays: number): Date | null {
+    // If approved, use approvedAt + validityDays
+    if (approvedAt) {
+      const expiresAt = new Date(approvedAt);
+      expiresAt.setDate(expiresAt.getDate() + validityDays);
+      return expiresAt;
+    }
+    // Otherwise, use createdAt + validityDays (for draft quotes that might be approved later)
+    const expiresAt = new Date(createdAt);
+    expiresAt.setDate(expiresAt.getDate() + validityDays);
+    return expiresAt;
+  }
+
   // Generate unique quote number: Q-YYYYMM-####
   private async generateQuoteNumber(): Promise<string> {
     const now = new Date();
@@ -198,6 +214,7 @@ export class QuotesService {
       salesRepUserId?: string;
       startDate?: Date;
       endDate?: Date;
+      includeArchived?: boolean;
     } = {},
     page = 1,
     limit = 20,
@@ -221,6 +238,10 @@ export class QuotesService {
       where.createdAt = {};
       if (filters.startDate) where.createdAt.gte = filters.startDate;
       if (filters.endDate) where.createdAt.lte = filters.endDate;
+    }
+    // Exclude archived quotes by default (unless explicitly requested)
+    if (!filters.includeArchived) {
+      where.archived = false;
     }
 
     const [items, total] = await Promise.all([
@@ -426,11 +447,16 @@ export class QuotesService {
     // Generate quote number
     const quoteNumber = await this.generateQuoteNumber();
 
+    // Calculate expiresAt (will be recalculated when approved)
+    const createdAt = new Date();
+    const expiresAt = this.calculateExpiresAt(null, createdAt, validityDays);
+
     // Create quote with items
     return this.prisma.quote.create({
       data: {
         quoteNumber,
         companyId: dto.companyId,
+        expiresAt,
         projectId: dto.projectId,
         customerId: dto.customerId,
         contactId: dto.contactId,
@@ -723,12 +749,16 @@ export class QuotesService {
       throw new BadRequestException(`Cannot approve quote with status ${quote.status}`);
     }
 
+    const approvedAt = new Date();
+    const expiresAt = this.calculateExpiresAt(approvedAt, quote.createdAt, quote.validityDays);
+    
     const result = await this.prisma.$transaction([
       this.prisma.quote.update({
         where: { id },
         data: {
           status: QuoteStatus.APPROVED,
-          approvedAt: new Date(),
+          approvedAt,
+          expiresAt,
         },
       }),
       this.prisma.quoteApprovalAudit.create({
@@ -845,6 +875,7 @@ export class QuotesService {
 
     const status = outcome === 'WON' ? QuoteStatus.WON : QuoteStatus.LOST;
     const action = outcome === 'WON' ? ApprovalAction.MARK_WON : ApprovalAction.MARK_LOST;
+    const now = new Date();
 
     return this.prisma.$transaction([
       this.prisma.quote.update({
@@ -853,6 +884,8 @@ export class QuotesService {
           status,
           lossReasonCategory: outcome === 'LOST' ? (lossReasonCategory || null) : null,
           outcomeReasonNotes: reasonNotes,
+          // Archive immediately when marked as WON or LOST (will be archived after month ends by scheduled task)
+          // Note: We don't set archived=true here because the requirement is to archive after the month is over
         },
       }),
       this.prisma.quoteApprovalAudit.create({

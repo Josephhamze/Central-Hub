@@ -33,6 +33,7 @@ export class QuotesController {
     @Query('salesRepUserId') salesRepUserId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('includeArchived') includeArchived?: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
   ) {
@@ -46,6 +47,7 @@ export class QuotesController {
         salesRepUserId,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
+        includeArchived: includeArchived === 'true',
       },
       +page,
       +limit,

@@ -679,6 +679,7 @@ model Quote {
   grandTotal              Decimal        @map("grand_total") @db.Decimal(12, 2)
   // Validity
   validityDays            Int            @default(7) @map("validity_days")
+  expiresAt               DateTime?      @map("expires_at") // Calculated from approvedAt or createdAt + validityDays
   // Payment Terms
   paymentTerms            PaymentTerms?  @map("payment_terms")
   // Delivery Terms
@@ -688,6 +689,9 @@ model Quote {
   truckType               TruckType?    @map("truck_type")
   // Status
   status                  QuoteStatus    @default(DRAFT)
+  // Archiving
+  archived                Boolean        @default(false) @map("archived")
+  archivedAt              DateTime?      @map("archived_at")
   // Sales rep
   salesRepUserId          String         @map("sales_rep_user_id")
   // Relations to User
@@ -717,6 +721,8 @@ model Quote {
   @@index([salesRepUserId])
   @@index([status])
   @@index([quoteNumber])
+  @@index([archived])
+  @@index([expiresAt])
   @@map("quotes")
 }
 
