@@ -1202,7 +1202,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
       >
         <div className="space-y-4">
           <p className="text-sm text-content-secondary">
-            This route will be submitted for administrator approval. Please provide the route details. Note: Toll stations and cost per km will be configured by administrators.
+            This route will be submitted for administrator approval. You can leave fields blank if you don't have the information - administrators will fill them in. Note: Toll stations and cost per km will be configured by administrators.
           </p>
           <Input
             label="From City"
