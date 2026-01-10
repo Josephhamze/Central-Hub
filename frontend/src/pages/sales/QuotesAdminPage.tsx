@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck, Trash2 } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, Building2, ChevronDown, Users, Truck, Trash2, Archive } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -102,6 +102,22 @@ export function QuotesAdminPage() {
       setOutcomeModalOpen(false);
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to update outcome'),
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => quotesApi.archive(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
+      // Refresh the page data
+      queryClient.refetchQueries({ queryKey: ['quotes', filters] });
+      success('Quote archived successfully');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to archive quote';
+      showError(errorMessage);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -322,6 +338,24 @@ export function QuotesAdminPage() {
                         </Button>
                       </>
                     )}
+                    {/* Show Archive for WON, LOST, REJECTED quotes that aren't archived */}
+                    {!quote.archived && ['WON', 'LOST', 'REJECTED'].includes(quote.status) && (isAdmin || isCreator) && (
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to archive quote ${quote.quoteNumber}?`)) {
+                            archiveMutation.mutate(quote.id);
+                          }
+                        }}
+                        leftIcon={<Archive className="w-4 h-4" />}
+                        disabled={archiveMutation.isPending}
+                        title="Archive quote"
+                      >
+                        Archive
+                      </Button>
+                    )}
+                    {/* Show Delete only for DRAFT quotes */}
                     {((isAdmin) || (isCreator && quote.status === 'DRAFT')) && (
                       <Button 
                         size="sm" 

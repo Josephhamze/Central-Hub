@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { QuoteArchivingService } from './quote-archiving.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QuoteStatus, DeliveryMethod, ApprovalAction, PaymentTerms, TruckType, LossReasonCategory } from '@prisma/client';
@@ -11,6 +12,7 @@ export class QuotesService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private quoteArchivingService: QuoteArchivingService,
   ) {}
 
   /**
@@ -922,6 +924,29 @@ export class QuotesService {
     }
 
     return this.prisma.quote.delete({ where: { id } });
+  }
+
+  async archive(id: string, userId: string, userPermissions: string[]) {
+    const quote = await this.prisma.quote.findUnique({ where: { id } });
+    if (!quote) throw new NotFoundException('Quote not found');
+
+    // Check if user has permission to archive quotes
+    if (!userPermissions.includes('quotes:approve') && quote.salesRepUserId !== userId) {
+      throw new ForbiddenException('You do not have permission to archive this quote');
+    }
+
+    // Only allow archiving quotes that are WON, LOST, or REJECTED
+    if (![QuoteStatus.WON, QuoteStatus.LOST, QuoteStatus.REJECTED].includes(quote.status)) {
+      throw new BadRequestException('Can only archive quotes that are WON, LOST, or REJECTED');
+    }
+
+    // Don't archive if already archived
+    if (quote.archived) {
+      throw new BadRequestException('Quote is already archived');
+    }
+
+    await this.quoteArchivingService.archiveQuote(id);
+    return this.findOne(id, userId, userPermissions);
   }
   // KPI calculations
   async getSalesKPIs(

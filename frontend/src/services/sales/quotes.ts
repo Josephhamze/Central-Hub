@@ -52,6 +52,9 @@ export interface Quote {
   rejectedAt?: string;
   lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER';
   outcomeReasonNotes?: string;
+  archived?: boolean;
+  archivedAt?: string;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
   company?: { id: string; name: string };
@@ -117,6 +120,7 @@ export const quotesApi = {
   withdraw: (id: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/withdraw`),
   markOutcome: (id: string, outcome: 'WON' | 'LOST', lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER', reasonNotes?: string) =>
     api.post<ApiResponse<Quote>>(`/quotes/${id}/outcome?outcome=${outcome}`, { lossReasonCategory, reasonNotes }),
+  archive: (id: string) => api.post<ApiResponse<Quote>>(`/quotes/${id}/archive`),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/quotes/${id}`),
   getKPIs: (params?: { companyId?: string; projectId?: string; salesRepUserId?: string; startDate?: string; endDate?: string }) =>
     api.get<ApiResponse<SalesKPIs>>('/quotes/kpis', { params }),

@@ -172,6 +172,18 @@ export class QuotesController {
     return this.quotesService.markOutcome(id, outcome, userId, userPermissions, dto.lossReasonCategory, dto.reasonNotes);
   }
 
+  @Post(':id/archive')
+  @UseGuards(RbacGuard)
+  @Permissions('quotes:approve')
+  @ApiOperation({ summary: 'Archive a quote' })
+  async archive(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('permissions') userPermissions: string[],
+  ) {
+    return this.quotesService.archive(id, userId, userPermissions);
+  }
+
   @Delete(':id')
   @UseGuards(RbacGuard)
   @Permissions('quotes:delete')

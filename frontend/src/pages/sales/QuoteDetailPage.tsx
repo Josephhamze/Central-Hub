@@ -17,7 +17,8 @@ import {
   FolderKanban,
   Info,
   FileText,
-  Trash2
+  Trash2,
+  Archive
 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -139,6 +140,21 @@ export function QuoteDetailPage() {
     },
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to update outcome';
+      showError(errorMessage);
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: () => quotesApi.archive(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
+      success('Quote archived successfully');
+    },
+    onError: (err: any) => {
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to archive quote';
       showError(errorMessage);
     },
   });
@@ -450,6 +466,23 @@ export function QuoteDetailPage() {
                 </Button>
               </>
             )}
+            {/* Show Archive for WON, LOST, REJECTED quotes that aren't archived */}
+            {quote && !quote.archived && ['WON', 'LOST', 'REJECTED'].includes(quote.status) && (isAdmin || isCreator) && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to archive quote ${quote.quoteNumber}?`)) {
+                    archiveMutation.mutate();
+                  }
+                }}
+                leftIcon={<Archive className="w-4 h-4" />}
+                disabled={archiveMutation.isPending}
+                title="Archive quote"
+              >
+                Archive Quote
+              </Button>
+            )}
+            {/* Show Delete only for DRAFT quotes */}
             {quote && ((isAdmin) || (isCreator && quote.status === 'DRAFT')) && (
               <Button
                 variant="danger"
