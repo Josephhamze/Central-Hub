@@ -72,7 +72,7 @@ export class QuotesService {
     }
 
     // Truck capacity in tons
-    const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons
+    const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 40; // FLATBED_40T = 40 tons
 
     // Calculate number of loads needed
     const numberOfLoads = Math.ceil(totalTonnage.toNumber() / truckCapacity);

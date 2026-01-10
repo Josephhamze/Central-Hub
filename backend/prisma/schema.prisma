@@ -238,7 +238,7 @@ enum PaymentTerms {
 
 enum TruckType {
   TIPPER_42T
-  CANTER
+  FLATBED_40T
 }
 
 enum VehicleType {

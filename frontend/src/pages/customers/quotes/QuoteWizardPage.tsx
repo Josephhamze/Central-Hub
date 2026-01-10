@@ -57,7 +57,7 @@ interface QuoteDataUI extends Omit<Partial<CreateQuoteDto>, 'items'> {
   deliveryStartDate?: string;
   serviceEndDate?: string;
   loadsPerDay?: number;
-  truckType?: 'TIPPER_42T' | 'CANTER';
+  truckType?: 'TIPPER_42T' | 'FLATBED_40T';
 }
 
 const STEPS = [
@@ -706,6 +706,9 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
   const [suggestedRoute, setSuggestedRoute] = useState<Route | null>(null);
   const [showRouteConfirmModal, setShowRouteConfirmModal] = useState(false);
   const [showRouteRequestModal, setShowRouteRequestModal] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [addressInputFocused, setAddressInputFocused] = useState(false);
   const [routeRequestData, setRouteRequestData] = useState<{
     fromCity: string;
     toCity: string;
@@ -745,6 +748,54 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
       return res.data.data;
     },
   });
+
+  // Generate address suggestions from routes and existing addresses
+  useEffect(() => {
+    if (!quoteData.deliveryAddressLine1 || quoteData.deliveryAddressLine1.length < 2) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    const input = quoteData.deliveryAddressLine1.toLowerCase();
+    const suggestions: string[] = [];
+
+    // Get unique destination cities from routes
+    const routeCities = new Set<string>();
+    routesData?.items.forEach(route => {
+      if (route.toCity.toLowerCase().includes(input)) {
+        routeCities.add(route.toCity);
+      }
+    });
+
+    // Get unique cities from company/project addresses
+    if (companyData?.city && companyData.city.toLowerCase().includes(input)) {
+      suggestions.push(companyData.city);
+    }
+
+    // Add route destination cities
+    routeCities.forEach(city => {
+      if (!suggestions.includes(city)) {
+        suggestions.push(city);
+      }
+    });
+
+    // Add common address patterns if they match
+    const commonPatterns = [
+      `${input}, Lubumbashi, DRC`,
+      `${input}, Kinshasa, DRC`,
+      `${input}, Kolwezi, DRC`,
+    ];
+
+    commonPatterns.forEach(pattern => {
+      if (!suggestions.includes(pattern)) {
+        suggestions.push(pattern);
+      }
+    });
+
+    setAddressSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
+    setShowAddressSuggestions(suggestions.length > 0 && addressInputFocused);
+  }, [quoteData.deliveryAddressLine1, routesData, companyData, addressInputFocused]);
 
   // Fetch company data to get city
   const { data: companyData } = useQuery({
@@ -1012,13 +1063,39 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           </div>
           {quoteData.deliveryMethod === 'DELIVERED' && (
             <div className="space-y-4">
-              <Input
-                label="Address *"
-                required
-                value={quoteData.deliveryAddressLine1 || ''}
-                onChange={(e) => onUpdate({ ...quoteData, deliveryAddressLine1: e.target.value })}
-                placeholder="Enter the full delivery address (e.g., 123 Main Street, Lubumbashi, DRC)"
-              />
+              <div className="relative">
+                <Input
+                  label="Address *"
+                  required
+                  value={quoteData.deliveryAddressLine1 || ''}
+                  onChange={(e) => onUpdate({ ...quoteData, deliveryAddressLine1: e.target.value })}
+                  onFocus={() => setAddressInputFocused(true)}
+                  onBlur={() => {
+                    // Delay hiding suggestions to allow click on suggestion
+                    setTimeout(() => setShowAddressSuggestions(false), 200);
+                    setAddressInputFocused(false);
+                  }}
+                  placeholder="Enter the full delivery address (e.g., 123 Main Street, Lubumbashi, DRC)"
+                />
+                {showAddressSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-background-primary border border-border-default rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {addressSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        className="w-full text-left px-4 py-2 hover:bg-background-hover text-content-primary text-sm"
+                        onClick={() => {
+                          onUpdate({ ...quoteData, deliveryAddressLine1: suggestion });
+                          setShowAddressSuggestions(false);
+                          setAddressInputFocused(false);
+                        }}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="p-3 bg-status-info-bg border-l-4 border-status-info rounded-r-lg">
                 <p className="text-xs text-content-secondary">
                   <strong>Tip:</strong> The system will automatically suggest routes based on your address. If no route is found, you can request a new one.
@@ -1244,10 +1321,23 @@ function calculateTotalTonnage(items: QuoteItemUI[]): number {
   return totalTonnage;
 }
 
+// Helper function to check if a product is aggregate
+function isAggregateProduct(productName: string, description?: string): boolean {
+  const name = (productName || '').toLowerCase();
+  const desc = (description || '').toLowerCase();
+  const aggregateKeywords = ['aggregate', 'gravel', 'stone', 'sand', 'crushed', 'rock', 'rubble', 'ballast', 'chippings'];
+  return aggregateKeywords.some(keyword => name.includes(keyword) || desc.includes(keyword));
+}
+
+// Helper function to check if quote has any aggregate products
+function hasAggregateProducts(items: QuoteItemUI[]): boolean {
+  return items.some(item => isAggregateProduct(item.nameSnapshot));
+}
+
 // Helper function to calculate required trucks
-function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' | 'CANTER'): number {
+function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' | 'FLATBED_40T'): number {
   if (!truckType) return 0;
-  const capacity = truckType === 'TIPPER_42T' ? 42 : 3; // Tipper = 42t, Canter = 3t (matching backend)
+  const capacity = truckType === 'TIPPER_42T' ? 42 : 40; // Tipper = 42t, Flatbed = 40t
   return Math.ceil(totalTonnage / capacity);
 }
 
@@ -1255,7 +1345,7 @@ function calculateRequiredTrucks(totalTonnage: number, truckType?: 'TIPPER_42T' 
 function calculateServiceEndDate(
   deliveryStartDate: string | undefined,
   loadsPerDay: number | undefined,
-  truckType: 'TIPPER_42T' | 'CANTER' | undefined,
+  truckType: 'TIPPER_42T' | 'FLATBED_40T' | undefined,
   totalTonnage: number,
 ): Date | null {
   if (!deliveryStartDate || !loadsPerDay || !truckType) {
@@ -1263,7 +1353,7 @@ function calculateServiceEndDate(
   }
 
   // Truck capacity in tons
-  const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 3; // CANTER = 3 tons (matching backend)
+  const truckCapacity = truckType === 'TIPPER_42T' ? 42 : 40; // FLATBED_40T = 40 tons
 
   // Calculate number of loads needed
   const numberOfLoads = Math.ceil(totalTonnage / truckCapacity);
@@ -1318,7 +1408,18 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
       discountPercentage: 0,
       lineTotal: defaultUnitPrice * minOrderQty,
     };
-    onUpdate({ ...quoteData, items: [...items, newItem] });
+    const updatedItems = [...items, newItem];
+    
+    // Check if adding this item makes it an aggregate product, and if flatbed is selected, clear it
+    const hasAggregate = hasAggregateProducts(updatedItems);
+    const updatedQuoteData: QuoteDataUI = { ...quoteData, items: updatedItems };
+    
+    if (hasAggregate && quoteData.truckType === 'FLATBED_40T') {
+      updatedQuoteData.truckType = undefined;
+      showError('Flatbed cannot be used with aggregate products. Truck type has been cleared.');
+    }
+    
+    onUpdate(updatedQuoteData);
   };
 
   const updateItem = (index: number, updates: Partial<QuoteItemUI>) => {
@@ -1555,7 +1656,8 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
           {(() => {
             const totalTonnage = calculateTotalTonnage(quoteData.items);
             const requiredTrucks = calculateRequiredTrucks(totalTonnage, quoteData.truckType);
-            const truckCapacity = quoteData.truckType === 'TIPPER_42T' ? 42 : quoteData.truckType === 'CANTER' ? 3 : 0;
+            const truckCapacity = quoteData.truckType === 'TIPPER_42T' ? 42 : quoteData.truckType === 'FLATBED_40T' ? 40 : 0;
+            const hasAggregate = hasAggregateProducts(quoteData.items);
             
             return (
               <div className="space-y-4">
@@ -1595,8 +1697,15 @@ function Step4Products({ companyId, projectId, quoteData, onUpdate }: { companyI
                     >
                       <option value="">Select truck type</option>
                       <option value="TIPPER_42T">Tipper 42t (42 tons capacity)</option>
-                      <option value="CANTER">Canter (3 tons capacity)</option>
+                      {!hasAggregate && (
+                        <option value="FLATBED_40T">Flatbed 40t (40 tons capacity)</option>
+                      )}
                     </select>
+                    {hasAggregate && (
+                      <p className="text-xs text-status-warning mt-1">
+                        Flatbed not available for aggregate products
+                      </p>
+                    )}
                     {quoteData.truckType && (
                       <p className="text-xs text-content-tertiary mt-1">
                         {calculateRequiredTrucks(totalTonnage, quoteData.truckType)} truck{calculateRequiredTrucks(totalTonnage, quoteData.truckType) !== 1 ? 's' : ''} required

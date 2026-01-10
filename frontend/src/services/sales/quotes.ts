@@ -44,7 +44,7 @@ export interface Quote {
   deliveryStartDate?: string;
   serviceEndDate?: string;
   loadsPerDay?: number;
-  truckType?: 'TIPPER_42T' | 'CANTER';
+  truckType?: 'TIPPER_42T' | 'FLATBED_40T';
   status: QuoteStatus;
   salesRepUserId: string;
   submittedAt?: string;
@@ -93,7 +93,7 @@ export interface CreateQuoteDto {
   deliveryStartDate?: string;
   serviceEndDate?: string;
   loadsPerDay?: number;
-  truckType?: 'TIPPER_42T' | 'CANTER';
+  truckType?: 'TIPPER_42T' | 'FLATBED_40T';
   items: CreateQuoteItemDto[];
 }
 
