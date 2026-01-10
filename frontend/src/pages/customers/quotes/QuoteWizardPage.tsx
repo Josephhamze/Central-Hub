@@ -884,9 +884,9 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     const requestCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1] || quoteData.deliveryAddressLine1 || '';
     
     setRouteRequestData({
-      fromCity: fromCity,
-      toCity: requestCity,
-      distanceKm: 0,
+      fromCity: fromCity || undefined,
+      toCity: requestCity || undefined,
+      distanceKm: undefined,
       warehouseId: quoteData.warehouseId,
     });
     setShowRouteRequestModal(true);
@@ -1212,7 +1212,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
           />
           <Input
             label="To City"
-            value={routeRequestData.toCity}
+            value={routeRequestData.toCity || ''}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, toCity: e.target.value })}
             placeholder="Destination city (optional - admin will fill in)"
           />
