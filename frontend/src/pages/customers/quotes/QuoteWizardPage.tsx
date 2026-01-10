@@ -855,7 +855,16 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { com
 
   const routeRequestMutation = useMutation({
     mutationFn: async (data: typeof routeRequestData) => {
-      return routesApi.createRequest({ ...data, quoteId: quoteId });
+      // Filter out undefined values before sending (JSON.stringify omits undefined)
+      const requestData: any = {};
+      if (data.fromCity) requestData.fromCity = data.fromCity;
+      if (data.toCity) requestData.toCity = data.toCity;
+      if (data.distanceKm !== undefined && data.distanceKm !== null) requestData.distanceKm = data.distanceKm;
+      if (data.timeHours !== undefined && data.timeHours !== null) requestData.timeHours = data.timeHours;
+      if (data.warehouseId) requestData.warehouseId = data.warehouseId;
+      if (data.notes) requestData.notes = data.notes;
+      if (quoteId) requestData.quoteId = quoteId;
+      return routesApi.createRequest(requestData);
     },
     onSuccess: () => {
       success('Route creation request submitted. An administrator will review and approve it. Once approved, the route will be automatically applied to this quote.');
