@@ -717,16 +717,16 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [addressInputFocused, setAddressInputFocused] = useState(false);
   const [routeRequestData, setRouteRequestData] = useState<{
-    fromCity: string;
-    toCity: string;
-    distanceKm: number;
+    fromCity?: string;
+    toCity?: string;
+    distanceKm?: number;
     timeHours?: number;
     warehouseId?: string;
     notes?: string;
   }>({
-    fromCity: '',
-    toCity: '',
-    distanceKm: 0,
+    fromCity: undefined,
+    toCity: undefined,
+    distanceKm: undefined,
   });
   
   const { data: projectsData, error: projectsError } = useQuery({
@@ -899,7 +899,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
     onSuccess: () => {
       success('Route creation request submitted. An administrator will review and approve it. You can save this quote as draft and submit it for approval once the route is created.');
       setShowRouteRequestModal(false);
-      setRouteRequestData({ fromCity: '', toCity: '', distanceKm: 0, warehouseId: undefined });
+      setRouteRequestData({ fromCity: undefined, toCity: undefined, distanceKm: undefined, warehouseId: undefined });
       // Refetch routes to get any newly approved routes
       queryClient.invalidateQueries({ queryKey: ['routes'] });
     },
@@ -909,10 +909,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
   });
 
   const handleSubmitRouteRequest = () => {
-    if (!routeRequestData.fromCity || !routeRequestData.toCity || !routeRequestData.distanceKm) {
-      showError('Please fill in all required fields');
-      return;
-    }
+    // Allow submitting with blank fields - admin will fill them in
     routeRequestMutation.mutate(routeRequestData);
   };
 
@@ -1208,26 +1205,23 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
             This route will be submitted for administrator approval. Please provide the route details. Note: Toll stations and cost per km will be configured by administrators.
           </p>
           <Input
-            label="From City *"
+            label="From City"
             value={routeRequestData.fromCity}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, fromCity: e.target.value })}
-            placeholder="Departure city"
-            required
+            placeholder="Departure city (optional - admin will fill in)"
           />
           <Input
-            label="To City *"
+            label="To City"
             value={routeRequestData.toCity}
             onChange={(e) => setRouteRequestData({ ...routeRequestData, toCity: e.target.value })}
-            placeholder="Destination city"
-            required
+            placeholder="Destination city (optional - admin will fill in)"
           />
           <Input
-            label="Distance (km) *"
+            label="Distance (km)"
             type="number"
             value={routeRequestData.distanceKm || ''}
-            onChange={(e) => setRouteRequestData({ ...routeRequestData, distanceKm: parseFloat(e.target.value) || 0 })}
-            placeholder="Distance in kilometers"
-            required
+            onChange={(e) => setRouteRequestData({ ...routeRequestData, distanceKm: e.target.value ? parseFloat(e.target.value) : undefined })}
+            placeholder="Distance in kilometers (optional - admin will fill in)"
           />
           <Input
             label="Time (hours)"
