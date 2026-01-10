@@ -793,7 +793,7 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate }: { companyId?: 
       setSuggestedRoute(bestMatch.route);
       setShowRouteConfirmModal(true);
     }
-  }, [quoteData.deliveryCity, fromCity, routesData, quoteData.routeId]);
+  }, [quoteData.deliveryAddressLine1, fromCity, routesData, quoteData.routeId]);
 
   const handleConfirmRoute = () => {
     if (suggestedRoute) {
