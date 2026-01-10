@@ -326,17 +326,36 @@ export class QuotesService {
     }
 
     // Validate delivery method and address
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && (!dto.deliveryAddressLine1 || !dto.deliveryCity || !dto.deliveryPostalCode)) {
-      throw new BadRequestException('Delivery address (including city) is required for delivered quotes');
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.deliveryAddressLine1) {
+      throw new BadRequestException('Delivery address is required for delivered quotes');
     }
 
-    // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery city (destination)
+    // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery address (destination)
     let routeId = dto.routeId;
     let departureCity: string | null = null;
     
     if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !routeId) {
-      if (!dto.deliveryCity) {
-        throw new BadRequestException('Delivery city is required for route calculation');
+      if (!dto.deliveryAddressLine1) {
+        throw new BadRequestException('Delivery address is required for route calculation');
+      }
+      
+      // Extract city from address if not provided separately (try to get city from address string)
+      let deliveryCity: string | null = null;
+      if (dto.deliveryCity) {
+        deliveryCity = dto.deliveryCity;
+      } else if (dto.deliveryAddressLine1) {
+        // Try to extract city from address (usually the second-to-last part before country, or last part)
+        const addressParts = dto.deliveryAddressLine1.split(',').map(p => p.trim());
+        if (addressParts.length >= 2) {
+          // Usually format is: "Street, City, Country" or "Street, City"
+          deliveryCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1];
+        } else {
+          deliveryCity = addressParts[0]; // Fallback to full address if no comma
+        }
+      }
+      
+      if (!deliveryCity) {
+        throw new BadRequestException('Could not determine delivery city from address. Please ensure the address includes the city name.');
       }
       
       // Try to get departure city from warehouse first, then fall back to company city
@@ -465,7 +484,7 @@ export class QuotesService {
         deliveryMethod: dto.deliveryMethod,
         deliveryAddressLine1: dto.deliveryAddressLine1,
         deliveryAddressLine2: dto.deliveryAddressLine2,
-        deliveryCity: dto.deliveryCity,
+        deliveryCity: dto.deliveryCity || null, // Keep for backward compatibility but allow null
         deliveryState: dto.deliveryState,
         deliveryPostalCode: dto.deliveryPostalCode,
         deliveryCountry: dto.deliveryCountry,
