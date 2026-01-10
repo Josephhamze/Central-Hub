@@ -10,7 +10,6 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { useAuth } from '@contexts/AuthContext';
 import { routesApi, type RouteRequest, type RouteRequestStatus } from '@services/logistics/routes';
-import { cn } from '@utils/cn';
 
 export function RouteRequestsPage() {
   const { success, error: showError } = useToast();

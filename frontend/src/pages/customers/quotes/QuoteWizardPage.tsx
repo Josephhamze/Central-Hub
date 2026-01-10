@@ -37,7 +37,7 @@ import { contactsApi } from '@services/sales/contacts';
 import { warehousesApi } from '@services/sales/warehouses';
 import { projectsApi } from '@services/sales/projects';
 import { stockItemsApi, type StockItem } from '@services/sales/stock-items';
-import { routesApi, type Route, type CreateRouteDto } from '@services/logistics/routes';
+import { routesApi, type Route } from '@services/logistics/routes';
 import { cn } from '@utils/cn';
 
 // Local UI type for quote items (extends DTO with UI-only fields)
