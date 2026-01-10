@@ -80,6 +80,9 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
+      // Refresh the page data
+      queryClient.refetchQueries({ queryKey: ['quotes', filters] });
       success('Quote rejected');
       setRejectModalOpen(false);
     },
@@ -92,6 +95,9 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
+      // Refresh the page data
+      queryClient.refetchQueries({ queryKey: ['quotes', filters] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
     },
@@ -103,6 +109,9 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['quote'] }); // Refresh individual quote if open
+      // Refresh the page data
+      queryClient.refetchQueries({ queryKey: ['quotes', filters] });
       success('Quote deleted successfully');
     },
     onError: (err: any) => {

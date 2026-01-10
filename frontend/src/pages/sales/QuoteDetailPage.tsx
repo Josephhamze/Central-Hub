@@ -96,6 +96,9 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      // Refetch the current quote to get updated data
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote rejected');
       setRejectModalOpen(false);
       setRejectReason('');
@@ -126,6 +129,9 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      // Refetch the current quote to get updated data
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
       setLossReasonCategory('');
