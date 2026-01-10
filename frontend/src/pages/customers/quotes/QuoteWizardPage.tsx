@@ -179,10 +179,8 @@ export function QuoteWizardPage() {
         showError('Please select a delivery method');
         return;
       }
-      if (quoteData.deliveryMethod === 'DELIVERED' && !quoteData.deliveryAddressLine1) {
-        showError('Please enter a delivery address');
-        return;
-      }
+      // Address is optional - can proceed without it and add route later
+      // Route will be required when submitting for approval, not when creating draft
     }
     if (currentStep === 4 && (!quoteData.items || quoteData.items.length === 0)) {
       showError('Please add at least one product');
