@@ -79,7 +79,6 @@ export function QuoteWizardPage() {
     items: [],
     companyId: searchParams.get('companyId') || undefined,
   });
-  const hasAutoAdvancedRef = useRef<boolean>(false); // Track if we've auto-advanced in this step
 
   // Fetch companies for step 1
   const { data: companiesData } = useQuery({
@@ -133,46 +132,6 @@ export function QuoteWizardPage() {
       });
     }
   }, [existingQuote, quoteId]);
-
-  // Auto-advance to next step when all required fields are filled
-  useEffect(() => {
-    // Don't auto-advance if we're on the last step or if we're editing an existing quote
-    if (currentStep >= STEPS.length || quoteId) {
-      hasAutoAdvancedRef.current = false;
-      return;
-    }
-    
-    // Don't auto-advance if we already auto-advanced in this step
-    if (hasAutoAdvancedRef.current) return;
-
-    // Check if all required fields for current step are filled
-    let shouldAdvance = false;
-
-    if (currentStep === 1 && quoteData.companyId) {
-      shouldAdvance = true;
-    } else if (currentStep === 2 && quoteData.customerId) {
-      shouldAdvance = true;
-    } else if (currentStep === 3) {
-      const hasProject = !!quoteData.projectId;
-      const hasDeliveryMethod = !!quoteData.deliveryMethod;
-      const hasAddress = quoteData.deliveryMethod === 'DELIVERED' ? !!quoteData.deliveryAddressLine1 : true;
-      if (hasProject && hasDeliveryMethod && hasAddress) {
-        shouldAdvance = true;
-      }
-    } else if (currentStep === 4 && quoteData.items && quoteData.items.length > 0) {
-      shouldAdvance = true;
-    }
-
-    // Auto-advance after a short delay to allow UI to update
-    if (shouldAdvance) {
-      hasAutoAdvancedRef.current = true; // Mark that we've auto-advanced
-      const timer = setTimeout(() => {
-        setCurrentStep(currentStep + 1);
-        hasAutoAdvancedRef.current = false; // Reset for next step
-      }, 300); // Small delay to prevent rapid step changes
-      return () => clearTimeout(timer);
-    }
-  }, [quoteData, currentStep, quoteId]);
 
   const createQuoteMutation = useMutation({
     mutationFn: (data: CreateQuoteDto) => quoteId ? quotesApi.update(quoteId, data) : quotesApi.create(data),
