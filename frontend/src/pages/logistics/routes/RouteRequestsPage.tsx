@@ -55,15 +55,11 @@ export function RouteRequestsPage() {
   const handleSubmitReview = () => {
     if (!selectedRequest) return;
     
-    if (reviewAction === 'REJECT' && !rejectionReason.trim()) {
-      showError('Please provide a reason for rejection');
-      return;
-    }
-
+    // Rejection reason is now optional
     reviewMutation.mutate({
       id: selectedRequest.id,
       status: reviewAction === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-      reason: reviewAction === 'REJECT' ? rejectionReason : undefined,
+      reason: reviewAction === 'REJECT' ? (rejectionReason.trim() || undefined) : undefined,
     });
   };
 
