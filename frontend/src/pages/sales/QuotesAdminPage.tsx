@@ -98,7 +98,7 @@ export function QuotesAdminPage() {
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => quotesApi.archive(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
@@ -113,7 +113,7 @@ export function QuotesAdminPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => quotesApi.remove(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
