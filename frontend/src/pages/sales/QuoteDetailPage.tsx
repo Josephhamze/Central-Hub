@@ -18,7 +18,8 @@ import {
   Info,
   FileText,
   Trash2,
-  Archive
+  Archive,
+  RotateCw
 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -50,7 +51,7 @@ export function QuoteDetailPage() {
   const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
 
-  const { data: quoteData, isLoading } = useQuery({
+  const { data: quoteData, isLoading, refetch: refetchQuote } = useQuery({
     queryKey: ['quote', id],
     queryFn: async () => {
       const res = await quotesApi.findOne(id!);
@@ -60,6 +61,10 @@ export function QuoteDetailPage() {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
+
+  const handleRefresh = () => {
+    refetchQuote();
+  };
 
   const submitMutation = useMutation({
     mutationFn: (notes?: string) => quotesApi.submit(id!, notes),
@@ -679,6 +684,14 @@ export function QuoteDetailPage() {
             {getStatusBadge(quote.status)}
           </div>
           <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={handleRefresh}
+              leftIcon={<RotateCw className="w-4 h-4" />}
+              disabled={isLoading}
+            >
+              Refresh
+            </Button>
             {canEdit && (
               <Button
                 variant="secondary"

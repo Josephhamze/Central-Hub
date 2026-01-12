@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, ChevronDown, Users, Truck, Trash2, Archive } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, XCircle, TrendingUp, DollarSign, Target, Clock, ChevronDown, Users, Truck, Trash2, Archive, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
@@ -187,7 +187,25 @@ export function QuotesAdminPage() {
   };
 
   return (
-    <PageContainer title="Quotes" description="Manage quotes and view sales KPIs" actions={<Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>Create New Quote</Button>}>
+    <PageContainer 
+      title="Quotes" 
+      description="Manage quotes and view sales KPIs" 
+      actions={
+        <div className="flex gap-2">
+          <Button 
+            variant="secondary" 
+            onClick={handleRefresh} 
+            leftIcon={<RotateCw className="w-4 h-4" />}
+            disabled={isLoading}
+          >
+            Refresh
+          </Button>
+          <Button variant="primary" onClick={() => navigate('/sales/quotes/new')} leftIcon={<Plus className="w-4 h-4" />}>
+            Create New Quote
+          </Button>
+        </div>
+      }
+    >
       {/* Tabs */}
       <div className="mb-6 flex gap-2 border-b border-border-default">
         <button
