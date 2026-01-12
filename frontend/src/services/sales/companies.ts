@@ -47,10 +47,7 @@ export const companiesApi = {
   uploadLogo: (file: File) => {
     const formData = new FormData();
     formData.append('logo', file);
-    return api.post<ApiResponse<{ logoUrl: string }>>('/companies/upload-logo', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Don't set Content-Type header - let the browser set it automatically with boundary
+    return api.post<ApiResponse<{ logoUrl: string }>>('/companies/upload-logo', formData);
   },
 };
