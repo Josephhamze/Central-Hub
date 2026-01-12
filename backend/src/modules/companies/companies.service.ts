@@ -92,11 +92,15 @@ export class CompaniesService {
       throw new NotFoundException('Company not found');
     }
 
-    // Handle logoUrl: explicitly set to null if provided as null to clear it
-    const updateData: any = { ...dto };
-    if ('logoUrl' in dto && dto.logoUrl === null) {
-      updateData.logoUrl = null;
-    }
+    // Prepare update data - handle null values explicitly
+    const updateData: any = {};
+    Object.keys(dto).forEach((key) => {
+      const value = (dto as any)[key];
+      // Include null values explicitly (to allow clearing fields like logoUrl)
+      if (value === null || value !== undefined) {
+        updateData[key] = value;
+      }
+    });
 
     return this.prisma.company.update({
       where: { id },

@@ -68,6 +68,7 @@ export class CreateCompanyDto {
 
   @ApiPropertyOptional({ description: 'Logo URL' })
   @IsOptional()
+  @ValidateIf((o) => o.logoUrl !== null && o.logoUrl !== undefined)
   @IsUrl({}, { message: 'Logo URL must be a valid URL' })
-  logoUrl?: string;
+  logoUrl?: string | null;
 }
