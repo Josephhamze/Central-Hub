@@ -246,9 +246,14 @@ export function CompaniesPage() {
                     {company.country && `, ${company.country}`}
                   </p>
                 )}
-                {company.registrationNo && (
+                {company.nif && (
                   <p className="text-content-tertiary text-xs">
-                    Reg: {company.registrationNo}
+                    NIF: {company.nif}
+                  </p>
+                )}
+                {company.rccm && (
+                  <p className="text-content-tertiary text-xs">
+                    RCCM: {company.rccm}
                   </p>
                 )}
               </div>
