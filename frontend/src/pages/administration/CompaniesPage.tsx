@@ -34,6 +34,10 @@ export function CompaniesPage() {
     email: '',
     logoUrl: '',
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['companies', search],
@@ -176,6 +180,46 @@ export function CompaniesPage() {
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this company?')) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showError('Please select an image file (PNG, JPG, JPEG, SVG, or WEBP)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showError('File size must be less than 5MB');
+        return;
+      }
+
+      setLogoFile(file);
+      setIsUploadingLogo(true);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload file
+      uploadLogoMutation.mutate(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, logoUrl: '' });
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
