@@ -489,7 +489,7 @@ export class QuotesService {
     const expiresAt = this.calculateExpiresAt(null, createdAt, validityDays);
 
     // Create quote with items
-    return this.prisma.quote.create({
+    const quote = await this.prisma.quote.create({
       data: {
         quoteNumber,
         companyId: dto.companyId,
