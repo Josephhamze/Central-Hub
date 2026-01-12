@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsUrl, ValidateIf } from 'class-validator';
 
 export class CreateCompanyDto {
   @ApiProperty({ description: 'Company name' })
@@ -68,7 +68,7 @@ export class CreateCompanyDto {
 
   @ApiPropertyOptional({ description: 'Logo URL' })
   @IsOptional()
-  @ValidateIf((o) => o.logoUrl !== null && o.logoUrl !== undefined)
+  @ValidateIf((o: CreateCompanyDto) => o.logoUrl !== null && o.logoUrl !== undefined)
   @IsUrl({}, { message: 'Logo URL must be a valid URL' })
   logoUrl?: string | null;
 }
