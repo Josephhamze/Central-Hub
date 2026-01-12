@@ -11,15 +11,25 @@ export class CreateCompanyDto {
   @IsOptional()
   legalName?: string;
 
-  @ApiPropertyOptional({ description: 'Registration number' })
+  @ApiPropertyOptional({ description: 'NIF (Numéro d\'Identification Fiscale)' })
   @IsString()
   @IsOptional()
-  registrationNo?: string;
+  nif?: string;
 
-  @ApiPropertyOptional({ description: 'Tax number' })
+  @ApiPropertyOptional({ description: 'RCCM (Registre du Commerce et du Crédit Mobilier)' })
   @IsString()
   @IsOptional()
-  taxNo?: string;
+  rccm?: string;
+
+  @ApiPropertyOptional({ description: 'ID National' })
+  @IsString()
+  @IsOptional()
+  idNational?: string;
+
+  @ApiPropertyOptional({ description: 'VAT number' })
+  @IsString()
+  @IsOptional()
+  vat?: string;
 
   @ApiPropertyOptional({ description: 'Address line 1' })
   @IsString()
@@ -40,11 +50,6 @@ export class CreateCompanyDto {
   @IsString()
   @IsOptional()
   state?: string;
-
-  @ApiPropertyOptional({ description: 'Postal code' })
-  @IsString()
-  @IsOptional()
-  postalCode?: string;
 
   @ApiPropertyOptional({ description: 'Country' })
   @IsString()

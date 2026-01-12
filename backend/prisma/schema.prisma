@@ -269,13 +269,14 @@ model Company {
   id             String    @id @default(cuid())
   name           String
   legalName      String?   @map("legal_name")
-  registrationNo String?   @map("registration_no")
-  taxNo          String?   @map("tax_no")
+  nif            String?   @map("nif")
+  rccm           String?   @map("rccm")
+  idNational     String?   @map("id_national")
+  vat            String?   @map("vat")
   addressLine1   String?   @map("address_line1")
   addressLine2   String?   @map("address_line2")
   city           String?
   state          String?
-  postalCode     String?   @map("postal_code")
   country        String?
   phone          String?
   email          String?

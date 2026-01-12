@@ -21,16 +21,18 @@ export function CompaniesPage() {
   const [formData, setFormData] = useState<CreateCompanyDto>({
     name: '',
     legalName: '',
-    registrationNo: '',
-    taxNo: '',
+    nif: '',
+    rccm: '',
+    idNational: '',
+    vat: '',
     addressLine1: '',
     addressLine2: '',
     city: '',
     state: '',
-    postalCode: '',
     country: '',
     phone: '',
     email: '',
+    logoUrl: '',
   });
 
   const { data, isLoading } = useQuery({
@@ -55,16 +57,18 @@ export function CompaniesPage() {
       setFormData({
         name: '',
         legalName: '',
-        registrationNo: '',
-        taxNo: '',
+        nif: '',
+        rccm: '',
+        idNational: '',
+        vat: '',
         addressLine1: '',
         addressLine2: '',
         city: '',
         state: '',
-        postalCode: '',
         country: '',
         phone: '',
         email: '',
+        logoUrl: '',
       });
     },
     onError: (err: any) => {
@@ -110,16 +114,18 @@ export function CompaniesPage() {
     setFormData({
       name: company.name,
       legalName: company.legalName || '',
-      registrationNo: company.registrationNo || '',
-      taxNo: company.taxNo || '',
+      nif: company.nif || '',
+      rccm: company.rccm || '',
+      idNational: company.idNational || '',
+      vat: company.vat || '',
       addressLine1: company.addressLine1 || '',
       addressLine2: company.addressLine2 || '',
       city: company.city || '',
       state: company.state || '',
-      postalCode: company.postalCode || '',
       country: company.country || '',
       phone: company.phone || '',
       email: company.email || '',
+      logoUrl: company.logoUrl || '',
     });
     setIsEditModalOpen(true);
   };
@@ -272,16 +278,30 @@ export function CompaniesPage() {
           />
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Registration Number"
-              value={formData.registrationNo}
-              onChange={(e) => setFormData({ ...formData, registrationNo: e.target.value })}
-              placeholder="Registration number"
+              label="NIF"
+              value={formData.nif}
+              onChange={(e) => setFormData({ ...formData, nif: e.target.value })}
+              placeholder="Numéro d'Identification Fiscale"
             />
             <Input
-              label="Tax Number"
-              value={formData.taxNo}
-              onChange={(e) => setFormData({ ...formData, taxNo: e.target.value })}
-              placeholder="Tax number"
+              label="RCCM"
+              value={formData.rccm}
+              onChange={(e) => setFormData({ ...formData, rccm: e.target.value })}
+              placeholder="Registre du Commerce et du Crédit Mobilier"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="ID National"
+              value={formData.idNational}
+              onChange={(e) => setFormData({ ...formData, idNational: e.target.value })}
+              placeholder="ID National"
+            />
+            <Input
+              label="VAT"
+              value={formData.vat}
+              onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
+              placeholder="VAT number"
             />
           </div>
           <Input
@@ -296,7 +316,7 @@ export function CompaniesPage() {
             onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
             placeholder="Apartment, suite, etc."
           />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Input
               label="City"
               value={formData.city}
@@ -308,12 +328,6 @@ export function CompaniesPage() {
               value={formData.state}
               onChange={(e) => setFormData({ ...formData, state: e.target.value })}
               placeholder="State"
-            />
-            <Input
-              label="Postal Code"
-              value={formData.postalCode}
-              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-              placeholder="Postal code"
             />
           </div>
           <Input
@@ -337,6 +351,16 @@ export function CompaniesPage() {
               placeholder="Email address"
             />
           </div>
+          <Input
+            label="Company Logo URL"
+            value={formData.logoUrl}
+            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+            placeholder="https://example.com/logo.png"
+            type="url"
+          />
+          <p className="text-xs text-content-secondary">
+            Logo URL will be used when printing quotes. Make sure the URL is accessible and the image format is suitable for printing (PNG, SVG, or high-quality JPG).
+          </p>
         </div>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
@@ -376,16 +400,30 @@ export function CompaniesPage() {
           />
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Registration Number"
-              value={formData.registrationNo}
-              onChange={(e) => setFormData({ ...formData, registrationNo: e.target.value })}
-              placeholder="Registration number"
+              label="NIF"
+              value={formData.nif}
+              onChange={(e) => setFormData({ ...formData, nif: e.target.value })}
+              placeholder="Numéro d'Identification Fiscale"
             />
             <Input
-              label="Tax Number"
-              value={formData.taxNo}
-              onChange={(e) => setFormData({ ...formData, taxNo: e.target.value })}
-              placeholder="Tax number"
+              label="RCCM"
+              value={formData.rccm}
+              onChange={(e) => setFormData({ ...formData, rccm: e.target.value })}
+              placeholder="Registre du Commerce et du Crédit Mobilier"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="ID National"
+              value={formData.idNational}
+              onChange={(e) => setFormData({ ...formData, idNational: e.target.value })}
+              placeholder="ID National"
+            />
+            <Input
+              label="VAT"
+              value={formData.vat}
+              onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
+              placeholder="VAT number"
             />
           </div>
           <Input
@@ -400,7 +438,7 @@ export function CompaniesPage() {
             onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
             placeholder="Apartment, suite, etc."
           />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Input
               label="City"
               value={formData.city}
@@ -412,12 +450,6 @@ export function CompaniesPage() {
               value={formData.state}
               onChange={(e) => setFormData({ ...formData, state: e.target.value })}
               placeholder="State"
-            />
-            <Input
-              label="Postal Code"
-              value={formData.postalCode}
-              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-              placeholder="Postal code"
             />
           </div>
           <Input
@@ -441,6 +473,16 @@ export function CompaniesPage() {
               placeholder="Email address"
             />
           </div>
+          <Input
+            label="Company Logo URL"
+            value={formData.logoUrl}
+            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+            placeholder="https://example.com/logo.png"
+            type="url"
+          />
+          <p className="text-xs text-content-secondary">
+            Logo URL will be used when printing quotes. Make sure the URL is accessible and the image format is suitable for printing (PNG, SVG, or high-quality JPG).
+          </p>
         </div>
         <ModalFooter>
           <Button

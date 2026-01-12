@@ -4,13 +4,14 @@ export interface Company {
   id: string;
   name: string;
   legalName?: string;
-  registrationNo?: string;
-  taxNo?: string;
+  nif?: string;
+  rccm?: string;
+  idNational?: string;
+  vat?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
   state?: string;
-  postalCode?: string;
   country?: string;
   phone?: string;
   email?: string;
@@ -22,13 +23,14 @@ export interface Company {
 export interface CreateCompanyDto {
   name: string;
   legalName?: string;
-  registrationNo?: string;
-  taxNo?: string;
+  nif?: string;
+  rccm?: string;
+  idNational?: string;
+  vat?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
   state?: string;
-  postalCode?: string;
   country?: string;
   phone?: string;
   email?: string;
