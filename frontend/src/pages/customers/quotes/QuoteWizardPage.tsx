@@ -79,7 +79,6 @@ export function QuoteWizardPage() {
     items: [],
     companyId: searchParams.get('companyId') || undefined,
   });
-  const [hasRequestedRoute, setHasRequestedRoute] = useState(false);
 
   // Fetch companies for step 1
   const { data: companiesData } = useQuery({
@@ -711,7 +710,7 @@ function calculateSimilarity(str1: string, str2: string): number {
 }
 
 // Step 3: Project & Delivery - Enhanced Two-Column Layout
-function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId, onRouteRequested }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void; quoteId?: string; onRouteRequested?: () => void }) {
+function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void; quoteId?: string }) {
   const { hasRole } = useAuth();
   const { error: showError, success } = useToast();
   const queryClient = useQueryClient();

@@ -326,27 +326,8 @@ export class QuotesService {
     }
 
     // Validate delivery method and address
-    // Allow saving without address if:
-    // 1. A routeId is provided (route already selected)
-    // 2. A route request exists for this quote (when editing)
-    // 3. For new quotes, allow saving without address (user may have requested route before creating quote)
-    // Address will be required when submitting for approval, not when creating/updating draft
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.deliveryAddressLine1 && !dto.routeId) {
-      // Check if there's a pending route request for this quote (only when editing)
-      if (id) {
-        const pendingRouteRequest = await this.prisma.routeRequest.findFirst({
-          where: {
-            quoteId: id,
-            status: 'PENDING',
-          },
-        });
-        if (!pendingRouteRequest) {
-          // For existing quotes, allow saving without address (will be required on submit)
-          // This allows users to save drafts and add address/route later
-        }
-      }
-      // For new quotes, allow saving without address (will be required on submit)
-    }
+    // Allow saving without address for drafts - address will be required when submitting for approval
+    // This allows users to save drafts and add address/route later
 
     // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery address (destination)
     let routeId = dto.routeId;
@@ -545,7 +526,7 @@ export class QuotesService {
           quoteId: null, // Only link route requests that aren't already linked
         },
         orderBy: {
-          requestedAt: 'desc', // Get the most recent one
+          createdAt: 'desc', // Get the most recent one
         },
       });
 
