@@ -15,7 +15,7 @@ async function bootstrap() {
   
   // Serve static files from uploads directory
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/api/uploads',
+    prefix: '/api/v1/uploads',
   });
 
   // CORS configuration - MUST be enabled FIRST before other middleware

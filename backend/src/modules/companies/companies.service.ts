@@ -128,23 +128,33 @@ export class CompaniesService {
   }
 
   async uploadLogo(file: Express.Multer.File) {
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+    try {
+      // Validate file buffer exists
+      if (!file.buffer) {
+        throw new BadRequestException('File buffer is missing');
+      }
+
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Generate unique filename
+      const fileExt = path.extname(file.originalname || '.png');
+      const fileName = `${uuidv4()}${fileExt}`;
+      const filePath = path.join(uploadsDir, fileName);
+
+      // Save file using promises for better error handling
+      await fs.promises.writeFile(filePath, file.buffer);
+
+      // Return URL path (will be served as static file)
+      const logoUrl = `/api/v1/uploads/logos/${fileName}`;
+      
+      return { logoUrl };
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      throw new BadRequestException(`Failed to upload logo: ${error.message || 'Unknown error'}`);
     }
-
-    // Generate unique filename
-    const fileExt = path.extname(file.originalname);
-    const fileName = `${uuidv4()}${fileExt}`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    // Save file
-    fs.writeFileSync(filePath, file.buffer);
-
-    // Return URL path (will be served as static file)
-    const logoUrl = `/api/uploads/logos/${fileName}`;
-    
-    return { logoUrl };
   }
 }
