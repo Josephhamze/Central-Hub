@@ -153,7 +153,6 @@ export function CompaniesPage() {
       email: company.email || '',
       logoUrl: company.logoUrl || '',
     });
-    setLogoFile(null);
     setLogoPreview(company.logoUrl || null);
     setIsEditModalOpen(true);
   };
