@@ -55,7 +55,9 @@ export class CompaniesController {
   @Post('upload-logo')
   @UseGuards(RbacGuard)
   @Permissions('companies:update')
-  @UseInterceptors(FileInterceptor('logo'))
+  @UseInterceptors(FileInterceptor('logo', {
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  }))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -72,22 +74,40 @@ export class CompaniesController {
   @ApiResponse({ status: 201, description: 'Logo uploaded successfully' })
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException('No file uploaded. Please select an image file.');
     }
+
+    // Log file info for debugging
+    console.log('Uploaded file:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      hasBuffer: !!file.buffer,
+    });
     
     // Validate file type
     const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('File must be an image (PNG, JPG, JPEG, SVG, or WEBP)');
+      throw new BadRequestException(`File must be an image (PNG, JPG, JPEG, SVG, or WEBP). Received: ${file.mimetype}`);
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      throw new BadRequestException('File size must be less than 5MB');
+      throw new BadRequestException(`File size must be less than 5MB. Received: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
     }
 
-    return this.companiesService.uploadLogo(file);
+    // Validate file buffer exists
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File buffer is empty. Please try uploading again.');
+    }
+
+    try {
+      return await this.companiesService.uploadLogo(file);
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      throw new BadRequestException(error.message || 'Failed to upload logo');
+    }
   }
 
   @Get(':id')
