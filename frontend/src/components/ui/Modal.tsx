@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactNode, Children, isValidElement } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { X } from 'lucide-react';
@@ -89,8 +89,20 @@ export function Modal({
           )}
 
           {/* Content - Scrollable */}
-          <div className="p-6 overflow-y-auto flex-1 min-h-0">
-            {children}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="p-6 overflow-y-auto flex-1">
+              {Children.map(children, (child) => {
+                // Keep ModalFooter outside scrollable area
+                if (isValidElement(child) && child.type === ModalFooter) {
+                  return null;
+                }
+                return child;
+              })}
+            </div>
+            {/* Footer - Always visible */}
+            {Children.toArray(children).find(
+              (child) => isValidElement(child) && child.type === ModalFooter
+            )}
           </div>
         </div>
       </div>
