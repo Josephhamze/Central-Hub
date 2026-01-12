@@ -533,6 +533,32 @@ export class QuotesService {
         items: { include: { stockItem: true } },
       },
     });
+
+    // If no route was selected and no routeId was provided, check if there's a pending route request
+    // for this user/warehouse that can be linked to this quote
+    if (!routeId && !dto.routeId && dto.warehouseId) {
+      const pendingRouteRequest = await this.prisma.routeRequest.findFirst({
+        where: {
+          requestedByUserId: userId,
+          warehouseId: dto.warehouseId,
+          status: 'PENDING',
+          quoteId: null, // Only link route requests that aren't already linked
+        },
+        orderBy: {
+          requestedAt: 'desc', // Get the most recent one
+        },
+      });
+
+      if (pendingRouteRequest) {
+        // Link the route request to this quote
+        await this.prisma.routeRequest.update({
+          where: { id: pendingRouteRequest.id },
+          data: { quoteId: quote.id },
+        });
+      }
+    }
+
+    return quote;
   }
 
   async update(id: string, dto: UpdateQuoteDto, userId: string, userPermissions: string[]) {
