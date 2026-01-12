@@ -145,6 +145,7 @@ export class CompaniesService {
       }
 
       // Create uploads directory if it doesn't exist
+      // Note: Directory should already exist from Dockerfile, but create it if needed
       const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
       try {
         // Try to create directory, ignore error if it already exists
@@ -152,22 +153,8 @@ export class CompaniesService {
       } catch (mkdirError: any) {
         // If directory creation fails, check if it already exists
         if (mkdirError.code !== 'EEXIST') {
-          // If it's a permission error, try to use /tmp as fallback
-          if (mkdirError.code === 'EACCES' || mkdirError.code === 'EPERM') {
-            console.warn(`Cannot create ${uploadsDir} due to permissions, using /tmp/uploads/logos instead`);
-            const tmpUploadsDir = '/tmp/uploads/logos';
-            await fs.promises.mkdir(tmpUploadsDir, { recursive: true, mode: 0o755 });
-            // Use tmp directory instead
-            const fileExt = path.extname(file.originalname || '.png');
-            const fileName = `${uuidv4()}${fileExt}`;
-            const filePath = path.join(tmpUploadsDir, fileName);
-            await fs.promises.writeFile(filePath, file.buffer);
-            // Return URL pointing to tmp (note: this won't work with static file serving, but at least the file is saved)
-            const logoUrl = `/tmp/uploads/logos/${fileName}`;
-            console.warn(`Logo saved to ${filePath} (temporary location due to permissions)`);
-            return { logoUrl, warning: 'Logo saved to temporary location due to permissions' };
-          }
-          throw mkdirError;
+          console.error(`Failed to create uploads directory: ${mkdirError.message}`, mkdirError);
+          throw new BadRequestException(`Failed to create uploads directory: ${mkdirError.message}`);
         }
       }
 
