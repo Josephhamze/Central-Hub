@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UsePipes,
 } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -55,7 +57,9 @@ export class CompaniesController {
   @Post('upload-logo')
   @UseGuards(RbacGuard)
   @Permissions('companies:update')
+  @UsePipes(new ValidationPipe({ skipMissingProperties: true, transform: false })) // Skip validation for file uploads
   @UseInterceptors(FileInterceptor('logo', {
+    storage: undefined, // Use memory storage (default) to get buffer
     limits: { 
       fileSize: 5 * 1024 * 1024, // 5MB limit
     },

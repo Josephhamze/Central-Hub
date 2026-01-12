@@ -88,10 +88,6 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-      // Skip validation for routes with file uploads
-      skipMissingProperties: false,
-      skipNullProperties: false,
-      skipUndefinedProperties: false,
     }),
   );
 
