@@ -57,7 +57,23 @@ export interface Quote {
   expiresAt?: string;
   createdAt: string;
   updatedAt: string;
-  company?: { id: string; name: string };
+  company?: { 
+    id: string; 
+    name: string; 
+    legalName?: string;
+    nif?: string;
+    rccm?: string;
+    idNational?: string;
+    vat?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    phone?: string;
+    email?: string;
+    logoUrl?: string;
+  };
   project?: { id: string; name: string };
   customer?: { id: string; type: CustomerType; companyName?: string; firstName?: string; lastName?: string };
   contact?: { id: string; name: string };

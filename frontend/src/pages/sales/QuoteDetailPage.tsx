@@ -231,56 +231,314 @@ export function QuoteDetailPage() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    // Calculate totals
+    const subtotal = Number(quote.subtotal);
+    const discountAmount = subtotal * (Number(quote.discountPercentage) / 100);
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const vatRate = 0.16; // 16% VAT
+    const vatAmount = subtotalAfterDiscount * vatRate;
+    const transportTotal = Number(quote.transportTotal) || 0;
+    
+    // Calculate total quantity in tons for transport cost per ton
+    const totalTons = quote.items?.reduce((sum, item) => {
+      const qty = Number(item.qty);
+      // If UOM is not tons, assume it's already in tons or convert if needed
+      return sum + qty;
+    }, 0) || 0;
+    const transportCostPerTon = totalTons > 0 ? transportTotal / totalTons : 0;
+    
+    const grandTotal = subtotalAfterDiscount + vatAmount + transportTotal;
+    
+    const customerName = quote.customer?.companyName || 
+      `${quote.customer?.firstName || ''} ${quote.customer?.lastName || ''}`.trim() || 'N/A';
+
     const printContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>Quote ${quote.quoteNumber}</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
-            .quote-number { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-            .section { margin-bottom: 30px; }
-            .section-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-            .info-row { margin-bottom: 8px; }
-            .label { font-weight: bold; display: inline-block; width: 150px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-            th { background-color: #f0f0f0; font-weight: bold; }
-            .total-row { font-weight: bold; }
-            .text-right { text-align: right; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              padding: 30px 40px; 
+              color: #333;
+              line-height: 1.6;
+            }
+            .header { 
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 3px solid #2563eb;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .logo-section {
+              flex: 0 0 200px;
+            }
+            .logo {
+              max-width: 180px;
+              max-height: 100px;
+              object-fit: contain;
+            }
+            .header-info {
+              flex: 1;
+              text-align: right;
+            }
+            .quote-number { 
+              font-size: 32px; 
+              font-weight: bold; 
+              color: #2563eb;
+              margin-bottom: 8px;
+            }
+            .quote-date {
+              font-size: 14px;
+              color: #666;
+              margin-bottom: 5px;
+            }
+            .quote-status {
+              display: inline-block;
+              padding: 4px 12px;
+              background: #dbeafe;
+              color: #1e40af;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            .two-column {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-bottom: 30px;
+            }
+            .section { 
+              margin-bottom: 25px;
+              background: #f9fafb;
+              padding: 20px;
+              border-radius: 8px;
+              border-left: 4px solid #2563eb;
+            }
+            .section-title { 
+              font-size: 16px; 
+              font-weight: bold; 
+              color: #1e40af;
+              margin-bottom: 15px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .section-title::before {
+              content: "📋";
+              font-size: 18px;
+            }
+            .info-row { 
+              margin-bottom: 10px;
+              display: flex;
+            }
+            .label { 
+              font-weight: 600; 
+              color: #555;
+              min-width: 140px;
+              display: inline-block;
+            }
+            .value {
+              color: #333;
+            }
+            .company-details {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+              margin-top: 10px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 15px;
+              background: white;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            th, td { 
+              border: 1px solid #e5e7eb; 
+              padding: 12px; 
+              text-align: left;
+            }
+            th { 
+              background: linear-gradient(to bottom, #2563eb, #1e40af);
+              color: white;
+              font-weight: 600;
+              text-transform: uppercase;
+              font-size: 12px;
+            }
+            tbody tr:nth-child(even) {
+              background: #f9fafb;
+            }
+            tbody tr:hover {
+              background: #f3f4f6;
+            }
+            .total-row { 
+              font-weight: bold;
+              background: #eff6ff !important;
+            }
+            .text-right { 
+              text-align: right; 
+            }
+            .totals-section {
+              margin-top: 20px;
+              margin-left: auto;
+              width: 400px;
+            }
+            .totals-table {
+              width: 100%;
+            }
+            .totals-table td {
+              padding: 8px 12px;
+              border: 1px solid #e5e7eb;
+            }
+            .totals-table .total-row td {
+              background: #2563eb;
+              color: white;
+              font-size: 18px;
+              font-weight: bold;
+            }
+            .signature-section {
+              margin-top: 60px;
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 40px;
+              padding-top: 30px;
+              border-top: 2px solid #e5e7eb;
+            }
+            .signature-box {
+              text-align: center;
+            }
+            .signature-line {
+              border-top: 2px solid #333;
+              margin-top: 60px;
+              margin-bottom: 10px;
+              width: 100%;
+            }
+            .signature-label {
+              font-weight: 600;
+              color: #555;
+              font-size: 14px;
+            }
+            .icon {
+              display: inline-block;
+              margin-right: 6px;
+              font-size: 16px;
+            }
             @media print {
               body { padding: 20px; }
               .no-print { display: none; }
+              .section {
+                page-break-inside: avoid;
+              }
+              table {
+                page-break-inside: avoid;
+              }
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <div class="quote-number">Quote ${quote.quoteNumber}</div>
-            <div>Status: ${quote.status.replace('_', ' ')}</div>
-            <div>Date: ${new Date(quote.createdAt).toLocaleDateString()}</div>
+            <div class="logo-section">
+              ${quote.company?.logoUrl ? `<img src="${quote.company.logoUrl}" alt="${quote.company.name}" class="logo" />` : ''}
+            </div>
+            <div class="header-info">
+              <div class="quote-number">QUOTE #${quote.quoteNumber}</div>
+              <div class="quote-date">Date: ${new Date(quote.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              <div style="margin-top: 8px;">
+                <span class="quote-status">${quote.status.replace('_', ' ')}</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section">
-            <div class="section-title">Company Information</div>
-            <div class="info-row"><span class="label">Company:</span> ${quote.company?.name || 'N/A'}</div>
-            <div class="info-row"><span class="label">Project:</span> ${quote.project?.name || 'N/A'}</div>
-          </div>
+          <div class="two-column">
+            <div class="section">
+              <div class="section-title">Company Information</div>
+              <div class="info-row">
+                <span class="label"><span class="icon">🏢</span>Company:</span>
+                <span class="value">${quote.company?.name || 'N/A'}</span>
+              </div>
+              ${quote.company?.legalName ? `
+                <div class="info-row">
+                  <span class="label">Legal Name:</span>
+                  <span class="value">${quote.company.legalName}</span>
+                </div>
+              ` : ''}
+              <div class="company-details">
+                ${quote.company?.nif ? `
+                  <div class="info-row">
+                    <span class="label">NIF:</span>
+                    <span class="value">${quote.company.nif}</span>
+                  </div>
+                ` : ''}
+                ${quote.company?.rccm ? `
+                  <div class="info-row">
+                    <span class="label">RCCM:</span>
+                    <span class="value">${quote.company.rccm}</span>
+                  </div>
+                ` : ''}
+                ${quote.company?.idNational ? `
+                  <div class="info-row">
+                    <span class="label">ID National:</span>
+                    <span class="value">${quote.company.idNational}</span>
+                  </div>
+                ` : ''}
+                ${quote.company?.vat ? `
+                  <div class="info-row">
+                    <span class="label">VAT Number:</span>
+                    <span class="value">${quote.company.vat}</span>
+                  </div>
+                ` : ''}
+              </div>
+              ${quote.company?.addressLine1 ? `
+                <div class="info-row" style="margin-top: 10px;">
+                  <span class="label"><span class="icon">📍</span>Address:</span>
+                  <span class="value">${quote.company.addressLine1}${quote.company.city ? `, ${quote.company.city}` : ''}${quote.company.country ? `, ${quote.company.country}` : ''}</span>
+                </div>
+              ` : ''}
+              ${quote.company?.phone ? `
+                <div class="info-row">
+                  <span class="label"><span class="icon">📞</span>Phone:</span>
+                  <span class="value">${quote.company.phone}</span>
+                </div>
+              ` : ''}
+              ${quote.company?.email ? `
+                <div class="info-row">
+                  <span class="label"><span class="icon">✉️</span>Email:</span>
+                  <span class="value">${quote.company.email}</span>
+                </div>
+              ` : ''}
+            </div>
 
-          <div class="section">
-            <div class="section-title">Customer Information</div>
-            <div class="info-row"><span class="label">Customer:</span> ${quote.customer?.companyName || `${quote.customer?.firstName || ''} ${quote.customer?.lastName || ''}`.trim() || 'N/A'}</div>
-            ${quote.contact ? `<div class="info-row"><span class="label">Contact:</span> ${quote.contact.name}</div>` : ''}
-          </div>
-
-          <div class="section">
-            <div class="section-title">Delivery Information</div>
-            <div class="info-row"><span class="label">Method:</span> ${quote.deliveryMethod || 'N/A'}</div>
-            ${quote.deliveryMethod === 'DELIVERED' ? `
-              <div class="info-row"><span class="label">Address:</span> ${quote.deliveryAddressLine1 || ''} ${quote.deliveryCity || ''}</div>
-              ${quote.route ? `<div class="info-row"><span class="label">Route:</span> ${quote.route.fromCity} to ${quote.route.toCity}</div>` : ''}
-            ` : ''}
+            <div class="section">
+              <div class="section-title">Customer Information</div>
+              <div class="info-row">
+                <span class="label"><span class="icon">👤</span>Customer:</span>
+                <span class="value">${customerName}</span>
+              </div>
+              ${quote.contact ? `
+                <div class="info-row">
+                  <span class="label">Contact:</span>
+                  <span class="value">${quote.contact.name}</span>
+                </div>
+              ` : ''}
+              ${quote.project ? `
+                <div class="info-row">
+                  <span class="label"><span class="icon">📁</span>Project:</span>
+                  <span class="value">${quote.project.name}</span>
+                </div>
+              ` : ''}
+              ${quote.deliveryMethod === 'DELIVERED' && quote.deliveryAddressLine1 ? `
+                <div class="info-row" style="margin-top: 10px;">
+                  <span class="label"><span class="icon">🚚</span>Delivery Address:</span>
+                  <span class="value">${quote.deliveryAddressLine1}${quote.deliveryCity ? `, ${quote.deliveryCity}` : ''}</span>
+                </div>
+              ` : ''}
+            </div>
           </div>
 
           <div class="section">
@@ -288,56 +546,86 @@ export function QuoteDetailPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Item</th>
+                  <th>Item Description</th>
                   <th>Quantity</th>
                   <th>Unit Price</th>
                   <th>Discount</th>
-                  <th>Total</th>
+                  <th>Line Total</th>
                 </tr>
               </thead>
               <tbody>
                 ${quote.items?.map(item => `
                   <tr>
-                    <td>${item.nameSnapshot}</td>
+                    <td><strong>${item.nameSnapshot}</strong></td>
                     <td>${Number(item.qty).toFixed(2)} ${item.uomSnapshot}</td>
                     <td>$${Number(item.unitPrice).toFixed(2)}</td>
                     <td>${Number(item.discountPercentage) > 0 ? `${Number(item.discountPercentage).toFixed(1)}%` : '-'}</td>
-                    <td>$${Number(item.lineTotal).toFixed(2)}</td>
+                    <td><strong>$${Number(item.lineTotal).toFixed(2)}</strong></td>
                   </tr>
-                `).join('') || '<tr><td colspan="5">No items</td></tr>'}
+                `).join('') || '<tr><td colspan="5" style="text-align: center; padding: 20px;">No items</td></tr>'}
               </tbody>
-              <tfoot>
-                <tr class="total-row">
-                  <td colspan="4" class="text-right">Subtotal:</td>
-                  <td>$${Number(quote.subtotal).toFixed(2)}</td>
-                </tr>
-                ${Number(quote.discountPercentage) > 0 ? `
-                  <tr class="total-row">
-                    <td colspan="4" class="text-right">Discount (${Number(quote.discountPercentage).toFixed(1)}%):</td>
-                    <td>-$${(Number(quote.subtotal) * Number(quote.discountPercentage) / 100).toFixed(2)}</td>
-                  </tr>
-                ` : ''}
-                ${Number(quote.transportTotal) > 0 ? `
-                  <tr class="total-row">
-                    <td colspan="4" class="text-right">Transport:</td>
-                    <td>$${Number(quote.transportTotal).toFixed(2)}</td>
-                  </tr>
-                ` : ''}
-                <tr class="total-row">
-                  <td colspan="4" class="text-right">Grand Total:</td>
-                  <td>$${Number(quote.grandTotal).toFixed(2)}</td>
-                </tr>
-              </tfoot>
             </table>
+
+            <div class="totals-section">
+              <table class="totals-table">
+                <tr>
+                  <td class="text-right">Subtotal:</td>
+                  <td class="text-right">$${subtotal.toFixed(2)}</td>
+                </tr>
+                ${discountAmount > 0 ? `
+                  <tr>
+                    <td class="text-right">Discount (${Number(quote.discountPercentage).toFixed(1)}%):</td>
+                    <td class="text-right">-$${discountAmount.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-right">Subtotal After Discount:</td>
+                    <td class="text-right">$${subtotalAfterDiscount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr>
+                  <td class="text-right">VAT (16%):</td>
+                  <td class="text-right">$${vatAmount.toFixed(2)}</td>
+                </tr>
+                ${transportTotal > 0 ? `
+                  <tr>
+                    <td class="text-right">Transport (${totalTons.toFixed(2)} tons @ $${transportCostPerTon.toFixed(2)}/ton):</td>
+                    <td class="text-right">$${transportTotal.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td class="text-right">Grand Total:</td>
+                  <td class="text-right">$${grandTotal.toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
           </div>
 
           ${quote.salesRep ? `
             <div class="section">
               <div class="section-title">Sales Representative</div>
-              <div class="info-row"><span class="label">Name:</span> ${quote.salesRep.firstName} ${quote.salesRep.lastName}</div>
-              ${quote.salesRep.email ? `<div class="info-row"><span class="label">Email:</span> ${quote.salesRep.email}</div>` : ''}
+              <div class="info-row">
+                <span class="label">Name:</span>
+                <span class="value">${quote.salesRep.firstName} ${quote.salesRep.lastName}</span>
+              </div>
+              ${quote.salesRep.email ? `
+                <div class="info-row">
+                  <span class="label">Email:</span>
+                  <span class="value">${quote.salesRep.email}</span>
+                </div>
+              ` : ''}
             </div>
           ` : ''}
+
+          <div class="signature-section">
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <div class="signature-label">Customer Signature</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <div class="signature-label">Authorized Representative</div>
+            </div>
+          </div>
         </body>
       </html>
     `;
