@@ -89,7 +89,9 @@ export function Modal({
           )}
 
           {/* Content - Scrollable */}
-          <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+          <div className="p-6 overflow-y-auto flex-1 min-h-0">
+            {children}
+          </div>
         </div>
       </div>
     </Fragment>,

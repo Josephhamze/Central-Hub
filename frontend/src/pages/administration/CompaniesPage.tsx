@@ -267,8 +267,9 @@ export function CompaniesPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Create Company"
+        size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <Input
             label="Company Name *"
             value={formData.name}
@@ -389,8 +390,9 @@ export function CompaniesPage() {
           setSelectedCompany(null);
         }}
         title="Edit Company"
+        size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <Input
             label="Company Name *"
             value={formData.name}
