@@ -106,7 +106,14 @@ export function CompaniesPage() {
       showError('Company name is required');
       return;
     }
-    createMutation.mutate(formData);
+    // Remove empty strings and convert to undefined for optional fields
+    const cleanData = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [
+        key,
+        value === '' ? undefined : value,
+      ])
+    ) as CreateCompanyDto;
+    createMutation.mutate(cleanData);
   };
 
   const handleEdit = (company: Company) => {
@@ -136,7 +143,14 @@ export function CompaniesPage() {
       return;
     }
     if (!selectedCompany) return;
-    updateMutation.mutate({ id: selectedCompany.id, data: formData });
+    // Remove empty strings and convert to undefined for optional fields
+    const cleanData = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [
+        key,
+        value === '' ? undefined : value,
+      ])
+    ) as Partial<CreateCompanyDto>;
+    updateMutation.mutate({ id: selectedCompany.id, data: cleanData });
   };
 
   const handleDelete = (id: string) => {

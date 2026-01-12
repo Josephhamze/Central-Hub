@@ -67,7 +67,7 @@ export class CreateCompanyDto {
   email?: string;
 
   @ApiPropertyOptional({ description: 'Logo URL' })
-  @IsUrl()
+  @IsUrl({}, { message: 'Logo URL must be a valid URL' })
   @IsOptional()
   logoUrl?: string;
 }
