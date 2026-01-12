@@ -57,14 +57,17 @@ export function QuoteDetailPage() {
       return res.data.data;
     },
     enabled: !!id,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const submitMutation = useMutation({
     mutationFn: (notes?: string) => quotesApi.submit(id!, notes),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
+      // Invalidate and refetch immediately
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote submitted for approval');
       setSubmitModalOpen(false);
       setSubmitNotes('');
@@ -81,6 +84,7 @@ export function QuoteDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote approved successfully');
       setApproveModalOpen(false);
       setApproveNotes('');
@@ -97,6 +101,7 @@ export function QuoteDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote rejected');
       setRejectModalOpen(false);
       setRejectReason('');
@@ -112,6 +117,7 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote withdrawn and returned to draft');
       setWithdrawModalOpen(false);
     },
@@ -129,6 +135,7 @@ export function QuoteDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
       setLossReasonCategory('');
@@ -146,6 +153,7 @@ export function QuoteDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
+      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success('Quote archived successfully');
     },
     onError: (err: any) => {
