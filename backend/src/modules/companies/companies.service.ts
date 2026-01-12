@@ -6,6 +6,9 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import * as fs from 'fs';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CompaniesService {
@@ -122,5 +125,26 @@ export class CompaniesService {
     return this.prisma.company.delete({
       where: { id },
     });
+  }
+
+  async uploadLogo(file: Express.Multer.File) {
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${uuidv4()}${fileExt}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    // Save file
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Return URL path (will be served as static file)
+    const logoUrl = `/api/uploads/logos/${fileName}`;
+    
+    return { logoUrl };
   }
 }

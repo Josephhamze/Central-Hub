@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Building2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Search, Edit, Trash2, Building2, Upload, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -48,6 +48,22 @@ export function CompaniesPage() {
     },
   });
 
+  const uploadLogoMutation = useMutation({
+    mutationFn: (file: File) => companiesApi.uploadLogo(file),
+    onSuccess: (response) => {
+      const logoUrl = response.data.data.logoUrl;
+      setFormData({ ...formData, logoUrl });
+      setLogoPreview(null);
+      setLogoFile(null);
+      setIsUploadingLogo(false);
+      success('Logo uploaded successfully');
+    },
+    onError: (err: any) => {
+      setIsUploadingLogo(false);
+      showError(err.response?.data?.error?.message || 'Failed to upload logo');
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: (data: CreateCompanyDto) => companiesApi.create(data),
     onSuccess: () => {
@@ -70,6 +86,8 @@ export function CompaniesPage() {
         email: '',
         logoUrl: '',
       });
+      setLogoFile(null);
+      setLogoPreview(null);
     },
     onError: (err: any) => {
       showError(err.response?.data?.error?.message || 'Failed to create company');
@@ -134,6 +152,8 @@ export function CompaniesPage() {
       email: company.email || '',
       logoUrl: company.logoUrl || '',
     });
+    setLogoFile(null);
+    setLogoPreview(company.logoUrl || null);
     setIsEditModalOpen(true);
   };
 
@@ -371,16 +391,64 @@ export function CompaniesPage() {
               placeholder="Email address"
             />
           </div>
-          <Input
-            label="Company Logo URL"
-            value={formData.logoUrl}
-            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-            placeholder="https://example.com/logo.png"
-            type="url"
-          />
-          <p className="text-xs text-content-secondary">
-            Logo URL will be used when printing quotes. Make sure the URL is accessible and the image format is suitable for printing (PNG, SVG, or high-quality JPG).
-          </p>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-content-primary">
+              Company Logo
+            </label>
+            <div className="space-y-3">
+              {logoPreview || formData.logoUrl ? (
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreview || formData.logoUrl}
+                    alt="Logo preview"
+                    className="h-24 w-auto border border-border-default rounded-lg object-contain bg-background-secondary p-2"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="absolute -top-2 -right-2 p-1 bg-background-elevated rounded-full border border-border-default hover:bg-background-hover"
+                  >
+                    <X className="w-4 h-4 text-content-secondary" />
+                  </button>
+                </div>
+              ) : null}
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="logo-upload-edit"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  leftIcon={<Upload className="w-4 h-4" />}
+                  disabled={isUploadingLogo}
+                  isLoading={isUploadingLogo}
+                >
+                  {logoPreview || formData.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                </Button>
+                {!logoPreview && !formData.logoUrl && (
+                  <Input
+                    value={formData.logoUrl}
+                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                    placeholder="Or enter logo URL"
+                    type="url"
+                    className="flex-1"
+                  />
+                )}
+              </div>
+              <p className="text-xs text-content-secondary">
+                Upload a logo image (PNG, JPG, SVG, or WEBP, max 5MB) or enter a URL. The logo will be used when printing quotes.
+              </p>
+            </div>
+          </div>
         </div>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
@@ -494,16 +562,64 @@ export function CompaniesPage() {
               placeholder="Email address"
             />
           </div>
-          <Input
-            label="Company Logo URL"
-            value={formData.logoUrl}
-            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-            placeholder="https://example.com/logo.png"
-            type="url"
-          />
-          <p className="text-xs text-content-secondary">
-            Logo URL will be used when printing quotes. Make sure the URL is accessible and the image format is suitable for printing (PNG, SVG, or high-quality JPG).
-          </p>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-content-primary">
+              Company Logo
+            </label>
+            <div className="space-y-3">
+              {logoPreview || formData.logoUrl ? (
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreview || formData.logoUrl}
+                    alt="Logo preview"
+                    className="h-24 w-auto border border-border-default rounded-lg object-contain bg-background-secondary p-2"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="absolute -top-2 -right-2 p-1 bg-background-elevated rounded-full border border-border-default hover:bg-background-hover"
+                  >
+                    <X className="w-4 h-4 text-content-secondary" />
+                  </button>
+                </div>
+              ) : null}
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="logo-upload-edit"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  leftIcon={<Upload className="w-4 h-4" />}
+                  disabled={isUploadingLogo}
+                  isLoading={isUploadingLogo}
+                >
+                  {logoPreview || formData.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                </Button>
+                {!logoPreview && !formData.logoUrl && (
+                  <Input
+                    value={formData.logoUrl}
+                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                    placeholder="Or enter logo URL"
+                    type="url"
+                    className="flex-1"
+                  />
+                )}
+              </div>
+              <p className="text-xs text-content-secondary">
+                Upload a logo image (PNG, JPG, SVG, or WEBP, max 5MB) or enter a URL. The logo will be used when printing quotes.
+              </p>
+            </div>
+          </div>
         </div>
         <ModalFooter>
           <Button

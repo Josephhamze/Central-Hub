@@ -63,6 +63,9 @@ export function QuoteDetailPage() {
   });
 
   const handleRefresh = () => {
+    // Invalidate and refetch to ensure fresh data from database
+    queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
     refetchQuote();
   };
 

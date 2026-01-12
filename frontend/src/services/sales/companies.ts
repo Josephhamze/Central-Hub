@@ -44,4 +44,13 @@ export const companiesApi = {
   create: (data: CreateCompanyDto) => api.post<ApiResponse<Company>>('/companies', data),
   update: (id: string, data: Partial<CreateCompanyDto>) => api.put<ApiResponse<Company>>(`/companies/${id}`, data),
   remove: (id: string) => api.delete<ApiResponse<{ message: string }>>(`/companies/${id}`),
+  uploadLogo: (file: File) => {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return api.post<ApiResponse<{ logoUrl: string }>>('/companies/upload-logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

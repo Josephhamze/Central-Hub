@@ -52,6 +52,9 @@ export function QuotesAdminPage() {
   });
 
   const handleRefresh = () => {
+    // Invalidate and refetch to ensure fresh data from database
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
     refetchQuotes();
     refetchKPIs();
   };
