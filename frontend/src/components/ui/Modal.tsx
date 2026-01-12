@@ -45,7 +45,8 @@ export function Modal({
         <div
           className={clsx(
             'relative w-full bg-background-elevated rounded-xl shadow-elevation-5',
-            'pointer-events-auto animate-scale-in',
+            'pointer-events-auto animate-scale-in flex flex-col',
+            'max-h-[90vh]', // Limit modal height to 90% of viewport
             sizes[size]
           )}
           role="dialog"
@@ -56,7 +57,7 @@ export function Modal({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-6 pb-0">
+            <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0 border-b border-border-default">
               <div>
                 {title && (
                   <h2
@@ -87,8 +88,8 @@ export function Modal({
             </div>
           )}
 
-          {/* Content */}
-          <div className="p-6">{children}</div>
+          {/* Content - Scrollable */}
+          <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
         </div>
       </div>
     </Fragment>,
