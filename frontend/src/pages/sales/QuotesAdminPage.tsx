@@ -30,7 +30,7 @@ export function QuotesAdminPage() {
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<'quotes' | 'all-quotes' | 'customers' | 'logistics'>('quotes');
 
-  const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
+  const { data: kpiData, isLoading: isLoadingKPIs, refetch: refetchKPIs } = useQuery({
     queryKey: ['quotes-kpis', filters],
     queryFn: async () => {
       const res = await quotesApi.getKPIs(filters);
@@ -38,18 +38,23 @@ export function QuotesAdminPage() {
     },
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch: refetchQuotes } = useQuery({
     queryKey: ['quotes', filters, activeTab],
     queryFn: async () => {
       const res = await quotesApi.findAll({ 
         ...filters, 
         page: 1, 
         limit: 50,
-        includeArchived: activeTab === 'all-quotes' ? true : undefined
+        includeArchived: activeTab === 'all-quotes' ? true : false // Show all statuses except archived on main quotes tab
       });
       return res.data.data;
     },
   });
+
+  const handleRefresh = () => {
+    refetchQuotes();
+    refetchKPIs();
+  };
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
