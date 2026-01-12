@@ -62,6 +62,7 @@ export function QuoteDetailPage() {
   const submitMutation = useMutation({
     mutationFn: (notes?: string) => quotesApi.submit(id!, notes),
     onSuccess: () => {
+      // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       success('Quote submitted for approval');
@@ -128,11 +129,10 @@ export function QuoteDetailPage() {
     mutationFn: ({ outcome, lossReasonCategory, reasonNotes }: { outcome: 'WON' | 'LOST'; lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER'; reasonNotes?: string }) =>
       quotesApi.markOutcome(id!, outcome, lossReasonCategory, reasonNotes),
     onSuccess: () => {
+      // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-      // Refetch the current quote to get updated data
-      queryClient.refetchQueries({ queryKey: ['quote', id] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
       setLossReasonCategory('');
