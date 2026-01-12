@@ -30,6 +30,8 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { quotesApi } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
+import { pdf } from '@react-pdf/renderer';
+import { QuotePDF } from '@components/quotes/QuotePDF';
 
 export function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -242,6 +244,24 @@ export function QuoteDetailPage() {
   };
 
   const canPrint = quote.status === 'APPROVED' || quote.status === 'WON' || quote.status === 'LOST';
+
+  const handleDownloadPDF = async () => {
+    try {
+      const blob = await pdf(<QuotePDF quote={quote} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Quote-${quote.quoteNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showError('Failed to generate PDF');
+    }
+  };
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
@@ -752,13 +772,22 @@ export function QuoteDetailPage() {
               </>
             )}
             {canPrint && (
-              <Button
-                variant="secondary"
-                onClick={handlePrint}
-                leftIcon={<Printer className="w-4 h-4" />}
-              >
-                Print Quote
-              </Button>
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={handleDownloadPDF}
+                  leftIcon={<FileText className="w-4 h-4" />}
+                >
+                  Download PDF
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={handlePrint}
+                  leftIcon={<Printer className="w-4 h-4" />}
+                >
+                  Print Quote
+                </Button>
+              </>
             )}
             {canMarkOutcome && (
               <>
