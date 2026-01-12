@@ -56,7 +56,25 @@ export class CompaniesController {
   @UseGuards(RbacGuard)
   @Permissions('companies:update')
   @UseInterceptors(FileInterceptor('logo', {
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { 
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      // Log incoming file info
+      console.log('File interceptor - received file:', {
+        fieldname: file.fieldname,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        encoding: file.encoding,
+      });
+
+      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new BadRequestException(`File must be an image (PNG, JPG, JPEG, SVG, or WEBP). Received: ${file.mimetype}`), false);
+      }
+    },
   }))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -72,26 +90,20 @@ export class CompaniesController {
   })
   @ApiOperation({ summary: 'Upload company logo' })
   @ApiResponse({ status: 201, description: 'Logo uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing file' })
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded. Please select an image file.');
-    }
-
-    // Log file info for debugging
-    console.log('Uploaded file:', {
+    console.log('uploadLogo called, file:', file ? {
       originalname: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
       hasBuffer: !!file.buffer,
-    });
-    
-    // Validate file type
-    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(`File must be an image (PNG, JPG, JPEG, SVG, or WEBP). Received: ${file.mimetype}`);
+    } : 'null');
+
+    if (!file) {
+      throw new BadRequestException('No file uploaded. Please select an image file.');
     }
 
-    // Validate file size (max 5MB)
+    // Validate file size (max 5MB) - multer should handle this, but double-check
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       throw new BadRequestException(`File size must be less than 5MB. Received: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
