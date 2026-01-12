@@ -164,11 +164,14 @@ export function CompaniesPage() {
     }
     if (!selectedCompany) return;
     // Remove empty strings and convert to undefined for optional fields
+    // But explicitly set logoUrl to null if it's empty (to allow clearing the logo)
     const cleanData = Object.fromEntries(
-      Object.entries(formData).map(([key, value]) => [
-        key,
-        value === '' ? undefined : value,
-      ])
+      Object.entries(formData).map(([key, value]) => {
+        if (key === 'logoUrl' && value === '') {
+          return [key, null]; // Explicitly set to null to clear the logo
+        }
+        return [key, value === '' ? undefined : value];
+      })
     ) as Partial<CreateCompanyDto>;
     updateMutation.mutate({ id: selectedCompany.id, data: cleanData });
   };
