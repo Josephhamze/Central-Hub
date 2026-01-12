@@ -64,6 +64,11 @@ RUN test -f dist/src/main.js || (echo "Copy failed - dist/src/main.js not found"
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
+
+# Create uploads directory with proper permissions before switching to non-root user
+RUN mkdir -p /app/uploads/logos && chown -R nestjs:nodejs /app/uploads && chmod -R 755 /app/uploads
+
+# Switch to non-root user
 USER nestjs
 
 # Expose port
