@@ -44,8 +44,8 @@ api.interceptors.response.use(
 
     // Don't log 401/403 errors as they're handled
     if (error.response?.status !== 401 && error.response?.status !== 403) {
-      const errorData = error.response?.data;
-      const errorMessage = errorData?.error?.message || errorData?.message || error.message;
+      const errorData = error.response?.data as ApiError | undefined;
+      const errorMessage = errorData?.error?.message || (errorData as any)?.message || error.message;
       console.error('API Error:', {
         url: error.config?.url,
         method: error.config?.method,
