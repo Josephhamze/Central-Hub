@@ -9,6 +9,16 @@ import { ErrorBoundary } from '@components/common/ErrorBoundary';
 import App from './App';
 import './styles/index.css';
 
+// Polyfills for @react-pdf/renderer
+import { Buffer } from 'buffer';
+import process from 'process/browser';
+
+// Make Buffer and process available globally
+if (typeof window !== 'undefined') {
+  (window as any).Buffer = Buffer;
+  (window as any).process = process;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
