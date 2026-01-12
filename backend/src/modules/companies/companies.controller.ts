@@ -72,7 +72,8 @@ export class CompaniesController {
       if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new BadRequestException(`File must be an image (PNG, JPG, JPEG, SVG, or WEBP). Received: ${file.mimetype}`), false);
+        // fileFilter expects a standard Error, not HttpException
+        cb(new Error(`File must be an image (PNG, JPG, JPEG, SVG, or WEBP). Received: ${file.mimetype}`), false);
       }
     },
   }))
