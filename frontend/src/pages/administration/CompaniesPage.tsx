@@ -34,7 +34,6 @@ export function CompaniesPage() {
     email: '',
     logoUrl: '',
   });
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +57,6 @@ export function CompaniesPage() {
       const logoUrl = response.data.data.logoUrl;
       setFormData({ ...formData, logoUrl });
       setLogoPreview(null);
-      setLogoFile(null);
       setIsUploadingLogo(false);
       success('Logo uploaded successfully');
     },
@@ -90,7 +88,6 @@ export function CompaniesPage() {
         email: '',
         logoUrl: '',
       });
-      setLogoFile(null);
       setLogoPreview(null);
     },
     onError: (err: any) => {
@@ -199,7 +196,6 @@ export function CompaniesPage() {
         return;
       }
 
-      setLogoFile(file);
       setIsUploadingLogo(true);
       
       // Create preview
@@ -216,7 +212,6 @@ export function CompaniesPage() {
 
   const handleRemoveLogo = () => {
     setFormData({ ...formData, logoUrl: '' });
-    setLogoFile(null);
     setLogoPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
