@@ -55,9 +55,9 @@ export class CompaniesController {
   }
 
   @Post('upload-logo')
+  @UsePipes(new ValidationPipe({ skipMissingProperties: true, transform: false, whitelist: false, forbidNonWhitelisted: false })) // Skip validation for file uploads - must be before UseGuards
   @UseGuards(RbacGuard)
   @Permissions('companies:update')
-  @UsePipes(new ValidationPipe({ skipMissingProperties: true, transform: false })) // Skip validation for file uploads
   @UseInterceptors(FileInterceptor('logo', {
     storage: undefined, // Use memory storage (default) to get buffer
     limits: { 
