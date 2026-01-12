@@ -326,7 +326,11 @@ export class QuotesService {
     }
 
     // Validate delivery method and address
-    // Allow saving without address if a route request exists for this quote (when editing) or if routeId is provided
+    // Allow saving without address if:
+    // 1. A routeId is provided (route already selected)
+    // 2. A route request exists for this quote (when editing)
+    // 3. For new quotes, allow saving without address (user may have requested route before creating quote)
+    // Address will be required when submitting for approval, not when creating/updating draft
     if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.deliveryAddressLine1 && !dto.routeId) {
       // Check if there's a pending route request for this quote (only when editing)
       if (id) {
@@ -336,15 +340,12 @@ export class QuotesService {
             status: 'PENDING',
           },
         });
-        if (pendingRouteRequest) {
-          // Allow saving without address if route request exists
-        } else {
-          throw new BadRequestException('Delivery address is required for delivered quotes');
+        if (!pendingRouteRequest) {
+          // For existing quotes, allow saving without address (will be required on submit)
+          // This allows users to save drafts and add address/route later
         }
-      } else {
-        // For new quotes, require address unless routeId is provided
-        throw new BadRequestException('Delivery address is required for delivered quotes');
       }
+      // For new quotes, allow saving without address (will be required on submit)
     }
 
     // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery address (destination)
