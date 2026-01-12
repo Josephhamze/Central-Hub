@@ -79,6 +79,7 @@ export function QuoteWizardPage() {
     items: [],
     companyId: searchParams.get('companyId') || undefined,
   });
+  const [hasRequestedRoute, setHasRequestedRoute] = useState(false);
 
   // Fetch companies for step 1
   const { data: companiesData } = useQuery({
@@ -340,7 +341,7 @@ export function QuoteWizardPage() {
           <div>
             {currentStep === 1 && <Step1CompanySelection companies={companiesData?.items || []} selected={quoteData.companyId} onSelect={(id) => setQuoteData({ ...quoteData, companyId: id })} />}
             {currentStep === 2 && <Step2ClientSelection quoteData={quoteData} onUpdate={setQuoteData} />}
-            {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} quoteId={quoteId} />}
+            {currentStep === 3 && <Step3ProjectDelivery companyId={quoteData.companyId} quoteData={quoteData} onUpdate={setQuoteData} quoteId={quoteId} onRouteRequested={() => setHasRequestedRoute(true)} />}
             {currentStep === 4 && <Step4Products companyId={quoteData.companyId} projectId={quoteData.projectId} quoteData={quoteData} onUpdate={setQuoteData} />}
             {currentStep === 5 && <Step5Review quoteData={quoteData} />}
           </div>
@@ -710,7 +711,7 @@ function calculateSimilarity(str1: string, str2: string): number {
 }
 
 // Step 3: Project & Delivery - Enhanced Two-Column Layout
-function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void; quoteId?: string }) {
+function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId, onRouteRequested }: { companyId?: string; quoteData: QuoteDataUI; onUpdate: (data: QuoteDataUI) => void; quoteId?: string; onRouteRequested?: () => void }) {
   const { hasRole } = useAuth();
   const { error: showError, success } = useToast();
   const queryClient = useQueryClient();
@@ -865,6 +866,10 @@ function Step3ProjectDelivery({ companyId, quoteData, onUpdate, quoteId }: { com
       success('Route creation request submitted. An administrator will review and approve it. Once approved, the route will be automatically applied to this quote.');
       setShowRouteRequestModal(false);
       setRouteRequestData({ fromCity: undefined, toCity: undefined, distanceKm: undefined, warehouseId: undefined });
+      // Notify parent that a route was requested
+      if (onRouteRequested) {
+        onRouteRequested();
+      }
       // Refetch routes to get any newly approved routes
       queryClient.invalidateQueries({ queryKey: ['routes'] });
       queryClient.invalidateQueries({ queryKey: ['route-requests'] });
