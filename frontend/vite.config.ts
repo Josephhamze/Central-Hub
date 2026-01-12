@@ -17,11 +17,10 @@ export default defineConfig({
       '@styles': path.resolve(__dirname, './src/styles'),
       '@lib': path.resolve(__dirname, './src/lib'),
       buffer: 'buffer',
-      process: 'process/browser',
     },
   },
   define: {
-    'process.env': {},
+    'process.env': '{}',
     global: 'globalThis',
   },
   build: {
