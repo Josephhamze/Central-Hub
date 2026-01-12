@@ -13,7 +13,7 @@ export const pdfTheme = {
     white: '#FFFFFF',
   },
   fonts: {
-    family: 'Inter',
+    family: 'Helvetica',
     weights: {
       light: 300,
       regular: 400,

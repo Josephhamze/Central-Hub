@@ -25,29 +25,9 @@ import {
 } from '@lib/pdf-icons';
 import type { Quote } from '@services/sales/quotes';
 
-// Register Inter font with proper weights
-// Using Google Fonts CDN for reliable font loading
-Font.register({
-  family: 'Inter',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2',
-      fontWeight: 300,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2',
-      fontWeight: 500,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2',
-      fontWeight: 600,
-    },
-  ],
-});
+// Use Helvetica (built-in font) for reliable PDF generation
+// Helvetica is a clean, professional font that works perfectly with react-pdf
+// No font registration needed - Helvetica is available by default
 
 // Apple-inspired Stylesheet
 const styles = StyleSheet.create({
