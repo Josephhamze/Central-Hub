@@ -326,8 +326,25 @@ export class QuotesService {
     }
 
     // Validate delivery method and address
-    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.deliveryAddressLine1) {
-      throw new BadRequestException('Delivery address is required for delivered quotes');
+    // Allow saving without address if a route request exists for this quote (when editing) or if routeId is provided
+    if (dto.deliveryMethod === DeliveryMethod.DELIVERED && !dto.deliveryAddressLine1 && !dto.routeId) {
+      // Check if there's a pending route request for this quote (only when editing)
+      if (id) {
+        const pendingRouteRequest = await this.prisma.routeRequest.findFirst({
+          where: {
+            quoteId: id,
+            status: 'PENDING',
+          },
+        });
+        if (pendingRouteRequest) {
+          // Allow saving without address if route request exists
+        } else {
+          throw new BadRequestException('Delivery address is required for delivered quotes');
+        }
+      } else {
+        // For new quotes, require address unless routeId is provided
+        throw new BadRequestException('Delivery address is required for delivered quotes');
+      }
     }
 
     // Auto-match route based on warehouse location city (departure) or company city (fallback) and delivery address (destination)
