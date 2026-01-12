@@ -21,6 +21,7 @@ import {
   Archive,
   RotateCw
 } from 'lucide-react';
+import { pdf } from '@react-pdf/renderer';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -30,6 +31,7 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@contexts/ToastContext';
 import { quotesApi } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
+import { QuotePDF } from '@components/quotes/QuotePDF';
 
 export function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -658,13 +660,6 @@ export function QuoteDetailPage() {
       </html>
     `;
 
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
   };
 
   const canMarkOutcome = quote.status === 'APPROVED' && isCreator;
