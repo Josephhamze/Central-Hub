@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
-import { pdfTheme } from '@lib/pdf-theme';
 import {
   CheckCircle2Icon,
   ClockIcon,
@@ -40,7 +39,7 @@ const styles = StyleSheet.create({
     maxHeight: 40,
     objectFit: 'contain',
   },
-  companyName: {
+  headerCompanyName: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#000000',
@@ -352,7 +351,7 @@ export const QuotePDF: React.FC<QuotePDFProps> = ({ quote }) => {
               />
             )}
             {quote.company?.name && !quote.company?.logoUrl && (
-              <Text style={styles.companyName}>{quote.company.name}</Text>
+              <Text style={styles.headerCompanyName}>{quote.company.name}</Text>
             )}
           </View>
           <View style={styles.headerRight}>
