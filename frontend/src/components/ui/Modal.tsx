@@ -93,7 +93,7 @@ export function Modal({
             <div className="p-6 overflow-y-auto flex-1">
               {Children.map(children, (child) => {
                 // Keep ModalFooter outside scrollable area
-                if (isValidElement(child) && child.type === ModalFooter) {
+                if (isValidElement(child) && (child.type as any)?.displayName === 'ModalFooter') {
                   return null;
                 }
                 return child;
@@ -101,7 +101,7 @@ export function Modal({
             </div>
             {/* Footer - Always visible */}
             {Children.toArray(children).find(
-              (child) => isValidElement(child) && child.type === ModalFooter
+              (child) => isValidElement(child) && (child.type as any)?.displayName === 'ModalFooter'
             )}
           </div>
         </div>
@@ -120,7 +120,7 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border-default',
+        'flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border-default px-6 pb-6 flex-shrink-0',
         className
       )}
     >
@@ -128,3 +128,6 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
     </div>
   );
 }
+
+// Add displayName for component detection
+ModalFooter.displayName = 'ModalFooter';
