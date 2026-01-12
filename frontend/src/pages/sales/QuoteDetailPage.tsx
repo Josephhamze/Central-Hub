@@ -268,6 +268,18 @@ export function QuoteDetailPage() {
     const customerName = quote.customer?.companyName || 
       `${quote.customer?.firstName || ''} ${quote.customer?.lastName || ''}`.trim() || 'N/A';
 
+    // Get base URL for relative logo URLs
+    const getLogoUrl = (logoUrl?: string) => {
+      if (!logoUrl) return '';
+      // If it's already a full URL, return as is
+      if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+        return logoUrl;
+      }
+      // If it's a relative path, make it absolute
+      const baseUrl = window.location.origin;
+      return `${baseUrl}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`;
+    };
+
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -460,7 +472,7 @@ export function QuoteDetailPage() {
         <body>
           <div class="header">
             <div class="logo-section">
-              ${quote.company?.logoUrl ? `<img src="${quote.company.logoUrl}" alt="${quote.company.name}" class="logo" />` : ''}
+              ${quote.company?.logoUrl ? `<img src="${getLogoUrl(quote.company.logoUrl)}" alt="${quote.company.name}" class="logo" />` : ''}
             </div>
             <div class="header-info">
               <div class="quote-number">QUOTE #${quote.quoteNumber}</div>
@@ -472,8 +484,8 @@ export function QuoteDetailPage() {
           </div>
 
           <div class="two-column">
-            <div class="section">
-              <div class="section-title">Company Information</div>
+          <div class="section">
+            <div class="section-title">Company Information</div>
               <div class="info-row">
                 <span class="label"><span class="icon">🏢</span>Company:</span>
                 <span class="value">${quote.company?.name || 'N/A'}</span>
@@ -528,20 +540,20 @@ export function QuoteDetailPage() {
                   <span class="value">${quote.company.email}</span>
                 </div>
               ` : ''}
-            </div>
+          </div>
 
-            <div class="section">
-              <div class="section-title">Customer Information</div>
+          <div class="section">
+            <div class="section-title">Customer Information</div>
               <div class="info-row">
                 <span class="label"><span class="icon">👤</span>Customer:</span>
                 <span class="value">${customerName}</span>
-              </div>
+          </div>
               ${quote.contact ? `
                 <div class="info-row">
                   <span class="label">Contact:</span>
                   <span class="value">${quote.contact.name}</span>
                 </div>
-              ` : ''}
+            ` : ''}
               ${quote.project ? `
                 <div class="info-row">
                   <span class="label"><span class="icon">📁</span>Project:</span>
@@ -612,7 +624,7 @@ export function QuoteDetailPage() {
                   <td class="text-right">Grand Total:</td>
                   <td class="text-right">$${grandTotal.toFixed(2)}</td>
                 </tr>
-              </table>
+            </table>
             </div>
           </div>
 
@@ -627,8 +639,8 @@ export function QuoteDetailPage() {
                 <div class="info-row">
                   <span class="label">Email:</span>
                   <span class="value">${quote.salesRep.email}</span>
-                </div>
-              ` : ''}
+            </div>
+          ` : ''}
             </div>
           ` : ''}
 
