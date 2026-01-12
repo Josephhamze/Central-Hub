@@ -56,7 +56,7 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
       queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
       success('Quote approved successfully');
       setApproveModalOpen(false);
@@ -74,7 +74,7 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
       queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
       success('Quote rejected');
       setRejectModalOpen(false);
@@ -88,7 +88,7 @@ export function QuotesAdminPage() {
     onSuccess: () => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
       queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
@@ -101,7 +101,7 @@ export function QuotesAdminPage() {
     onSuccess: (_, id) => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       success('Quote archived successfully');
     },
@@ -116,7 +116,7 @@ export function QuotesAdminPage() {
     onSuccess: (_, id) => {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis', filters] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       success('Quote deleted successfully');
     },

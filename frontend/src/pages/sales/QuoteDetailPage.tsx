@@ -80,9 +80,7 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-      // Refetch the current quote to get updated data
-      queryClient.refetchQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
       success('Quote approved successfully');
       setApproveModalOpen(false);
       setApproveNotes('');
@@ -98,9 +96,7 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-      // Refetch the current quote to get updated data
-      queryClient.refetchQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
       success('Quote rejected');
       setRejectModalOpen(false);
       setRejectReason('');
@@ -132,7 +128,7 @@ export function QuoteDetailPage() {
       // Invalidate only the specific queries that need updating
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
       setLossReasonCategory('');
@@ -149,8 +145,7 @@ export function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-      queryClient.refetchQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries
       success('Quote archived successfully');
     },
     onError: (err: any) => {
