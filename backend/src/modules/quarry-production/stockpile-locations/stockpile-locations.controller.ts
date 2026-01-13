@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/stockpile-locations')
+@Controller('quarry-production/stockpile-locations')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class StockpileLocationsController {
   constructor(private readonly stockpileLocationsService: StockpileLocationsService) {}

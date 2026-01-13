@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/material-types')
+@Controller('quarry-production/material-types')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class MaterialTypesController {
   constructor(private readonly materialTypesService: MaterialTypesService) {}

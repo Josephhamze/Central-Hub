@@ -17,7 +17,7 @@ import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
-@Controller('api/v1/quarry-production/stock-levels')
+@Controller('quarry-production/stock-levels')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class StockLevelsController {
   constructor(private readonly stockLevelsService: StockLevelsService) {}

@@ -19,7 +19,7 @@ import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
-@Controller('api/v1/quarry-production/crusher-feed-entries')
+@Controller('quarry-production/crusher-feed-entries')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class CrusherFeedEntriesController {
   constructor(private readonly crusherFeedEntriesService: CrusherFeedEntriesService) {}

@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/excavators')
+@Controller('quarry-production/excavators')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class ExcavatorsController {
   constructor(private readonly excavatorsService: ExcavatorsService) {}

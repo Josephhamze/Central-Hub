@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/product-types')
+@Controller('quarry-production/product-types')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class ProductTypesController {
   constructor(private readonly productTypesService: ProductTypesService) {}

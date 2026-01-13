@@ -19,7 +19,7 @@ import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
-@Controller('api/v1/quarry-production/hauling-entries')
+@Controller('quarry-production/hauling-entries')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class HaulingEntriesController {
   constructor(private readonly haulingEntriesService: HaulingEntriesService) {}

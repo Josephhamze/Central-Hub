@@ -19,7 +19,7 @@ import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
-@Controller('api/v1/quarry-production/crusher-output-entries')
+@Controller('quarry-production/crusher-output-entries')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class CrusherOutputEntriesController {
   constructor(private readonly crusherOutputEntriesService: CrusherOutputEntriesService) {}

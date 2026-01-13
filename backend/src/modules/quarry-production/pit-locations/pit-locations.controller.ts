@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/pit-locations')
+@Controller('quarry-production/pit-locations')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class PitLocationsController {
   constructor(private readonly pitLocationsService: PitLocationsService) {}
