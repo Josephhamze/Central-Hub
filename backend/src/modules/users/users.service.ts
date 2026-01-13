@@ -104,10 +104,13 @@ export class UsersService {
 
     return {
       ...user,
-      roles: user.roles.map((ur: any) => ({
-        ...ur.role,
-        permissions: ur.role.permissions.map((rp: any) => rp.permission),
-      })),
+      roles: user.roles
+        .map((ur: any) => ur.role)
+        .filter((role: any) => role !== null)
+        .map((role: any) => ({
+          ...role,
+          permissions: (role.permissions || []).map((rp: any) => rp.permission),
+        })),
     };
   }
 
