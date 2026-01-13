@@ -49,6 +49,17 @@ import { OperationsProductionPage } from '@pages/operations-production/Operation
 import { FinanceReportingPage } from '@pages/finance-reporting/FinanceReportingPage';
 import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
 
+// Quarry Production pages
+import { QuarryProductionPage } from '@pages/quarry-production/QuarryProductionPage';
+import { ExcavatorsPage } from '@pages/quarry-production/equipment/ExcavatorsPage';
+import { TrucksPage } from '@pages/quarry-production/equipment/TrucksPage';
+import { CrushersPage } from '@pages/quarry-production/equipment/CrushersPage';
+import { MaterialTypesPage } from '@pages/quarry-production/settings/MaterialTypesPage';
+import { PitLocationsPage } from '@pages/quarry-production/settings/PitLocationsPage';
+import { ProductTypesPage } from '@pages/quarry-production/settings/ProductTypesPage';
+import { StockpileLocationsPage } from '@pages/quarry-production/settings/StockpileLocationsPage';
+import { ExcavatorEntriesPage } from '@pages/quarry-production/entries/ExcavatorEntriesPage';
+
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -132,6 +143,17 @@ function App() {
         <Route path="sales/quotes/:id" element={<QuoteDetailPage />} />
         <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        
+        {/* Quarry Production routes */}
+        <Route path="quarry-production" element={<QuarryProductionPage />} />
+        <Route path="quarry-production/equipment/excavators" element={<ExcavatorsPage />} />
+        <Route path="quarry-production/equipment/trucks" element={<TrucksPage />} />
+        <Route path="quarry-production/equipment/crushers" element={<CrushersPage />} />
+        <Route path="quarry-production/settings/pit-locations" element={<PitLocationsPage />} />
+        <Route path="quarry-production/settings/material-types" element={<MaterialTypesPage />} />
+        <Route path="quarry-production/settings/product-types" element={<ProductTypesPage />} />
+        <Route path="quarry-production/settings/stockpile-locations" element={<StockpileLocationsPage />} />
+        <Route path="quarry-production/excavator-entries" element={<ExcavatorEntriesPage />} />
       </Route>
 
       {/* 404 */}

@@ -148,23 +148,13 @@ export class CompaniesService {
       // Note: Directory should already exist from Dockerfile, but create it if needed
       const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
       try {
-        // Check if directory exists first
-        try {
-          await fs.promises.access(uploadsDir);
-          // Directory exists, we're good
-        } catch {
-          // Directory doesn't exist, try to create it
-          await fs.promises.mkdir(uploadsDir, { recursive: true, mode: 0o755 });
-        }
+        // Try to create directory, ignore error if it already exists
+        await fs.promises.mkdir(uploadsDir, { recursive: true, mode: 0o755 });
       } catch (mkdirError: any) {
-        // If directory creation fails, check if it exists now (race condition)
-        try {
-          await fs.promises.access(uploadsDir);
-          // Directory exists now, we're good (another process created it)
-        } catch {
-          // Directory still doesn't exist and we can't create it
+        // If directory creation fails, check if it already exists
+        if (mkdirError.code !== 'EEXIST') {
           console.error(`Failed to create uploads directory: ${mkdirError.message}`, mkdirError);
-          throw new BadRequestException(`Failed to create uploads directory: ${mkdirError.message}. Please ensure the uploads directory exists with proper permissions.`);
+          throw new BadRequestException(`Failed to create uploads directory: ${mkdirError.message}`);
         }
       }
 

@@ -49,6 +49,18 @@ model User {
   tollPaymentsPaidBy TollPayment[] @relation("TollPaymentPaidBy")
   routeRequestsRequested RouteRequest[] @relation("RouteRequestRequester")
   routeRequestsReviewed RouteRequest[] @relation("RouteRequestReviewer")
+  // Quarry Production Relations
+  excavatorEntriesAsOperator ExcavatorEntry[] @relation("ExcavatorOperator")
+  haulingEntriesAsDriver HaulingEntry[] @relation("TruckDriver")
+  excavatorEntriesCreated ExcavatorEntry[] @relation("ExcavatorEntryCreator")
+  haulingEntriesCreated HaulingEntry[] @relation("HaulingEntryCreator")
+  crusherFeedEntriesCreated CrusherFeedEntry[] @relation("CrusherFeedEntryCreator")
+  crusherOutputEntriesCreated CrusherOutputEntry[] @relation("CrusherOutputEntryCreator")
+  excavatorEntriesApproved ExcavatorEntry[] @relation("ExcavatorEntryApprover")
+  haulingEntriesApproved HaulingEntry[] @relation("HaulingEntryApprover")
+  crusherFeedEntriesApproved CrusherFeedEntry[] @relation("CrusherFeedEntryApprover")
+  crusherOutputEntriesApproved CrusherOutputEntry[] @relation("CrusherOutputEntryApprover")
+  stockLevelsCreated StockLevel[] @relation("StockLevelCreator")
 
   @@index([accountStatus])
   @@index([emailVerified])
@@ -1096,3 +1108,326 @@ model DepreciationEntry {
   @@map("depreciation_entries")
 }
 
+// ============================================================================
+// QUARRY PRODUCTION TRACKING SYSTEM
+// ============================================================================
+
+// Enums
+enum Shift {
+  DAY
+  NIGHT
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum CrusherType {
+  PRIMARY_JAW
+  SECONDARY_CONE
+  TERTIARY_VSI
+  SCREEN
+}
+
+enum EntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum QualityGrade {
+  PREMIUM
+  STANDARD
+  OFF_SPEC
+}
+
+// Equipment Models (Master Data)
+model Excavator {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  bucketCapacity Decimal        @map("bucket_capacity") @db.Decimal(8, 2) // cubic meters
+  status        EquipmentStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  entries       ExcavatorEntry[]
+
+  @@index([status])
+  @@map("excavators")
+}
+
+model Truck {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  loadCapacity  Decimal         @map("load_capacity") @db.Decimal(8, 2) // tonnes
+  status        EquipmentStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  entries       HaulingEntry[]
+
+  @@index([status])
+  @@map("trucks")
+}
+
+model Crusher {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  type          CrusherType
+  ratedCapacity Decimal         @map("rated_capacity") @db.Decimal(10, 2) // tonnes per hour
+  status        EquipmentStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  feedEntries   CrusherFeedEntry[]
+  outputEntries CrusherOutputEntry[]
+
+  @@index([status])
+  @@index([type])
+  @@map("crushers")
+}
+
+// Reference Data Models
+model PitLocation {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  entries     ExcavatorEntry[]
+
+  @@index([isActive])
+  @@map("pit_locations")
+}
+
+model MaterialType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  density     Decimal  @db.Decimal(8, 2) // tonnes per cubic meter
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  excavatorEntries ExcavatorEntry[]
+  crusherFeedEntries CrusherFeedEntry[]
+
+  @@index([isActive])
+  @@map("material_types")
+}
+
+model ProductType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  outputEntries CrusherOutputEntry[]
+  stockLevels   StockLevel[]
+
+  @@index([isActive])
+  @@map("product_types")
+}
+
+model StockpileLocation {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  outputEntries CrusherOutputEntry[]
+  stockLevels   StockLevel[]
+
+  @@index([isActive])
+  @@map("stockpile_locations")
+}
+
+// Production Entry Models
+model ExcavatorEntry {
+  id                String      @id @default(cuid())
+  date              DateTime    @db.Date
+  shift             Shift
+  excavatorId       String      @map("excavator_id")
+  operatorId        String      @map("operator_id")
+  materialTypeId    String      @map("material_type_id")
+  pitLocationId     String      @map("pit_location_id")
+  bucketCount       Int         @map("bucket_count")
+  estimatedVolume   Decimal     @map("estimated_volume") @db.Decimal(10, 2) // auto-calculated
+  estimatedTonnage  Decimal     @map("estimated_tonnage") @db.Decimal(10, 2) // auto-calculated
+  downtimeHours     Decimal?    @map("downtime_hours") @db.Decimal(5, 2)
+  notes             String?
+  status            EntryStatus @default(PENDING)
+  approverId        String?     @map("approver_id")
+  approvedAt        DateTime?   @map("approved_at")
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  excavator         Excavator   @relation(fields: [excavatorId], references: [id], onDelete: Restrict)
+  operator          User        @relation("ExcavatorOperator", fields: [operatorId], references: [id], onDelete: Restrict)
+  materialType      MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Restrict)
+  pitLocation       PitLocation @relation(fields: [pitLocationId], references: [id], onDelete: Restrict)
+  createdBy         User        @relation("ExcavatorEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approver          User?       @relation("ExcavatorEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  linkedHaulingEntries HaulingEntry[]
+
+  @@unique([date, shift, excavatorId, operatorId])
+  @@index([date])
+  @@index([shift])
+  @@index([excavatorId])
+  @@index([operatorId])
+  @@index([status])
+  @@index([createdById])
+  @@map("excavator_entries")
+}
+
+model HaulingEntry {
+  id                String      @id @default(cuid())
+  date              DateTime    @db.Date
+  shift             Shift
+  truckId           String      @map("truck_id")
+  driverId          String      @map("driver_id")
+  excavatorEntryId  String?     @map("excavator_entry_id") // Optional link to source
+  tripCount         Int         @map("trip_count")
+  totalHauled       Decimal     @map("total_hauled") @db.Decimal(10, 2) // auto-calculated
+  avgCycleTime      Decimal?    @map("avg_cycle_time") @db.Decimal(5, 2) // minutes
+  fuelConsumption   Decimal?    @map("fuel_consumption") @db.Decimal(8, 2) // liters
+  notes             String?
+  status            EntryStatus @default(PENDING)
+  approverId        String?     @map("approver_id")
+  approvedAt        DateTime?   @map("approved_at")
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  truck             Truck       @relation(fields: [truckId], references: [id], onDelete: Restrict)
+  driver            User        @relation("TruckDriver", fields: [driverId], references: [id], onDelete: Restrict)
+  sourceExcavatorEntry ExcavatorEntry? @relation(fields: [excavatorEntryId], references: [id], onDelete: SetNull)
+  createdBy         User        @relation("HaulingEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approver          User?       @relation("HaulingEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@unique([date, shift, truckId, driverId])
+  @@index([date])
+  @@index([shift])
+  @@index([truckId])
+  @@index([driverId])
+  @@index([excavatorEntryId])
+  @@index([status])
+  @@index([createdById])
+  @@map("hauling_entries")
+}
+
+model CrusherFeedEntry {
+  id                String      @id @default(cuid())
+  date              DateTime    @db.Date
+  shift             Shift
+  crusherId         String      @map("crusher_id")
+  materialTypeId   String      @map("material_type_id")
+  feedStartTime    DateTime    @map("feed_start_time")
+  feedEndTime       DateTime    @map("feed_end_time")
+  truckLoadsReceived Int       @map("truck_loads_received")
+  weighBridgeTonnage Decimal   @map("weigh_bridge_tonnage") @db.Decimal(10, 2) // source of truth
+  feedRate          Decimal?   @map("feed_rate") @db.Decimal(10, 2) // auto-calculated: tonnage / operating hours
+  rejectOversizeTonnage Decimal? @map("reject_oversize_tonnage") @db.Decimal(10, 2)
+  notes             String?
+  status            EntryStatus @default(PENDING)
+  approverId        String?     @map("approver_id")
+  approvedAt        DateTime?   @map("approved_at")
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  crusher           Crusher     @relation(fields: [crusherId], references: [id], onDelete: Restrict)
+  materialType      MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Restrict)
+  createdBy         User        @relation("CrusherFeedEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approver          User?       @relation("CrusherFeedEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@unique([date, shift, crusherId])
+  @@index([date])
+  @@index([shift])
+  @@index([crusherId])
+  @@index([status])
+  @@index([createdById])
+  @@map("crusher_feed_entries")
+}
+
+model CrusherOutputEntry {
+  id                String      @id @default(cuid())
+  date              DateTime    @db.Date
+  shift             Shift
+  crusherId         String      @map("crusher_id")
+  productTypeId     String      @map("product_type_id")
+  stockpileLocationId String    @map("stockpile_location_id")
+  outputTonnage     Decimal     @map("output_tonnage") @db.Decimal(10, 2)
+  yieldPercentage   Decimal?    @map("yield_percentage") @db.Decimal(5, 2) // auto-calculated
+  qualityGrade      QualityGrade @map("quality_grade")
+  moisturePercentage Decimal?   @map("moisture_percentage") @db.Decimal(5, 2)
+  notes             String?
+  status            EntryStatus @default(PENDING)
+  approverId        String?     @map("approver_id")
+  approvedAt        DateTime?   @map("approved_at")
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  crusher           Crusher     @relation(fields: [crusherId], references: [id], onDelete: Restrict)
+  productType       ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
+  stockpileLocation StockpileLocation @relation(fields: [stockpileLocationId], references: [id], onDelete: Restrict)
+  createdBy         User        @relation("CrusherOutputEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approver          User?       @relation("CrusherOutputEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@index([date])
+  @@index([shift])
+  @@index([crusherId])
+  @@index([productTypeId])
+  @@index([stockpileLocationId])
+  @@index([status])
+  @@index([createdById])
+  @@map("crusher_output_entries")
+}
+
+// Stock Management
+model StockLevel {
+  id                String      @id @default(cuid())
+  date              DateTime    @db.Date
+  productTypeId     String      @map("product_type_id")
+  stockpileLocationId String    @map("stockpile_location_id")
+  openingStock      Decimal     @map("opening_stock") @db.Decimal(12, 2) // from previous day's closing
+  produced          Decimal     @default(0) @db.Decimal(12, 2) // summed from approved crusher output entries
+  sold              Decimal     @default(0) @db.Decimal(12, 2) // from sales/dispatch or manual entry
+  adjustments       Decimal     @default(0) @db.Decimal(12, 2) // manual corrections
+  adjustmentReason  String?     @map("adjustment_reason")
+  closingStock      Decimal     @map("closing_stock") @db.Decimal(12, 2) // auto-calculated: opening + produced - sold + adjustments
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  productType       ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
+  stockpileLocation StockpileLocation @relation(fields: [stockpileLocationId], references: [id], onDelete: Restrict)
+  createdBy         User        @relation("StockLevelCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([date, productTypeId, stockpileLocationId])
+  @@index([date])
+  @@index([productTypeId])
+  @@index([stockpileLocationId])
+  @@map("stock_levels")
+}

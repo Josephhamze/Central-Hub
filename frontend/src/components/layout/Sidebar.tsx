@@ -7,6 +7,7 @@ import {
   Warehouse,
   FileText,
   Truck,
+  Mountain,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -29,6 +30,7 @@ const navigation: NavItem[] = [
   { name: 'Inventory & Assets', path: '/inventory-assets', icon: Warehouse },
   { name: 'Logistics', path: '/logistics', icon: Truck },
   { name: 'Quotes', path: '/sales/quotes', icon: FileText },
+  { name: 'Quarry Production', path: '/quarry-production', icon: Mountain },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {

@@ -72,6 +72,45 @@ async function main() {
     { code: 'quotes:reject', name: 'Reject Quotes', module: 'quotes' },
   );
 
+  // Add quarry production permissions
+  permissions.push(
+    // Equipment
+    { code: 'quarry:equipment:view', name: 'View Quarry Equipment', module: 'quarry' },
+    { code: 'quarry:equipment:manage', name: 'Manage Quarry Equipment', module: 'quarry' },
+    // Settings
+    { code: 'quarry:settings:view', name: 'View Quarry Settings', module: 'quarry' },
+    { code: 'quarry:settings:manage', name: 'Manage Quarry Settings', module: 'quarry' },
+    // Excavator Entries
+    { code: 'quarry:excavator:view', name: 'View Excavator Entries', module: 'quarry' },
+    { code: 'quarry:excavator:create', name: 'Create Excavator Entries', module: 'quarry' },
+    { code: 'quarry:excavator:update', name: 'Update Excavator Entries', module: 'quarry' },
+    { code: 'quarry:excavator:delete', name: 'Delete Excavator Entries', module: 'quarry' },
+    { code: 'quarry:excavator:approve', name: 'Approve Excavator Entries', module: 'quarry' },
+    // Hauling Entries
+    { code: 'quarry:hauling:view', name: 'View Hauling Entries', module: 'quarry' },
+    { code: 'quarry:hauling:create', name: 'Create Hauling Entries', module: 'quarry' },
+    { code: 'quarry:hauling:update', name: 'Update Hauling Entries', module: 'quarry' },
+    { code: 'quarry:hauling:delete', name: 'Delete Hauling Entries', module: 'quarry' },
+    { code: 'quarry:hauling:approve', name: 'Approve Hauling Entries', module: 'quarry' },
+    // Crusher Feed Entries
+    { code: 'quarry:crusher-feed:view', name: 'View Crusher Feed Entries', module: 'quarry' },
+    { code: 'quarry:crusher-feed:create', name: 'Create Crusher Feed Entries', module: 'quarry' },
+    { code: 'quarry:crusher-feed:update', name: 'Update Crusher Feed Entries', module: 'quarry' },
+    { code: 'quarry:crusher-feed:delete', name: 'Delete Crusher Feed Entries', module: 'quarry' },
+    { code: 'quarry:crusher-feed:approve', name: 'Approve Crusher Feed Entries', module: 'quarry' },
+    // Crusher Output Entries
+    { code: 'quarry:crusher-output:view', name: 'View Crusher Output Entries', module: 'quarry' },
+    { code: 'quarry:crusher-output:create', name: 'Create Crusher Output Entries', module: 'quarry' },
+    { code: 'quarry:crusher-output:update', name: 'Update Crusher Output Entries', module: 'quarry' },
+    { code: 'quarry:crusher-output:delete', name: 'Delete Crusher Output Entries', module: 'quarry' },
+    { code: 'quarry:crusher-output:approve', name: 'Approve Crusher Output Entries', module: 'quarry' },
+    // Stock
+    { code: 'quarry:stock:view', name: 'View Stock Levels', module: 'quarry' },
+    { code: 'quarry:stock:adjust', name: 'Adjust Stock Levels', module: 'quarry' },
+    // Dashboard
+    { code: 'quarry:dashboard:view', name: 'View Quarry Dashboard', module: 'quarry' },
+  );
+
   for (const perm of permissions) {
     await prisma.permission.upsert({
       where: { code: perm.code },
@@ -196,7 +235,7 @@ async function main() {
       (p.code.endsWith(':view') ||
         p.code.endsWith(':create') ||
         p.code.endsWith(':update')) &&
-      ['operations', 'production', 'inventory', 'logistics'].includes(p.module),
+      ['operations', 'production', 'inventory', 'logistics', 'quarry'].includes(p.module),
   );
   for (const perm of operatorPermissions) {
     await prisma.rolePermission.upsert({
