@@ -30,9 +30,10 @@ export function UsersManagementPage() {
     roleIds: [],
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['users', page],
     queryFn: async () => usersApi.findAll(page, 20),
+    retry: 1,
   });
 
   const { data: rolesData } = useQuery({
