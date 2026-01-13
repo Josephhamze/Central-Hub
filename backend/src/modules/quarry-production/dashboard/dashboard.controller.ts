@@ -10,7 +10,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../../common/guards/rbac.guard';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 
-@Controller('api/v1/quarry-production/dashboard')
+@Controller('quarry-production/dashboard')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
