@@ -6,7 +6,7 @@ import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
-import { dashboardApi, type ProductionSummary, type KPI } from '@services/quarry-production/dashboard';
+import { dashboardApi } from '@services/quarry-production/dashboard';
 import { useAuth } from '@contexts/AuthContext';
 
 export function QuarryProductionPage() {

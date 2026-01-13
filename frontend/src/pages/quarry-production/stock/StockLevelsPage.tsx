@@ -188,7 +188,7 @@ export function StockLevelsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data?.data.items.map((stock) => (
+                {data?.items.map((stock) => (
                   <tr key={stock.id} className="border-b border-border-default hover:bg-bg-hover">
                     <td className="p-4 text-content-primary">{new Date(stock.date).toLocaleDateString()}</td>
                     <td className="p-4 text-content-primary">{stock.productType?.name || 'N/A'}</td>
@@ -225,7 +225,7 @@ export function StockLevelsPage() {
                 ))}
               </tbody>
             </table>
-            {data?.data.items.length === 0 && (
+            {data?.items.length === 0 && (
               <div className="p-8 text-center text-content-secondary">No stock levels found</div>
             )}
           </div>
