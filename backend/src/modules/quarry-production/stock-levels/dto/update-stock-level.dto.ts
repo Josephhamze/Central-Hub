@@ -7,6 +7,10 @@ export class UpdateStockLevelDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   productTypeId?: string;
 
   @IsOptional()

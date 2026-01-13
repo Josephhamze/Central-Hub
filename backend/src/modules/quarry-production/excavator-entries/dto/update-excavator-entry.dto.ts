@@ -12,6 +12,10 @@ export class UpdateExcavatorEntryDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   excavatorId?: string;
 
   @IsOptional()

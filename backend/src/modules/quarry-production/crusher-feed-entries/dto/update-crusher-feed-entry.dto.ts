@@ -12,6 +12,10 @@ export class UpdateCrusherFeedEntryDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   crusherId?: string;
 
   @IsOptional()

@@ -12,6 +12,10 @@ export class UpdateHaulingEntryDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   truckId?: string;
 
   @IsOptional()

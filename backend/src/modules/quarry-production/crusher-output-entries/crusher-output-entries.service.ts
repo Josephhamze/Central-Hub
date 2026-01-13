@@ -149,6 +149,7 @@ export class CrusherOutputEntriesService {
       data: {
         date,
         shift: dto.shift,
+        projectId: dto.projectId,
         crusherId: dto.crusherId,
         productTypeId: dto.productTypeId,
         stockpileLocationId: dto.stockpileLocationId,

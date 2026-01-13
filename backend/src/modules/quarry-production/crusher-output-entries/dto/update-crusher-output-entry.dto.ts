@@ -12,6 +12,10 @@ export class UpdateCrusherOutputEntryDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   crusherId?: string;
 
   @IsOptional()

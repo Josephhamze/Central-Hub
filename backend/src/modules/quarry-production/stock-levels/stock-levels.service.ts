@@ -19,6 +19,7 @@ export class StockLevelsService {
    */
   private async getPreviousDayClosingStock(
     date: Date,
+    projectId: string,
     productTypeId: string,
     stockpileLocationId: string,
   ): Promise<Decimal> {
@@ -27,8 +28,9 @@ export class StockLevelsService {
 
     const previousStock = await this.prisma.stockLevel.findUnique({
       where: {
-        date_productTypeId_stockpileLocationId: {
+        date_projectId_productTypeId_stockpileLocationId: {
           date: previousDate,
+          projectId,
           productTypeId,
           stockpileLocationId,
         },
@@ -43,12 +45,14 @@ export class StockLevelsService {
    */
   private async calculateProduced(
     date: Date,
+    projectId: string,
     productTypeId: string,
     stockpileLocationId: string,
   ): Promise<Decimal> {
     const entries = await this.prisma.crusherOutputEntry.findMany({
       where: {
         date,
+        projectId,
         productTypeId,
         stockpileLocationId,
         status: EntryStatus.APPROVED,
@@ -165,8 +169,9 @@ export class StockLevelsService {
     // Check if stock level already exists
     const existing = await this.prisma.stockLevel.findUnique({
       where: {
-        date_productTypeId_stockpileLocationId: {
+        date_projectId_productTypeId_stockpileLocationId: {
           date,
+          projectId: dto.projectId,
           productTypeId: dto.productTypeId,
           stockpileLocationId: dto.stockpileLocationId,
         },
@@ -176,10 +181,10 @@ export class StockLevelsService {
     // Get opening stock (from previous day or provided)
     const openingStock = dto.openingStock !== undefined
       ? new Decimal(dto.openingStock)
-      : await this.getPreviousDayClosingStock(date, dto.productTypeId, dto.stockpileLocationId);
+      : await this.getPreviousDayClosingStock(date, dto.projectId, dto.productTypeId, dto.stockpileLocationId);
 
     // Calculate produced from approved crusher output entries
-    const produced = await this.calculateProduced(date, dto.productTypeId, dto.stockpileLocationId);
+    const produced = await this.calculateProduced(date, dto.projectId, dto.productTypeId, dto.stockpileLocationId);
 
     const sold = dto.sold ? new Decimal(dto.sold) : new Decimal(0);
     const adjustments = dto.adjustments ? new Decimal(dto.adjustments) : new Decimal(0);
@@ -208,6 +213,7 @@ export class StockLevelsService {
     return this.prisma.stockLevel.create({
       data: {
         date,
+        projectId: dto.projectId,
         productTypeId: dto.productTypeId,
         stockpileLocationId: dto.stockpileLocationId,
         openingStock,
@@ -259,13 +265,14 @@ export class StockLevelsService {
    * Recalculate stock for a specific date
    * Useful when crusher output entries are approved/updated
    */
-  async recalculateStock(date: Date, productTypeId: string, stockpileLocationId: string) {
+  async recalculateStock(date: Date, projectId: string, productTypeId: string, stockpileLocationId: string) {
     date.setHours(0, 0, 0, 0);
 
     const stockLevel = await this.prisma.stockLevel.findUnique({
       where: {
-        date_productTypeId_stockpileLocationId: {
+        date_projectId_productTypeId_stockpileLocationId: {
           date,
+          projectId,
           productTypeId,
           stockpileLocationId,
         },
@@ -277,7 +284,7 @@ export class StockLevelsService {
     }
 
     // Recalculate produced from approved entries
-    const produced = await this.calculateProduced(date, productTypeId, stockpileLocationId);
+    const produced = await this.calculateProduced(date, projectId, productTypeId, stockpileLocationId);
 
     // Recalculate closing stock
     const closingStock = this.calculateClosingStock(
