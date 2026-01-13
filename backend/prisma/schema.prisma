@@ -300,8 +300,25 @@ model Company {
   projects       Project[]
   warehouses     Warehouse[]
   quotes         Quote[]
+  quarrySettings QuarrySettings? @relation("QuarryDefaultCompany")
 
   @@map("companies")
+}
+
+// Quarry Production Settings
+model QuarrySettings {
+  id                String    @id @default(cuid())
+  defaultCompanyId  String?   @map("default_company_id") // Default company for quarry operations
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  defaultCompany    Company?  @relation("QuarryDefaultCompany", fields: [defaultCompanyId], references: [id], onDelete: SetNull)
+
+  @@unique([id]) // Only one settings record
+  @@index([defaultCompanyId])
+  @@map("quarry_settings")
 }
 
 // Project
@@ -320,9 +337,15 @@ model Project {
   warehouses  Warehouse[]
   stockItems  StockItem[]
   quotes      Quote[]
+  assets      Asset[]
+  // Quarry Production Relations
+  excavatorEntries ExcavatorEntry[]
+  haulingEntries HaulingEntry[]
+  crusherFeedEntries CrusherFeedEntry[]
+  crusherOutputEntries CrusherOutputEntry[]
+  stockLevels StockLevel[]
 
   @@index([companyId])
-  assets           Asset[]
   @@map("projects")
 }
 
@@ -426,6 +449,7 @@ model StockItem {
   project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   warehouse   Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   quoteItems  QuoteItem[]
+  stockLevels StockLevel[] // Quarry production stock levels linked to this stock item
 
   @@index([projectId])
   @@index([warehouseId])
@@ -936,6 +960,10 @@ model Asset {
   history           AssetHistory[]
   depreciationProfile DepreciationProfile?
   depreciationEntries DepreciationEntry[]
+  // Quarry Production Relations
+  excavator          Excavator?        @relation("ExcavatorAsset")
+  truck              Truck?            @relation("TruckAsset")
+  crusher            Crusher?          @relation("CrusherAsset")
 
   @@index([assetTag])
   @@index([status])
@@ -1149,14 +1177,17 @@ model Excavator {
   name          String          @unique
   bucketCapacity Decimal        @map("bucket_capacity") @db.Decimal(8, 2) // cubic meters
   status        EquipmentStatus @default(ACTIVE)
+  assetId       String?         @map("asset_id") // Link to Asset model
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
   // Relations
   entries       ExcavatorEntry[]
+  asset         Asset?          @relation("ExcavatorAsset", fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([status])
+  @@index([assetId])
   @@map("excavators")
 }
 
@@ -1165,14 +1196,17 @@ model Truck {
   name          String          @unique
   loadCapacity  Decimal         @map("load_capacity") @db.Decimal(8, 2) // tonnes
   status        EquipmentStatus @default(ACTIVE)
+  assetId       String?         @map("asset_id") // Link to Asset model
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
   // Relations
   entries       HaulingEntry[]
+  asset         Asset?          @relation("TruckAsset", fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([status])
+  @@index([assetId])
   @@map("trucks")
 }
 
@@ -1182,6 +1216,7 @@ model Crusher {
   type          CrusherType
   ratedCapacity Decimal         @map("rated_capacity") @db.Decimal(10, 2) // tonnes per hour
   status        EquipmentStatus @default(ACTIVE)
+  assetId       String?         @map("asset_id") // Link to Asset model
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1189,9 +1224,11 @@ model Crusher {
   // Relations
   feedEntries   CrusherFeedEntry[]
   outputEntries CrusherOutputEntry[]
+  asset         Asset?          @relation("CrusherAsset", fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([type])
+  @@index([assetId])
   @@map("crushers")
 }
 
@@ -1261,6 +1298,7 @@ model ExcavatorEntry {
   id                String      @id @default(cuid())
   date              DateTime    @db.Date
   shift             Shift
+  projectId         String      @map("project_id") // Link to Project
   excavatorId       String      @map("excavator_id")
   operatorId        String      @map("operator_id")
   materialTypeId    String      @map("material_type_id")
@@ -1278,6 +1316,7 @@ model ExcavatorEntry {
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
   excavator         Excavator   @relation(fields: [excavatorId], references: [id], onDelete: Restrict)
   operator          User        @relation("ExcavatorOperator", fields: [operatorId], references: [id], onDelete: Restrict)
   materialType      MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Restrict)
@@ -1286,9 +1325,10 @@ model ExcavatorEntry {
   approver          User?       @relation("ExcavatorEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
   linkedHaulingEntries HaulingEntry[]
 
-  @@unique([date, shift, excavatorId, operatorId])
+  @@unique([date, shift, projectId, excavatorId, operatorId])
   @@index([date])
   @@index([shift])
+  @@index([projectId])
   @@index([excavatorId])
   @@index([operatorId])
   @@index([status])
@@ -1300,6 +1340,7 @@ model HaulingEntry {
   id                String      @id @default(cuid())
   date              DateTime    @db.Date
   shift             Shift
+  projectId         String      @map("project_id") // Link to Project
   truckId           String      @map("truck_id")
   driverId          String      @map("driver_id")
   excavatorEntryId  String?     @map("excavator_entry_id") // Optional link to source
@@ -1316,15 +1357,17 @@ model HaulingEntry {
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
   truck             Truck       @relation(fields: [truckId], references: [id], onDelete: Restrict)
   driver            User        @relation("TruckDriver", fields: [driverId], references: [id], onDelete: Restrict)
   sourceExcavatorEntry ExcavatorEntry? @relation(fields: [excavatorEntryId], references: [id], onDelete: SetNull)
   createdBy         User        @relation("HaulingEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
   approver          User?       @relation("HaulingEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
 
-  @@unique([date, shift, truckId, driverId])
+  @@unique([date, shift, projectId, truckId, driverId])
   @@index([date])
   @@index([shift])
+  @@index([projectId])
   @@index([truckId])
   @@index([driverId])
   @@index([excavatorEntryId])
@@ -1337,6 +1380,7 @@ model CrusherFeedEntry {
   id                String      @id @default(cuid())
   date              DateTime    @db.Date
   shift             Shift
+  projectId         String      @map("project_id") // Link to Project
   crusherId         String      @map("crusher_id")
   materialTypeId   String      @map("material_type_id")
   feedStartTime    DateTime    @map("feed_start_time")
@@ -1354,14 +1398,16 @@ model CrusherFeedEntry {
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
   crusher           Crusher     @relation(fields: [crusherId], references: [id], onDelete: Restrict)
   materialType      MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Restrict)
   createdBy         User        @relation("CrusherFeedEntryCreator", fields: [createdById], references: [id], onDelete: Restrict)
   approver          User?       @relation("CrusherFeedEntryApprover", fields: [approverId], references: [id], onDelete: SetNull)
 
-  @@unique([date, shift, crusherId])
+  @@unique([date, shift, projectId, crusherId])
   @@index([date])
   @@index([shift])
+  @@index([projectId])
   @@index([crusherId])
   @@index([status])
   @@index([createdById])
@@ -1372,6 +1418,7 @@ model CrusherOutputEntry {
   id                String      @id @default(cuid())
   date              DateTime    @db.Date
   shift             Shift
+  projectId         String      @map("project_id") // Link to Project
   crusherId         String      @map("crusher_id")
   productTypeId     String      @map("product_type_id")
   stockpileLocationId String    @map("stockpile_location_id")
@@ -1388,6 +1435,7 @@ model CrusherOutputEntry {
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
   crusher           Crusher     @relation(fields: [crusherId], references: [id], onDelete: Restrict)
   productType       ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
   stockpileLocation StockpileLocation @relation(fields: [stockpileLocationId], references: [id], onDelete: Restrict)
@@ -1396,6 +1444,7 @@ model CrusherOutputEntry {
 
   @@index([date])
   @@index([shift])
+  @@index([projectId])
   @@index([crusherId])
   @@index([productTypeId])
   @@index([stockpileLocationId])
@@ -1408,8 +1457,10 @@ model CrusherOutputEntry {
 model StockLevel {
   id                String      @id @default(cuid())
   date              DateTime    @db.Date
+  projectId         String      @map("project_id") // Link to Project
   productTypeId     String      @map("product_type_id")
   stockpileLocationId String    @map("stockpile_location_id")
+  stockItemId       String?     @map("stock_item_id") // Optional link to StockItem for syncing
   openingStock      Decimal     @map("opening_stock") @db.Decimal(12, 2) // from previous day's closing
   produced          Decimal     @default(0) @db.Decimal(12, 2) // summed from approved crusher output entries
   sold              Decimal     @default(0) @db.Decimal(12, 2) // from sales/dispatch or manual entry
@@ -1421,13 +1472,17 @@ model StockLevel {
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  project           Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
   productType       ProductType @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
   stockpileLocation StockpileLocation @relation(fields: [stockpileLocationId], references: [id], onDelete: Restrict)
+  stockItem         StockItem?  @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
   createdBy         User        @relation("StockLevelCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
-  @@unique([date, productTypeId, stockpileLocationId])
+  @@unique([date, projectId, productTypeId, stockpileLocationId])
   @@index([date])
+  @@index([projectId])
   @@index([productTypeId])
   @@index([stockpileLocationId])
+  @@index([stockItemId])
   @@map("stock_levels")
 }
