@@ -308,7 +308,7 @@ model Company {
 // Quarry Production Settings
 model QuarrySettings {
   id                String    @id @default(cuid())
-  defaultCompanyId  String?   @map("default_company_id") // Default company for quarry operations
+  defaultCompanyId  String?   @unique @map("default_company_id") // Default company for quarry operations (one-to-one)
   isActive          Boolean   @default(true) @map("is_active")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -316,8 +316,6 @@ model QuarrySettings {
   // Relations
   defaultCompany    Company?  @relation("QuarryDefaultCompany", fields: [defaultCompanyId], references: [id], onDelete: SetNull)
 
-  @@unique([id]) // Only one settings record
-  @@index([defaultCompanyId])
   @@map("quarry_settings")
 }
 
@@ -1177,7 +1175,7 @@ model Excavator {
   name          String          @unique
   bucketCapacity Decimal        @map("bucket_capacity") @db.Decimal(8, 2) // cubic meters
   status        EquipmentStatus @default(ACTIVE)
-  assetId       String?         @map("asset_id") // Link to Asset model
+  assetId       String?         @unique @map("asset_id") // Link to Asset model (one-to-one)
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1187,7 +1185,6 @@ model Excavator {
   asset         Asset?          @relation("ExcavatorAsset", fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([status])
-  @@index([assetId])
   @@map("excavators")
 }
 
@@ -1196,7 +1193,7 @@ model Truck {
   name          String          @unique
   loadCapacity  Decimal         @map("load_capacity") @db.Decimal(8, 2) // tonnes
   status        EquipmentStatus @default(ACTIVE)
-  assetId       String?         @map("asset_id") // Link to Asset model
+  assetId       String?         @unique @map("asset_id") // Link to Asset model (one-to-one)
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1206,7 +1203,6 @@ model Truck {
   asset         Asset?          @relation("TruckAsset", fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([status])
-  @@index([assetId])
   @@map("trucks")
 }
 
@@ -1216,7 +1212,7 @@ model Crusher {
   type          CrusherType
   ratedCapacity Decimal         @map("rated_capacity") @db.Decimal(10, 2) // tonnes per hour
   status        EquipmentStatus @default(ACTIVE)
-  assetId       String?         @map("asset_id") // Link to Asset model
+  assetId       String?         @unique @map("asset_id") // Link to Asset model (one-to-one)
   notes         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1228,7 +1224,6 @@ model Crusher {
 
   @@index([status])
   @@index([type])
-  @@index([assetId])
   @@map("crushers")
 }
 
