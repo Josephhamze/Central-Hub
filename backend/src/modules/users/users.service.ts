@@ -49,7 +49,7 @@ export class UsersService {
     return {
       items: users.map((user) => ({
         ...user,
-        roles: user.roles.map((ur) => ur.role),
+        roles: user.roles.map((ur) => ur.role).filter((role) => role !== null),
       })),
       pagination: {
         page,
@@ -154,10 +154,11 @@ export class UsersService {
     }
 
     // Flatten roles and permissions for frontend
-    const roles = user.roles.map((ur) => ur.role.name);
+    const roles = user.roles.map((ur) => ur.role?.name).filter((name) => name !== undefined);
     const permissions = new Set<string>();
     user.roles.forEach((ur) => {
-      ur.role.permissions.forEach((rp) => {
+      if (!ur.role) return;
+      ur.role.permissions?.forEach((rp) => {
         permissions.add(rp.permission.code);
       });
     });
