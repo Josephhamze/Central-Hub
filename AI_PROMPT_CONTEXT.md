@@ -40,6 +40,9 @@ The platform is in **core skeleton state** — all infrastructure, authenticatio
 | TanStack Query | 5.x | Server state management |
 | Axios | 1.x | HTTP client |
 | Lucide React | Latest | Icon system |
+| @react-pdf/renderer | 4.3.2 | PDF generation |
+| buffer | 6.0.3 | Buffer polyfill for PDF generation |
+| process | 0.11.10 | Process polyfill for PDF generation |
 
 ### Backend
 | Technology | Version | Purpose |
@@ -684,16 +687,23 @@ Based on the design system in AI_PROMPT_CONTEXT.md, create a
 │ useTheme()   - { theme, resolvedTheme, setTheme }           │
 │ useToast()   - { success, error, warning, info }            │
 ├─────────────────────────────────────────────────────────────┤
+│ PDF GENERATION                                              │
+│ @components/quotes/QuotePDF - Quote PDF component           │
+│ @lib/pdf-theme - PDF design system                          │
+│ @lib/pdf-icons - SVG icons for PDF                          │
+│ pdf().toBlob() - Generate PDF blob                         │
+├─────────────────────────────────────────────────────────────┤
 │ DECORATORS (Backend)                                        │
 │ @Public()              - Skip auth                          │
-│ @Permissions('...')    - Require permissions                │
+│ @Permissions('...')    - Require permissions                 │
 │ @CurrentUser()         - Get current user                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-*Last updated: Initial skeleton release*
+*Last updated: PDF Generation System implementation*
+*Version: 3.1.0*
 
 
 ---
@@ -1486,3 +1496,190 @@ totalCostPerMonth = baseTripCost × tripsPerMonth (if tripsPerMonth provided)
 
 *Last updated: Routes & Tolls + Route Costing System implementation*
 *Version: 3.0.0*
+
+---
+
+## 11. PDF Generation System
+
+### Overview
+Professional PDF generation system for sales quotes using `@react-pdf/renderer`. The system generates clean, simple, professional PDF documents with proper formatting and styling.
+
+### Technology Stack
+- **@react-pdf/renderer**: v4.3.2 - React-based PDF generation library
+- **buffer**: v6.0.3 - Polyfill for Buffer API (required for react-pdf in browser)
+- **process**: v0.11.10 - Polyfill for process API (required for react-pdf in browser)
+
+### Configuration
+
+**Vite Configuration** (`frontend/vite.config.ts`):
+```typescript
+resolve: {
+  alias: {
+    // ... other aliases
+    buffer: 'buffer',
+  },
+},
+define: {
+  'process.env': '{}',
+  global: 'globalThis',
+},
+```
+
+**Main Entry Point** (`frontend/src/main.tsx`):
+```typescript
+// Polyfills for @react-pdf/renderer
+import { Buffer } from 'buffer';
+
+// Make Buffer available globally
+if (typeof window !== 'undefined') {
+  (window as any).Buffer = Buffer;
+}
+```
+
+**Type Declarations** (`frontend/src/vite-env-polyfills.d.ts`):
+```typescript
+declare module 'process/browser' {
+  const process: {
+    env: Record<string, string | undefined>;
+    [key: string]: any;
+  };
+  export default process;
+}
+```
+
+### PDF Components
+
+**Location**: `frontend/src/components/quotes/QuotePDF.tsx`
+
+**Design Philosophy**:
+- Clean, simple, professional layout
+- Minimal styling with clear hierarchy
+- Helvetica font (built-in, reliable)
+- Proper spacing and typography
+- No complex backgrounds or excessive icons
+
+**Key Features**:
+- Company logo support
+- Quote number and date display
+- Status badge (APPROVED, PENDING_APPROVAL, etc.)
+- FROM/TO sections with company and customer details
+- Project and delivery information
+- Line items table with proper formatting
+- Totals section with subtotal, VAT, transport, grand total
+- Terms & Conditions section
+- Signature section for customer and authorized representative
+
+**PDF Theme** (`frontend/src/lib/pdf-theme.ts`):
+- Color palette: Primary black (#1D1D1F), secondary gray (#86868B), accent blue (#0071E3), success green (#34C759)
+- Typography: Helvetica font family with proper weights
+- Spacing: 8px grid system
+- Border radius: 12px for cards, 20px for badges
+
+**PDF Icons** (`frontend/src/lib/pdf-icons.tsx`):
+- SVG icon components for PDF rendering
+- Icons: Building2, User, MapPin, Phone, Mail, FileText, Package, Truck, FolderOpen, CheckCircle2, Clock, CreditCard
+- All icons use SVG paths compatible with react-pdf
+
+### Usage
+
+**Generating and Downloading PDF**:
+```typescript
+import { pdf } from '@react-pdf/renderer';
+import { QuotePDF } from '@components/quotes/QuotePDF';
+
+const handlePrint = async () => {
+  try {
+    const blob = await pdf(<QuotePDF quote={quote} />).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Quote-${quote.quoteNumber}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    success('PDF downloaded successfully');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    showError('Failed to generate PDF');
+  }
+};
+```
+
+### PDF Layout Structure
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [Logo/Company Name]              QUOTE                    │
+│                              #Q-202601-0010                 │
+│                              January 12, 2026               │
+│                              ● APPROVED                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  FROM                          TO                           │
+│  Company Name                  Customer Name               │
+│  Legal Name                    Contact: Name                │
+│  NIF: XXX                      Delivery: Address           │
+│  RCCM: XXX                                                     │
+│  Address: XXX                                                 │
+│  Phone: XXX                                                    │
+│  Email: XXX                                                    │
+├─────────────────────────────────────────────────────────────┤
+│  Project: Name        Delivery: Address                     │
+├─────────────────────────────────────────────────────────────┤
+│  LINE ITEMS                                                 │
+│  ───────────────────────────────────────────────────────── │
+│  Description          Qty        Unit Price      Amount    │
+│  Product Name         42.00 Ton    $18.00      $756.00     │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                                    Subtotal    $756.00     │
+│                                    VAT (16%)    $120.96    │
+│                                    Transport    $100.00    │
+│                              ─────────────────────────────  │
+│                              GRAND TOTAL      $976.96      │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  TERMS & CONDITIONS                                         │
+│  Payment Terms: Net 30 days                                 │
+│  Valid until: January 19, 2026                              │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  [Signature Line]              [Signature Line]              │
+│  Customer Signature          Authorized Representative     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Important Notes
+
+1. **Font Selection**: Uses built-in Helvetica font (no custom font loading) for reliability
+2. **Polyfills Required**: Buffer and process polyfills must be configured for browser compatibility
+3. **Path Aliases**: `@lib` alias must be configured in both `tsconfig.json` and `vite.config.ts`
+4. **Error Handling**: Always wrap PDF generation in try-catch blocks
+5. **File Naming**: PDFs are named `Quote-{quoteNumber}.pdf`
+
+### File Structure
+
+```
+frontend/src/
+  components/quotes/
+    QuotePDF.tsx          # Main PDF component
+  lib/
+    pdf-theme.ts          # PDF design system
+    pdf-icons.tsx         # SVG icon components for PDF
+  pages/sales/
+    QuoteDetailPage.tsx   # Uses QuotePDF for download
+```
+
+### Troubleshooting
+
+**Common Issues**:
+1. **"Buffer is not defined"**: Ensure Buffer polyfill is imported and set globally in `main.tsx`
+2. **"Offset is outside the bounds of the DataView"**: Usually caused by custom font loading - use built-in Helvetica instead
+3. **TypeScript errors**: Ensure `@lib` path alias is configured in both `tsconfig.json` and `vite.config.ts`
+4. **Build errors**: Ensure `buffer` and `process` packages are in `package.json` dependencies
+
+---
+
+*Last updated: PDF Generation System implementation*
+*Version: 3.1.0*
