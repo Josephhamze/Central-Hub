@@ -1,0 +1,161 @@
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { CustomerType } from '@prisma/client';
+export declare class CustomersService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    findAll(type?: CustomerType, page?: number, limit?: number, search?: string): Promise<{
+        items: ({
+            _count: {
+                quotes: number;
+            };
+            contacts: {
+                id: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                email: string | null;
+                phone: string | null;
+                isPrimary: boolean;
+                customerId: string;
+                roleTitle: string | null;
+            }[];
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string | null;
+            firstName: string | null;
+            lastName: string | null;
+            type: import(".prisma/client").$Enums.CustomerType;
+            companyName: string | null;
+            billingAddressLine1: string;
+            billingAddressLine2: string | null;
+            billingCity: string;
+            billingState: string | null;
+            billingPostalCode: string;
+            billingCountry: string | null;
+            deliveryAddressLine1: string | null;
+            deliveryAddressLine2: string | null;
+            deliveryCity: string | null;
+            deliveryState: string | null;
+            deliveryPostalCode: string | null;
+            deliveryCountry: string | null;
+            phone: string | null;
+        })[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    findOne(id: string): Promise<{
+        _count: {
+            quotes: number;
+        };
+        contacts: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string | null;
+            phone: string | null;
+            isPrimary: boolean;
+            customerId: string;
+            roleTitle: string | null;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        type: import(".prisma/client").$Enums.CustomerType;
+        companyName: string | null;
+        billingAddressLine1: string;
+        billingAddressLine2: string | null;
+        billingCity: string;
+        billingState: string | null;
+        billingPostalCode: string;
+        billingCountry: string | null;
+        deliveryAddressLine1: string | null;
+        deliveryAddressLine2: string | null;
+        deliveryCity: string | null;
+        deliveryState: string | null;
+        deliveryPostalCode: string | null;
+        deliveryCountry: string | null;
+        phone: string | null;
+    }>;
+    create(dto: CreateCustomerDto): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        type: import(".prisma/client").$Enums.CustomerType;
+        companyName: string | null;
+        billingAddressLine1: string;
+        billingAddressLine2: string | null;
+        billingCity: string;
+        billingState: string | null;
+        billingPostalCode: string;
+        billingCountry: string | null;
+        deliveryAddressLine1: string | null;
+        deliveryAddressLine2: string | null;
+        deliveryCity: string | null;
+        deliveryState: string | null;
+        deliveryPostalCode: string | null;
+        deliveryCountry: string | null;
+        phone: string | null;
+    }>;
+    update(id: string, dto: UpdateCustomerDto): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        type: import(".prisma/client").$Enums.CustomerType;
+        companyName: string | null;
+        billingAddressLine1: string;
+        billingAddressLine2: string | null;
+        billingCity: string;
+        billingState: string | null;
+        billingPostalCode: string;
+        billingCountry: string | null;
+        deliveryAddressLine1: string | null;
+        deliveryAddressLine2: string | null;
+        deliveryCity: string | null;
+        deliveryState: string | null;
+        deliveryPostalCode: string | null;
+        deliveryCountry: string | null;
+        phone: string | null;
+    }>;
+    remove(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        type: import(".prisma/client").$Enums.CustomerType;
+        companyName: string | null;
+        billingAddressLine1: string;
+        billingAddressLine2: string | null;
+        billingCity: string;
+        billingState: string | null;
+        billingPostalCode: string;
+        billingCountry: string | null;
+        deliveryAddressLine1: string | null;
+        deliveryAddressLine2: string | null;
+        deliveryCity: string | null;
+        deliveryState: string | null;
+        deliveryPostalCode: string | null;
+        deliveryCountry: string | null;
+        phone: string | null;
+    }>;
+}
