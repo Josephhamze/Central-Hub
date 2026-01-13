@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Mountain, ArrowRight, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Mountain, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -15,22 +15,26 @@ export function QuarryProductionPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedShift, setSelectedShift] = useState<'DAY' | 'NIGHT' | undefined>(undefined);
 
-  const { data: varianceData, isLoading: varianceLoading } = useQuery<ProductionSummary>({
+  const { data: varianceData, isLoading: varianceLoading } = useQuery({
     queryKey: ['quarry-dashboard', 'variance', selectedDate, selectedShift],
-    queryFn: () => dashboardApi.getVarianceAnalysis({ date: selectedDate, shift: selectedShift }),
+    queryFn: async () => {
+      const response = await dashboardApi.getVarianceAnalysis({ date: selectedDate, shift: selectedShift });
+      return response.data.data;
+    },
     enabled: !!selectedDate,
   });
 
-  const { data: kpis, isLoading: kpisLoading } = useQuery<KPI[]>({
+  const { data: kpis, isLoading: kpisLoading } = useQuery({
     queryKey: ['quarry-dashboard', 'kpis', selectedDate],
-    queryFn: () => {
+    queryFn: async () => {
       const date = new Date(selectedDate);
       const dateFrom = new Date(date);
       dateFrom.setDate(dateFrom.getDate() - 7);
-      return dashboardApi.getKPIs({
+      const response = await dashboardApi.getKPIs({
         dateFrom: dateFrom.toISOString().split('T')[0],
         dateTo: selectedDate,
       });
+      return response.data.data;
     },
     enabled: !!selectedDate,
   });
@@ -92,7 +96,7 @@ export function QuarryProductionPage() {
         <CardHeader title="Production Flow" description={`${selectedDate} ${selectedShift ? `- ${selectedShift} Shift` : ''}`} />
         {varianceLoading ? (
           <div className="p-8 text-center text-content-secondary">Loading...</div>
-        ) : varianceData?.data ? (
+        ) : varianceData ? (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Excavator */}
@@ -100,7 +104,7 @@ export function QuarryProductionPage() {
                 <div className="bg-bg-elevated rounded-lg p-4 mb-2">
                   <Mountain className="w-8 h-8 mx-auto mb-2 text-content-primary" />
                   <div className="text-2xl font-bold text-content-primary">
-                    {varianceData.data.excavatorTonnage.toFixed(2)}
+                    {varianceData.excavatorTonnage.toFixed(2)}
                   </div>
                   <div className="text-sm text-content-secondary">tonnes</div>
                   <div className="text-xs text-content-tertiary mt-1">Excavator</div>
@@ -110,12 +114,12 @@ export function QuarryProductionPage() {
               {/* Arrow */}
               <div className="flex items-center justify-center">
                 <ArrowRight className="w-6 h-6 text-content-tertiary" />
-                {varianceData.data.variances[0] && (
+                {varianceData.variances[0] && (
                   <Badge
-                    variant={getVarianceStatusColor(varianceData.data.variances[0].status)}
+                    variant={getVarianceStatusColor(varianceData.variances[0].status)}
                     className="ml-2"
                   >
-                    {varianceData.data.variances[0].variancePercent.toFixed(1)}%
+                    {varianceData.variances[0].variancePercent.toFixed(1)}%
                   </Badge>
                 )}
               </div>
@@ -125,7 +129,7 @@ export function QuarryProductionPage() {
                 <div className="bg-bg-elevated rounded-lg p-4 mb-2">
                   <Mountain className="w-8 h-8 mx-auto mb-2 text-content-primary" />
                   <div className="text-2xl font-bold text-content-primary">
-                    {varianceData.data.haulingTonnage.toFixed(2)}
+                    {varianceData.haulingTonnage.toFixed(2)}
                   </div>
                   <div className="text-sm text-content-secondary">tonnes</div>
                   <div className="text-xs text-content-tertiary mt-1">Hauling</div>
@@ -135,12 +139,12 @@ export function QuarryProductionPage() {
               {/* Arrow */}
               <div className="flex items-center justify-center">
                 <ArrowRight className="w-6 h-6 text-content-tertiary" />
-                {varianceData.data.variances[1] && (
+                {varianceData.variances[1] && (
                   <Badge
-                    variant={getVarianceStatusColor(varianceData.data.variances[1].status)}
+                    variant={getVarianceStatusColor(varianceData.variances[1].status)}
                     className="ml-2"
                   >
-                    {varianceData.data.variances[1].variancePercent.toFixed(1)}%
+                    {varianceData.variances[1].variancePercent.toFixed(1)}%
                   </Badge>
                 )}
               </div>
@@ -152,7 +156,7 @@ export function QuarryProductionPage() {
                 <div className="bg-bg-elevated rounded-lg p-4 mb-2">
                   <Mountain className="w-8 h-8 mx-auto mb-2 text-content-primary" />
                   <div className="text-2xl font-bold text-content-primary">
-                    {varianceData.data.crusherFeedTonnage.toFixed(2)}
+                    {varianceData.crusherFeedTonnage.toFixed(2)}
                   </div>
                   <div className="text-sm text-content-secondary">tonnes</div>
                   <div className="text-xs text-content-tertiary mt-1">Crusher Feed</div>
@@ -162,12 +166,12 @@ export function QuarryProductionPage() {
               {/* Arrow */}
               <div className="flex items-center justify-center">
                 <ArrowRight className="w-6 h-6 text-content-tertiary" />
-                {varianceData.data.variances[2] && (
+                {varianceData.variances[2] && (
                   <Badge
-                    variant={getVarianceStatusColor(varianceData.data.variances[2].status)}
+                    variant={getVarianceStatusColor(varianceData.variances[2].status)}
                     className="ml-2"
                   >
-                    {varianceData.data.variances[2].variancePercent.toFixed(1)}%
+                    {varianceData.variances[2].variancePercent.toFixed(1)}%
                   </Badge>
                 )}
               </div>
@@ -177,7 +181,7 @@ export function QuarryProductionPage() {
                 <div className="bg-bg-elevated rounded-lg p-4 mb-2">
                   <Mountain className="w-8 h-8 mx-auto mb-2 text-content-primary" />
                   <div className="text-2xl font-bold text-content-primary">
-                    {varianceData.data.crusherOutputTonnage.toFixed(2)}
+                    {varianceData.crusherOutputTonnage.toFixed(2)}
                   </div>
                   <div className="text-sm text-content-secondary">tonnes</div>
                   <div className="text-xs text-content-tertiary mt-1">Crusher Output</div>
@@ -191,9 +195,9 @@ export function QuarryProductionPage() {
       </Card>
 
       {/* Variance Checkpoints */}
-      {varianceData?.data && varianceData.data.variances.length > 0 && (
+      {varianceData && varianceData.variances.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {varianceData.data.variances.map((checkpoint) => {
+          {varianceData.variances.map((checkpoint) => {
             const Icon = getVarianceIcon(checkpoint.status);
             return (
               <Card key={checkpoint.checkpoint} className="p-4">
@@ -235,9 +239,9 @@ export function QuarryProductionPage() {
         <CardHeader title="Key Performance Indicators" description="Last 7 days" />
         {kpisLoading ? (
           <div className="p-8 text-center text-content-secondary">Loading...</div>
-        ) : kpis?.data && kpis.data.length > 0 ? (
+        ) : kpis && kpis.length > 0 ? (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {kpis.data.map((kpi) => (
+            {kpis.map((kpi) => (
               <div key={kpi.name} className="text-center">
                 <div className="text-sm text-content-secondary mb-1">{kpi.name}</div>
                 <div className="text-2xl font-bold text-content-primary">

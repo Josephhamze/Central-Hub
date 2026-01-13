@@ -176,15 +176,43 @@ export class HaulingEntriesService {
       totalHauled = this.calculateTotalHauled(tripCount, truck.loadCapacity);
     }
 
+    const updateData: any = {};
+    
+    if (dto.date !== undefined) {
+      updateData.date = new Date(dto.date);
+    }
+    if (dto.shift !== undefined) {
+      updateData.shift = dto.shift;
+    }
+    if (dto.truckId !== undefined) {
+      updateData.truckId = dto.truckId;
+    }
+    if (dto.driverId !== undefined) {
+      updateData.driverId = dto.driverId;
+    }
+    if (dto.excavatorEntryId !== undefined) {
+      updateData.excavatorEntryId = dto.excavatorEntryId || null;
+    }
+    if (dto.tripCount !== undefined) {
+      updateData.tripCount = dto.tripCount;
+    }
+    if (dto.avgCycleTime !== undefined) {
+      updateData.avgCycleTime = dto.avgCycleTime ? new Decimal(dto.avgCycleTime) : null;
+    }
+    if (dto.fuelConsumption !== undefined) {
+      updateData.fuelConsumption = dto.fuelConsumption ? new Decimal(dto.fuelConsumption) : null;
+    }
+    if (dto.notes !== undefined) {
+      updateData.notes = dto.notes;
+    }
+    
+    if (totalHauled !== undefined) {
+      updateData.totalHauled = totalHauled;
+    }
+
     return this.prisma.haulingEntry.update({
       where: { id },
-      data: {
-        ...dto,
-        date: dto.date ? new Date(dto.date) : undefined,
-        totalHauled,
-        avgCycleTime: dto.avgCycleTime !== undefined ? (dto.avgCycleTime ? new Decimal(dto.avgCycleTime) : null) : undefined,
-        fuelConsumption: dto.fuelConsumption !== undefined ? (dto.fuelConsumption ? new Decimal(dto.fuelConsumption) : null) : undefined,
-      },
+      data: updateData,
       include: {
         truck: true,
         driver: { select: { id: true, firstName: true, lastName: true } },

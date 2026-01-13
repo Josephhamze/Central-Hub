@@ -1,4 +1,11 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateStockpileLocationDto } from './create-stockpile-location.dto';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
-export class UpdateStockpileLocationDto extends PartialType(CreateStockpileLocationDto) {}
+export class UpdateStockpileLocationDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

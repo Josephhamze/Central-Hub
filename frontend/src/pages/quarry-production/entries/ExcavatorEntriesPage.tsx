@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -18,11 +18,10 @@ import { useToast } from '@contexts/ToastContext';
 
 export function ExcavatorEntriesPage() {
   const navigate = useNavigate();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [shiftFilter, setShiftFilter] = useState<Shift | ''>('');

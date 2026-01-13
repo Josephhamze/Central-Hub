@@ -1,4 +1,33 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateStockLevelDto } from './create-stock-level.dto';
+import { IsOptional, IsDateString, IsString, IsNumber, Min } from 'class-validator';
 
-export class UpdateStockLevelDto extends PartialType(CreateStockLevelDto) {}
+export class UpdateStockLevelDto {
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @IsOptional()
+  @IsString()
+  productTypeId?: string;
+
+  @IsOptional()
+  @IsString()
+  stockpileLocationId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  openingStock?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sold?: number;
+
+  @IsOptional()
+  @IsNumber()
+  adjustments?: number;
+
+  @IsOptional()
+  @IsString()
+  adjustmentReason?: string;
+}

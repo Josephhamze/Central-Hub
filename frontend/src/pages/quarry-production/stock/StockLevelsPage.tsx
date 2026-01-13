@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -29,22 +29,28 @@ export function StockLevelsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['stock-levels', dateFilter, productTypeFilter, stockpileLocationFilter],
-    queryFn: () => stockLevelsApi.list({
-      page: 1,
-      limit: 100,
-      dateFrom: dateFilter,
-      dateTo: dateFilter,
-      productTypeId: productTypeFilter || undefined,
-      stockpileLocationId: stockpileLocationFilter || undefined,
-    }),
+    queryFn: async () => {
+      const response = await stockLevelsApi.list({
+        page: 1,
+        limit: 100,
+        dateFrom: dateFilter,
+        dateTo: dateFilter,
+        productTypeId: productTypeFilter || undefined,
+        stockpileLocationId: stockpileLocationFilter || undefined,
+      });
+      return response.data.data;
+    },
   });
 
   const { data: currentStock } = useQuery({
     queryKey: ['stock-levels', 'current', productTypeFilter, stockpileLocationFilter],
-    queryFn: () => stockLevelsApi.getCurrent({
-      productTypeId: productTypeFilter || undefined,
-      stockpileLocationId: stockpileLocationFilter || undefined,
-    }),
+    queryFn: async () => {
+      const response = await stockLevelsApi.getCurrent({
+        productTypeId: productTypeFilter || undefined,
+        stockpileLocationId: stockpileLocationFilter || undefined,
+      });
+      return response.data.data;
+    },
   });
 
   const { data: productTypesData } = useQuery({
@@ -141,12 +147,12 @@ export function StockLevelsPage() {
       </Card>
 
       {/* Current Stock Summary */}
-      {currentStock?.data && currentStock.data.length > 0 && (
+      {currentStock && currentStock.length > 0 && (
         <Card className="mb-6">
           <CardHeader title="Current Stock Summary" />
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {currentStock.data.map((stock) => (
+              {currentStock.map((stock) => (
                 <div key={`${stock.productTypeId}-${stock.stockpileLocationId}`} className="bg-bg-elevated p-4 rounded-lg">
                   <div className="text-sm text-content-secondary mb-1">
                     {stock.productType?.name} - {stock.stockpileLocation?.name}
@@ -182,7 +188,7 @@ export function StockLevelsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data?.data.data.items.map((stock) => (
+                {data?.data.items.map((stock) => (
                   <tr key={stock.id} className="border-b border-border-default hover:bg-bg-hover">
                     <td className="p-4 text-content-primary">{new Date(stock.date).toLocaleDateString()}</td>
                     <td className="p-4 text-content-primary">{stock.productType?.name || 'N/A'}</td>
@@ -219,7 +225,7 @@ export function StockLevelsPage() {
                 ))}
               </tbody>
             </table>
-            {data?.data.data.items.length === 0 && (
+            {data?.data.items.length === 0 && (
               <div className="p-8 text-center text-content-secondary">No stock levels found</div>
             )}
           </div>
