@@ -30,7 +30,7 @@ export function RolesManagementPage() {
     queryFn: async () => rolesApi.findAll(),
   });
 
-  const { data: permissionsData } = useQuery({
+  const { data: permissionsData, refetch: refetchPermissions } = useQuery({
     queryKey: ['permissions'],
     queryFn: async () => rolesApi.getAllPermissions(),
     enabled: isCreateModalOpen || isEditModalOpen,
