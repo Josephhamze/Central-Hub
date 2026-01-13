@@ -208,6 +208,17 @@ export function UsersManagementPage() {
 
       {isLoading ? (
         <div className="text-center py-12 text-content-secondary">Loading...</div>
+      ) : error ? (
+        <Card className="p-12 text-center">
+          <Users className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
+          <h3 className="text-lg font-semibold text-content-primary mb-2">Error loading users</h3>
+          <p className="text-content-secondary mb-4">
+            {(error as any)?.response?.data?.error?.message || (error as any)?.message || 'Failed to load users. Please check your permissions or try again.'}
+          </p>
+          <Button variant="primary" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </Card>
       ) : filteredUsers.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
