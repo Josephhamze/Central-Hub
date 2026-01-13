@@ -98,6 +98,8 @@ export function RolesManagementPage() {
       permissionIds: role.permissions?.map((p) => p.id) || [],
     });
     setIsEditModalOpen(true);
+    // Refetch permissions to ensure we have the latest data
+    refetchPermissions();
   };
 
   const handleUpdate = () => {
@@ -161,7 +163,10 @@ export function RolesManagementPage() {
         canCreate ? (
           <Button
             variant="primary"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setIsCreateModalOpen(true);
+              refetchPermissions();
+            }}
             leftIcon={<Plus className="w-4 h-4" />}
           >
             Create Role
