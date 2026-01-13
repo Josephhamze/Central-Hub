@@ -89,10 +89,11 @@ export class StockLevelsController {
   @Post('recalculate')
   @Permissions('quarry:stock:view')
   recalculateStock(
-    @Body() body: { date: string; productTypeId: string; stockpileLocationId: string },
+    @Body() body: { date: string; projectId: string; productTypeId: string; stockpileLocationId: string },
   ) {
     return this.stockLevelsService.recalculateStock(
       new Date(body.date),
+      body.projectId,
       body.productTypeId,
       body.stockpileLocationId,
     );
