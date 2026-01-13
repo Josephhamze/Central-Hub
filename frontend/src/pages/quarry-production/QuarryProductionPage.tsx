@@ -257,7 +257,7 @@ export function QuarryProductionPage() {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
         <Button
           variant="secondary"
           onClick={() => navigate('/quarry-production/excavator-entries')}
@@ -285,6 +285,20 @@ export function QuarryProductionPage() {
           className="w-full"
         >
           Crusher Output
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/quarry-production/stock')}
+          className="w-full"
+        >
+          Stock Levels
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/quarry-production/stock/history')}
+          className="w-full"
+        >
+          Stock History
         </Button>
       </div>
     </PageContainer>

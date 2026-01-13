@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -8,21 +8,18 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
-import { excavatorEntriesApi, type ExcavatorEntry, type Shift, type EntryStatus } from '@services/quarry-production/entries';
-import { excavatorsApi } from '@services/quarry-production/equipment';
+import { crusherFeedEntriesApi, type CrusherFeedEntry, type Shift, type EntryStatus } from '@services/quarry-production/entries';
+import { crushersApi } from '@services/quarry-production/equipment';
 import { materialTypesApi } from '@services/quarry-production/settings';
-import { pitLocationsApi } from '@services/quarry-production/settings';
-import { usersApi } from '@services/system/users';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
 
-export function ExcavatorEntriesPage() {
+export function CrusherFeedEntriesPage() {
   const navigate = useNavigate();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [shiftFilter, setShiftFilter] = useState<Shift | ''>('');
@@ -32,18 +29,19 @@ export function ExcavatorEntriesPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     shift: 'DAY' as Shift,
-    excavatorId: '',
-    operatorId: '',
+    crusherId: '',
     materialTypeId: '',
-    pitLocationId: '',
-    bucketCount: 0,
-    downtimeHours: undefined as number | undefined,
+    feedStartTime: '',
+    feedEndTime: '',
+    truckLoadsReceived: 0,
+    weighBridgeTonnage: 0,
+    rejectOversizeTonnage: undefined as number | undefined,
     notes: '',
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['excavator-entries', dateFrom, dateTo, shiftFilter, statusFilter],
-    queryFn: () => excavatorEntriesApi.list({
+    queryKey: ['crusher-feed-entries', dateFrom, dateTo, shiftFilter, statusFilter],
+    queryFn: () => crusherFeedEntriesApi.list({
       page: 1,
       limit: 50,
       dateFrom: dateFrom || undefined,
@@ -53,10 +51,9 @@ export function ExcavatorEntriesPage() {
     }),
   });
 
-  // Fetch dropdown data
-  const { data: excavatorsData } = useQuery({
-    queryKey: ['excavators', 'active'],
-    queryFn: () => excavatorsApi.list({ page: 1, limit: 100, status: 'ACTIVE' }),
+  const { data: crushersData } = useQuery({
+    queryKey: ['crushers', 'active'],
+    queryFn: () => crushersApi.list({ page: 1, limit: 100, status: 'ACTIVE' }),
   });
 
   const { data: materialTypesData } = useQuery({
@@ -64,36 +61,27 @@ export function ExcavatorEntriesPage() {
     queryFn: () => materialTypesApi.list({ page: 1, limit: 100, isActive: true }),
   });
 
-  const { data: pitLocationsData } = useQuery({
-    queryKey: ['pit-locations', 'active'],
-    queryFn: () => pitLocationsApi.list({ page: 1, limit: 100, isActive: true }),
-  });
-
-  const { data: usersData } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersApi.findAll(1, 100),
-  });
-
-  const canCreate = hasPermission('quarry:excavator-entries:create');
-  const canUpdate = hasPermission('quarry:excavator-entries:update');
-  const canDelete = hasPermission('quarry:excavator-entries:delete');
-  const canApprove = hasPermission('quarry:excavator-entries:approve');
+  const canCreate = hasPermission('quarry:crusher-feed:create');
+  const canUpdate = hasPermission('quarry:crusher-feed:update');
+  const canDelete = hasPermission('quarry:crusher-feed:delete');
+  const canApprove = hasPermission('quarry:crusher-feed:approve');
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => excavatorEntriesApi.create(data),
+    mutationFn: (data: any) => crusherFeedEntriesApi.create(data),
     onSuccess: () => {
-      success('Excavator entry created successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      success('Crusher feed entry created successfully');
+      queryClient.invalidateQueries({ queryKey: ['crusher-feed-entries'] });
       setIsCreateModalOpen(false);
       setFormData({
         date: new Date().toISOString().split('T')[0],
         shift: 'DAY',
-        excavatorId: '',
-        operatorId: '',
+        crusherId: '',
         materialTypeId: '',
-        pitLocationId: '',
-        bucketCount: 0,
-        downtimeHours: undefined,
+        feedStartTime: '',
+        feedEndTime: '',
+        truckLoadsReceived: 0,
+        weighBridgeTonnage: 0,
+        rejectOversizeTonnage: undefined,
         notes: '',
       });
     },
@@ -101,10 +89,10 @@ export function ExcavatorEntriesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => excavatorEntriesApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => crusherFeedEntriesApi.update(id, data),
     onSuccess: () => {
       success('Entry updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['crusher-feed-entries'] });
       setEditingId(null);
       setIsCreateModalOpen(false);
     },
@@ -112,33 +100,33 @@ export function ExcavatorEntriesPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => excavatorEntriesApi.approve(id),
+    mutationFn: (id: string) => crusherFeedEntriesApi.approve(id),
     onSuccess: () => {
       success('Entry approved successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['crusher-feed-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to approve entry'),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => excavatorEntriesApi.reject(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => crusherFeedEntriesApi.reject(id, reason),
     onSuccess: () => {
       success('Entry rejected');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['crusher-feed-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to reject entry'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => excavatorEntriesApi.delete(id),
+    mutationFn: (id: string) => crusherFeedEntriesApi.delete(id),
     onSuccess: () => {
       success('Entry deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['crusher-feed-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to delete entry'),
   });
 
-  const handleEdit = (entry: ExcavatorEntry) => {
+  const handleEdit = (entry: CrusherFeedEntry) => {
     if (entry.status !== 'PENDING' && entry.status !== 'REJECTED') {
       showError('Can only edit PENDING or REJECTED entries');
       return;
@@ -147,22 +135,29 @@ export function ExcavatorEntriesPage() {
     setFormData({
       date: entry.date,
       shift: entry.shift,
-      excavatorId: entry.excavatorId,
-      operatorId: entry.operatorId,
+      crusherId: entry.crusherId,
       materialTypeId: entry.materialTypeId,
-      pitLocationId: entry.pitLocationId,
-      bucketCount: entry.bucketCount,
-      downtimeHours: entry.downtimeHours,
+      feedStartTime: new Date(entry.feedStartTime).toISOString().slice(0, 16),
+      feedEndTime: new Date(entry.feedEndTime).toISOString().slice(0, 16),
+      truckLoadsReceived: entry.truckLoadsReceived,
+      weighBridgeTonnage: entry.weighBridgeTonnage,
+      rejectOversizeTonnage: entry.rejectOversizeTonnage,
       notes: entry.notes || '',
     });
     setIsCreateModalOpen(true);
   };
 
   const handleSubmit = () => {
+    const submitData = {
+      ...formData,
+      feedStartTime: new Date(formData.feedStartTime).toISOString(),
+      feedEndTime: new Date(formData.feedEndTime).toISOString(),
+      rejectOversizeTonnage: formData.rejectOversizeTonnage || undefined,
+    };
     if (editingId) {
-      updateMutation.mutate({ id: editingId, data: formData });
+      updateMutation.mutate({ id: editingId, data: submitData });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -191,35 +186,41 @@ export function ExcavatorEntriesPage() {
     REJECTED: 'error',
   };
 
-  // Calculate auto-calculated values for display
-  const selectedExcavator = excavatorsData?.data.data.items.find(e => e.id === formData.excavatorId);
-  const selectedMaterial = materialTypesData?.data.data.items.find(m => m.id === formData.materialTypeId);
-  const estimatedVolume = selectedExcavator && formData.bucketCount > 0
-    ? formData.bucketCount * selectedExcavator.bucketCapacity
+  // Calculate feed rate if times are provided
+  const startTime = formData.feedStartTime ? new Date(formData.feedStartTime) : null;
+  const endTime = formData.feedEndTime ? new Date(formData.feedEndTime) : null;
+  const feedDurationHours = startTime && endTime && endTime > startTime
+    ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
     : 0;
-  const estimatedTonnage = selectedMaterial && estimatedVolume > 0
-    ? estimatedVolume * selectedMaterial.density
+  const feedRate = feedDurationHours > 0 && formData.weighBridgeTonnage > 0
+    ? formData.weighBridgeTonnage / feedDurationHours
     : 0;
 
   return (
     <PageContainer
-      title="Excavator Entries"
-      description="Track material extraction from pits"
+      title="Crusher Feed Entries"
+      description="Track material fed into crushers"
       actions={
         canCreate ? (
           <Button
             variant="primary"
             onClick={() => {
               setEditingId(null);
+              const now = new Date();
+              const start = new Date(now);
+              start.setHours(8, 0, 0, 0);
+              const end = new Date(now);
+              end.setHours(17, 0, 0, 0);
               setFormData({
                 date: new Date().toISOString().split('T')[0],
                 shift: 'DAY',
-                excavatorId: '',
-                operatorId: '',
+                crusherId: '',
                 materialTypeId: '',
-                pitLocationId: '',
-                bucketCount: 0,
-                downtimeHours: undefined,
+                feedStartTime: start.toISOString().slice(0, 16),
+                feedEndTime: end.toISOString().slice(0, 16),
+                truckLoadsReceived: 0,
+                weighBridgeTonnage: 0,
+                rejectOversizeTonnage: undefined,
                 notes: '',
               });
               setIsCreateModalOpen(true);
@@ -231,9 +232,8 @@ export function ExcavatorEntriesPage() {
         ) : undefined
       }
     >
-      {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             type="date"
             label="From Date"
@@ -274,7 +274,6 @@ export function ExcavatorEntriesPage() {
         </div>
       </Card>
 
-      {/* Table */}
       <Card>
         {isLoading ? (
           <div className="p-8 text-center text-content-secondary">Loading...</div>
@@ -285,10 +284,10 @@ export function ExcavatorEntriesPage() {
                 <tr className="border-b border-border-default">
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Date</th>
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Shift</th>
-                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Excavator</th>
-                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Operator</th>
+                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Crusher</th>
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Material</th>
                   <th className="text-right p-4 text-sm font-medium text-content-secondary">Tonnage</th>
+                  <th className="text-right p-4 text-sm font-medium text-content-secondary">Feed Rate</th>
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Status</th>
                   <th className="text-right p-4 text-sm font-medium text-content-secondary">Actions</th>
                 </tr>
@@ -298,13 +297,13 @@ export function ExcavatorEntriesPage() {
                   <tr key={entry.id} className="border-b border-border-default hover:bg-bg-hover">
                     <td className="p-4 text-content-primary">{new Date(entry.date).toLocaleDateString()}</td>
                     <td className="p-4 text-content-secondary">{entry.shift}</td>
-                    <td className="p-4 text-content-primary">{entry.excavator?.name || 'N/A'}</td>
-                    <td className="p-4 text-content-primary">
-                      {entry.operator ? `${entry.operator.firstName} ${entry.operator.lastName}` : 'N/A'}
-                    </td>
+                    <td className="p-4 text-content-primary">{entry.crusher?.name || 'N/A'}</td>
                     <td className="p-4 text-content-primary">{entry.materialType?.name || 'N/A'}</td>
                     <td className="p-4 text-right text-content-primary font-medium">
-                      {entry.estimatedTonnage.toFixed(2)} t
+                      {entry.weighBridgeTonnage.toFixed(2)} t
+                    </td>
+                    <td className="p-4 text-right text-content-secondary">
+                      {entry.feedRate ? `${entry.feedRate.toFixed(2)} t/h` : 'N/A'}
                     </td>
                     <td className="p-4">
                       <Badge variant={statusColors[entry.status]}>{entry.status}</Badge>
@@ -314,7 +313,7 @@ export function ExcavatorEntriesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/quarry-production/excavator-entries/${entry.id}`)}
+                          onClick={() => navigate(`/quarry-production/crusher-feed/${entry.id}`)}
                           leftIcon={<Eye className="w-4 h-4" />}
                         >
                           View
@@ -372,14 +371,13 @@ export function ExcavatorEntriesPage() {
         )}
       </Card>
 
-      {/* Create/Edit Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => {
           setIsCreateModalOpen(false);
           setEditingId(null);
         }}
-        title={editingId ? 'Edit Excavator Entry' : 'Create Excavator Entry'}
+        title={editingId ? 'Edit Crusher Feed Entry' : 'Create Crusher Feed Entry'}
         size="lg"
       >
         <div className="space-y-4">
@@ -404,33 +402,17 @@ export function ExcavatorEntriesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Excavator *</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">Crusher *</label>
             <select
-              value={formData.excavatorId}
-              onChange={(e) => setFormData({ ...formData, excavatorId: e.target.value })}
+              value={formData.crusherId}
+              onChange={(e) => setFormData({ ...formData, crusherId: e.target.value })}
               className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
               required
             >
-              <option value="">Select excavator</option>
-              {excavatorsData?.data.data.items.map((excavator) => (
-                <option key={excavator.id} value={excavator.id}>
-                  {excavator.name} ({excavator.bucketCapacity} m³)
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Operator *</label>
-            <select
-              value={formData.operatorId}
-              onChange={(e) => setFormData({ ...formData, operatorId: e.target.value })}
-              className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
-              required
-            >
-              <option value="">Select operator</option>
-              {usersData?.items?.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.firstName} {user.lastName}
+              <option value="">Select crusher</option>
+              {crushersData?.data.data.items.map((crusher) => (
+                <option key={crusher.id} value={crusher.id}>
+                  {crusher.name} ({crusher.type.replace('_', ' ')})
                 </option>
               ))}
             </select>
@@ -446,51 +428,56 @@ export function ExcavatorEntriesPage() {
               <option value="">Select material type</option>
               {materialTypesData?.data.data.items.map((material) => (
                 <option key={material.id} value={material.id}>
-                  {material.name} ({material.density} t/m³)
+                  {material.name}
                 </option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Pit Location *</label>
-            <select
-              value={formData.pitLocationId}
-              onChange={(e) => setFormData({ ...formData, pitLocationId: e.target.value })}
-              className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Feed Start Time"
+              type="datetime-local"
+              value={formData.feedStartTime}
+              onChange={(e) => setFormData({ ...formData, feedStartTime: e.target.value })}
               required
-            >
-              <option value="">Select pit location</option>
-              {pitLocationsData?.data.data.items.map((pit) => (
-                <option key={pit.id} value={pit.id}>
-                  {pit.name}
-                </option>
-              ))}
-            </select>
+            />
+            <Input
+              label="Feed End Time"
+              type="datetime-local"
+              value={formData.feedEndTime}
+              onChange={(e) => setFormData({ ...formData, feedEndTime: e.target.value })}
+              required
+            />
           </div>
           <Input
-            label="Bucket Count"
+            label="Truck Loads Received"
             type="number"
-            value={formData.bucketCount}
-            onChange={(e) => setFormData({ ...formData, bucketCount: parseInt(e.target.value) || 0 })}
+            value={formData.truckLoadsReceived}
+            onChange={(e) => setFormData({ ...formData, truckLoadsReceived: parseInt(e.target.value) || 0 })}
             required
           />
-          {estimatedVolume > 0 && (
+          <Input
+            label="Weigh Bridge Tonnage (source of truth)"
+            type="number"
+            step="0.01"
+            value={formData.weighBridgeTonnage}
+            onChange={(e) => setFormData({ ...formData, weighBridgeTonnage: parseFloat(e.target.value) || 0 })}
+            required
+          />
+          {feedRate > 0 && (
             <div className="bg-bg-elevated p-3 rounded-lg">
               <div className="text-sm text-content-secondary mb-1">Auto-calculated:</div>
               <div className="text-sm text-content-primary">
-                Estimated Volume: <strong>{estimatedVolume.toFixed(2)} m³</strong>
-              </div>
-              <div className="text-sm text-content-primary">
-                Estimated Tonnage: <strong>{estimatedTonnage.toFixed(2)} tonnes</strong>
+                Feed Rate: <strong>{feedRate.toFixed(2)} tonnes/hour</strong>
               </div>
             </div>
           )}
           <Input
-            label="Downtime Hours (optional)"
+            label="Reject/Oversize Tonnage (optional)"
             type="number"
-            step="0.1"
-            value={formData.downtimeHours || ''}
-            onChange={(e) => setFormData({ ...formData, downtimeHours: e.target.value ? parseFloat(e.target.value) : undefined })}
+            step="0.01"
+            value={formData.rejectOversizeTonnage || ''}
+            onChange={(e) => setFormData({ ...formData, rejectOversizeTonnage: e.target.value ? parseFloat(e.target.value) : undefined })}
           />
           <Input
             label="Notes (optional)"

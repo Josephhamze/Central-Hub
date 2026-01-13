@@ -59,6 +59,11 @@ import { PitLocationsPage } from '@pages/quarry-production/settings/PitLocations
 import { ProductTypesPage } from '@pages/quarry-production/settings/ProductTypesPage';
 import { StockpileLocationsPage } from '@pages/quarry-production/settings/StockpileLocationsPage';
 import { ExcavatorEntriesPage } from '@pages/quarry-production/entries/ExcavatorEntriesPage';
+import { HaulingEntriesPage } from '@pages/quarry-production/entries/HaulingEntriesPage';
+import { CrusherFeedEntriesPage } from '@pages/quarry-production/entries/CrusherFeedEntriesPage';
+import { CrusherOutputEntriesPage } from '@pages/quarry-production/entries/CrusherOutputEntriesPage';
+import { StockLevelsPage } from '@pages/quarry-production/stock/StockLevelsPage';
+import { StockHistoryPage } from '@pages/quarry-production/stock/StockHistoryPage';
 
 
 function App() {
@@ -154,6 +159,11 @@ function App() {
         <Route path="quarry-production/settings/product-types" element={<ProductTypesPage />} />
         <Route path="quarry-production/settings/stockpile-locations" element={<StockpileLocationsPage />} />
         <Route path="quarry-production/excavator-entries" element={<ExcavatorEntriesPage />} />
+        <Route path="quarry-production/hauling-entries" element={<HaulingEntriesPage />} />
+        <Route path="quarry-production/crusher-feed" element={<CrusherFeedEntriesPage />} />
+        <Route path="quarry-production/crusher-output" element={<CrusherOutputEntriesPage />} />
+        <Route path="quarry-production/stock" element={<StockLevelsPage />} />
+        <Route path="quarry-production/stock/history" element={<StockHistoryPage />} />
       </Route>
 
       {/* 404 */}

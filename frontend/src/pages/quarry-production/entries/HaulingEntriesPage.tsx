@@ -8,21 +8,19 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
-import { excavatorEntriesApi, type ExcavatorEntry, type Shift, type EntryStatus } from '@services/quarry-production/entries';
-import { excavatorsApi } from '@services/quarry-production/equipment';
-import { materialTypesApi } from '@services/quarry-production/settings';
-import { pitLocationsApi } from '@services/quarry-production/settings';
+import { haulingEntriesApi, type HaulingEntry, type Shift, type EntryStatus } from '@services/quarry-production/entries';
+import { trucksApi } from '@services/quarry-production/equipment';
+import { excavatorEntriesApi } from '@services/quarry-production/entries';
 import { usersApi } from '@services/system/users';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
 
-export function ExcavatorEntriesPage() {
+export function HaulingEntriesPage() {
   const navigate = useNavigate();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [shiftFilter, setShiftFilter] = useState<Shift | ''>('');
@@ -32,18 +30,18 @@ export function ExcavatorEntriesPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     shift: 'DAY' as Shift,
-    excavatorId: '',
-    operatorId: '',
-    materialTypeId: '',
-    pitLocationId: '',
-    bucketCount: 0,
-    downtimeHours: undefined as number | undefined,
+    truckId: '',
+    driverId: '',
+    excavatorEntryId: '',
+    tripCount: 0,
+    avgCycleTime: undefined as number | undefined,
+    fuelConsumption: undefined as number | undefined,
     notes: '',
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['excavator-entries', dateFrom, dateTo, shiftFilter, statusFilter],
-    queryFn: () => excavatorEntriesApi.list({
+    queryKey: ['hauling-entries', dateFrom, dateTo, shiftFilter, statusFilter],
+    queryFn: () => haulingEntriesApi.list({
       page: 1,
       limit: 50,
       dateFrom: dateFrom || undefined,
@@ -53,20 +51,9 @@ export function ExcavatorEntriesPage() {
     }),
   });
 
-  // Fetch dropdown data
-  const { data: excavatorsData } = useQuery({
-    queryKey: ['excavators', 'active'],
-    queryFn: () => excavatorsApi.list({ page: 1, limit: 100, status: 'ACTIVE' }),
-  });
-
-  const { data: materialTypesData } = useQuery({
-    queryKey: ['material-types', 'active'],
-    queryFn: () => materialTypesApi.list({ page: 1, limit: 100, isActive: true }),
-  });
-
-  const { data: pitLocationsData } = useQuery({
-    queryKey: ['pit-locations', 'active'],
-    queryFn: () => pitLocationsApi.list({ page: 1, limit: 100, isActive: true }),
+  const { data: trucksData } = useQuery({
+    queryKey: ['trucks', 'active'],
+    queryFn: () => trucksApi.list({ page: 1, limit: 100, status: 'ACTIVE' }),
   });
 
   const { data: usersData } = useQuery({
@@ -74,26 +61,31 @@ export function ExcavatorEntriesPage() {
     queryFn: () => usersApi.findAll(1, 100),
   });
 
-  const canCreate = hasPermission('quarry:excavator-entries:create');
-  const canUpdate = hasPermission('quarry:excavator-entries:update');
-  const canDelete = hasPermission('quarry:excavator-entries:delete');
-  const canApprove = hasPermission('quarry:excavator-entries:approve');
+  const { data: excavatorEntriesData } = useQuery({
+    queryKey: ['excavator-entries', 'recent'],
+    queryFn: () => excavatorEntriesApi.list({ page: 1, limit: 100, status: 'APPROVED' }),
+  });
+
+  const canCreate = hasPermission('quarry:hauling-entries:create');
+  const canUpdate = hasPermission('quarry:hauling-entries:update');
+  const canDelete = hasPermission('quarry:hauling-entries:delete');
+  const canApprove = hasPermission('quarry:hauling-entries:approve');
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => excavatorEntriesApi.create(data),
+    mutationFn: (data: any) => haulingEntriesApi.create(data),
     onSuccess: () => {
-      success('Excavator entry created successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      success('Hauling entry created successfully');
+      queryClient.invalidateQueries({ queryKey: ['hauling-entries'] });
       setIsCreateModalOpen(false);
       setFormData({
         date: new Date().toISOString().split('T')[0],
         shift: 'DAY',
-        excavatorId: '',
-        operatorId: '',
-        materialTypeId: '',
-        pitLocationId: '',
-        bucketCount: 0,
-        downtimeHours: undefined,
+        truckId: '',
+        driverId: '',
+        excavatorEntryId: '',
+        tripCount: 0,
+        avgCycleTime: undefined,
+        fuelConsumption: undefined,
         notes: '',
       });
     },
@@ -101,10 +93,10 @@ export function ExcavatorEntriesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => excavatorEntriesApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => haulingEntriesApi.update(id, data),
     onSuccess: () => {
       success('Entry updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['hauling-entries'] });
       setEditingId(null);
       setIsCreateModalOpen(false);
     },
@@ -112,33 +104,33 @@ export function ExcavatorEntriesPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => excavatorEntriesApi.approve(id),
+    mutationFn: (id: string) => haulingEntriesApi.approve(id),
     onSuccess: () => {
       success('Entry approved successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['hauling-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to approve entry'),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => excavatorEntriesApi.reject(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => haulingEntriesApi.reject(id, reason),
     onSuccess: () => {
       success('Entry rejected');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['hauling-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to reject entry'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => excavatorEntriesApi.delete(id),
+    mutationFn: (id: string) => haulingEntriesApi.delete(id),
     onSuccess: () => {
       success('Entry deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['excavator-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['hauling-entries'] });
     },
     onError: (err: any) => showError(err.response?.data?.error?.message || 'Failed to delete entry'),
   });
 
-  const handleEdit = (entry: ExcavatorEntry) => {
+  const handleEdit = (entry: HaulingEntry) => {
     if (entry.status !== 'PENDING' && entry.status !== 'REJECTED') {
       showError('Can only edit PENDING or REJECTED entries');
       return;
@@ -147,22 +139,26 @@ export function ExcavatorEntriesPage() {
     setFormData({
       date: entry.date,
       shift: entry.shift,
-      excavatorId: entry.excavatorId,
-      operatorId: entry.operatorId,
-      materialTypeId: entry.materialTypeId,
-      pitLocationId: entry.pitLocationId,
-      bucketCount: entry.bucketCount,
-      downtimeHours: entry.downtimeHours,
+      truckId: entry.truckId,
+      driverId: entry.driverId,
+      excavatorEntryId: entry.excavatorEntryId || '',
+      tripCount: entry.tripCount,
+      avgCycleTime: entry.avgCycleTime,
+      fuelConsumption: entry.fuelConsumption,
       notes: entry.notes || '',
     });
     setIsCreateModalOpen(true);
   };
 
   const handleSubmit = () => {
+    const submitData = {
+      ...formData,
+      excavatorEntryId: formData.excavatorEntryId || undefined,
+    };
     if (editingId) {
-      updateMutation.mutate({ id: editingId, data: formData });
+      updateMutation.mutate({ id: editingId, data: submitData });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -191,20 +187,15 @@ export function ExcavatorEntriesPage() {
     REJECTED: 'error',
   };
 
-  // Calculate auto-calculated values for display
-  const selectedExcavator = excavatorsData?.data.data.items.find(e => e.id === formData.excavatorId);
-  const selectedMaterial = materialTypesData?.data.data.items.find(m => m.id === formData.materialTypeId);
-  const estimatedVolume = selectedExcavator && formData.bucketCount > 0
-    ? formData.bucketCount * selectedExcavator.bucketCapacity
-    : 0;
-  const estimatedTonnage = selectedMaterial && estimatedVolume > 0
-    ? estimatedVolume * selectedMaterial.density
+  const selectedTruck = trucksData?.data.data.items.find(t => t.id === formData.truckId);
+  const estimatedTotalHauled = selectedTruck && formData.tripCount > 0
+    ? formData.tripCount * selectedTruck.loadCapacity
     : 0;
 
   return (
     <PageContainer
-      title="Excavator Entries"
-      description="Track material extraction from pits"
+      title="Hauling Entries"
+      description="Track material transportation from pit to crusher"
       actions={
         canCreate ? (
           <Button
@@ -214,12 +205,12 @@ export function ExcavatorEntriesPage() {
               setFormData({
                 date: new Date().toISOString().split('T')[0],
                 shift: 'DAY',
-                excavatorId: '',
-                operatorId: '',
-                materialTypeId: '',
-                pitLocationId: '',
-                bucketCount: 0,
-                downtimeHours: undefined,
+                truckId: '',
+                driverId: '',
+                excavatorEntryId: '',
+                tripCount: 0,
+                avgCycleTime: undefined,
+                fuelConsumption: undefined,
                 notes: '',
               });
               setIsCreateModalOpen(true);
@@ -231,9 +222,8 @@ export function ExcavatorEntriesPage() {
         ) : undefined
       }
     >
-      {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             type="date"
             label="From Date"
@@ -274,7 +264,6 @@ export function ExcavatorEntriesPage() {
         </div>
       </Card>
 
-      {/* Table */}
       <Card>
         {isLoading ? (
           <div className="p-8 text-center text-content-secondary">Loading...</div>
@@ -285,10 +274,10 @@ export function ExcavatorEntriesPage() {
                 <tr className="border-b border-border-default">
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Date</th>
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Shift</th>
-                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Excavator</th>
-                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Operator</th>
-                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Material</th>
-                  <th className="text-right p-4 text-sm font-medium text-content-secondary">Tonnage</th>
+                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Truck</th>
+                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Driver</th>
+                  <th className="text-left p-4 text-sm font-medium text-content-secondary">Trips</th>
+                  <th className="text-right p-4 text-sm font-medium text-content-secondary">Total Hauled</th>
                   <th className="text-left p-4 text-sm font-medium text-content-secondary">Status</th>
                   <th className="text-right p-4 text-sm font-medium text-content-secondary">Actions</th>
                 </tr>
@@ -298,13 +287,13 @@ export function ExcavatorEntriesPage() {
                   <tr key={entry.id} className="border-b border-border-default hover:bg-bg-hover">
                     <td className="p-4 text-content-primary">{new Date(entry.date).toLocaleDateString()}</td>
                     <td className="p-4 text-content-secondary">{entry.shift}</td>
-                    <td className="p-4 text-content-primary">{entry.excavator?.name || 'N/A'}</td>
+                    <td className="p-4 text-content-primary">{entry.truck?.name || 'N/A'}</td>
                     <td className="p-4 text-content-primary">
-                      {entry.operator ? `${entry.operator.firstName} ${entry.operator.lastName}` : 'N/A'}
+                      {entry.driver ? `${entry.driver.firstName} ${entry.driver.lastName}` : 'N/A'}
                     </td>
-                    <td className="p-4 text-content-primary">{entry.materialType?.name || 'N/A'}</td>
+                    <td className="p-4 text-content-primary">{entry.tripCount}</td>
                     <td className="p-4 text-right text-content-primary font-medium">
-                      {entry.estimatedTonnage.toFixed(2)} t
+                      {entry.totalHauled.toFixed(2)} t
                     </td>
                     <td className="p-4">
                       <Badge variant={statusColors[entry.status]}>{entry.status}</Badge>
@@ -314,7 +303,7 @@ export function ExcavatorEntriesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/quarry-production/excavator-entries/${entry.id}`)}
+                          onClick={() => navigate(`/quarry-production/hauling-entries/${entry.id}`)}
                           leftIcon={<Eye className="w-4 h-4" />}
                         >
                           View
@@ -372,14 +361,13 @@ export function ExcavatorEntriesPage() {
         )}
       </Card>
 
-      {/* Create/Edit Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => {
           setIsCreateModalOpen(false);
           setEditingId(null);
         }}
-        title={editingId ? 'Edit Excavator Entry' : 'Create Excavator Entry'}
+        title={editingId ? 'Edit Hauling Entry' : 'Create Hauling Entry'}
         size="lg"
       >
         <div className="space-y-4">
@@ -404,30 +392,30 @@ export function ExcavatorEntriesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Excavator *</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">Truck *</label>
             <select
-              value={formData.excavatorId}
-              onChange={(e) => setFormData({ ...formData, excavatorId: e.target.value })}
+              value={formData.truckId}
+              onChange={(e) => setFormData({ ...formData, truckId: e.target.value })}
               className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
               required
             >
-              <option value="">Select excavator</option>
-              {excavatorsData?.data.data.items.map((excavator) => (
-                <option key={excavator.id} value={excavator.id}>
-                  {excavator.name} ({excavator.bucketCapacity} m³)
+              <option value="">Select truck</option>
+              {trucksData?.data.data.items.map((truck) => (
+                <option key={truck.id} value={truck.id}>
+                  {truck.name} ({truck.loadCapacity} t)
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Operator *</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">Driver *</label>
             <select
-              value={formData.operatorId}
-              onChange={(e) => setFormData({ ...formData, operatorId: e.target.value })}
+              value={formData.driverId}
+              onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
               className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
               required
             >
-              <option value="">Select operator</option>
+              <option value="">Select driver</option>
               {usersData?.items?.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.firstName} {user.lastName}
@@ -436,61 +424,48 @@ export function ExcavatorEntriesPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Material Type *</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">Source Excavator Entry (optional)</label>
             <select
-              value={formData.materialTypeId}
-              onChange={(e) => setFormData({ ...formData, materialTypeId: e.target.value })}
+              value={formData.excavatorEntryId}
+              onChange={(e) => setFormData({ ...formData, excavatorEntryId: e.target.value })}
               className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
-              required
             >
-              <option value="">Select material type</option>
-              {materialTypesData?.data.data.items.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.name} ({material.density} t/m³)
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">Pit Location *</label>
-            <select
-              value={formData.pitLocationId}
-              onChange={(e) => setFormData({ ...formData, pitLocationId: e.target.value })}
-              className="w-full px-3 py-2 border border-border-default rounded-lg bg-bg-tertiary text-content-primary"
-              required
-            >
-              <option value="">Select pit location</option>
-              {pitLocationsData?.data.data.items.map((pit) => (
-                <option key={pit.id} value={pit.id}>
-                  {pit.name}
+              <option value="">None</option>
+              {excavatorEntriesData?.data.data.items.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {new Date(entry.date).toLocaleDateString()} - {entry.shift} - {entry.estimatedTonnage.toFixed(2)}t
                 </option>
               ))}
             </select>
           </div>
           <Input
-            label="Bucket Count"
+            label="Trip Count"
             type="number"
-            value={formData.bucketCount}
-            onChange={(e) => setFormData({ ...formData, bucketCount: parseInt(e.target.value) || 0 })}
+            value={formData.tripCount}
+            onChange={(e) => setFormData({ ...formData, tripCount: parseInt(e.target.value) || 0 })}
             required
           />
-          {estimatedVolume > 0 && (
+          {estimatedTotalHauled > 0 && (
             <div className="bg-bg-elevated p-3 rounded-lg">
               <div className="text-sm text-content-secondary mb-1">Auto-calculated:</div>
               <div className="text-sm text-content-primary">
-                Estimated Volume: <strong>{estimatedVolume.toFixed(2)} m³</strong>
-              </div>
-              <div className="text-sm text-content-primary">
-                Estimated Tonnage: <strong>{estimatedTonnage.toFixed(2)} tonnes</strong>
+                Total Hauled: <strong>{estimatedTotalHauled.toFixed(2)} tonnes</strong>
               </div>
             </div>
           )}
           <Input
-            label="Downtime Hours (optional)"
+            label="Average Cycle Time (minutes, optional)"
             type="number"
             step="0.1"
-            value={formData.downtimeHours || ''}
-            onChange={(e) => setFormData({ ...formData, downtimeHours: e.target.value ? parseFloat(e.target.value) : undefined })}
+            value={formData.avgCycleTime || ''}
+            onChange={(e) => setFormData({ ...formData, avgCycleTime: e.target.value ? parseFloat(e.target.value) : undefined })}
+          />
+          <Input
+            label="Fuel Consumption (liters, optional)"
+            type="number"
+            step="0.1"
+            value={formData.fuelConsumption || ''}
+            onChange={(e) => setFormData({ ...formData, fuelConsumption: e.target.value ? parseFloat(e.target.value) : undefined })}
           />
           <Input
             label="Notes (optional)"
