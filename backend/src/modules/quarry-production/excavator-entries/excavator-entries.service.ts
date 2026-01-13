@@ -114,9 +114,10 @@ export class ExcavatorEntriesService {
     // Check for duplicate entry
     const existing = await this.prisma.excavatorEntry.findUnique({
       where: {
-        date_shift_excavatorId_operatorId: {
+        date_shift_projectId_excavatorId_operatorId: {
           date: new Date(dto.date),
           shift: dto.shift,
+          projectId: dto.projectId,
           excavatorId: dto.excavatorId,
           operatorId: dto.operatorId,
         },
@@ -138,6 +139,7 @@ export class ExcavatorEntriesService {
       data: {
         date: new Date(dto.date),
         shift: dto.shift,
+        projectId: dto.projectId,
         excavatorId: dto.excavatorId,
         operatorId: dto.operatorId,
         materialTypeId: dto.materialTypeId,

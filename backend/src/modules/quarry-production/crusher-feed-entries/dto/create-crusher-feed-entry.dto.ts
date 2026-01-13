@@ -10,6 +10,10 @@ export class CreateCrusherFeedEntryDto {
 
   @IsString()
   @IsNotEmpty()
+  projectId: string;
+
+  @IsString()
+  @IsNotEmpty()
   crusherId: string;
 
   @IsString()

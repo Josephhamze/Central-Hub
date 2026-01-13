@@ -6,6 +6,10 @@ export class CreateStockLevelDto {
 
   @IsString()
   @IsNotEmpty()
+  projectId: string;
+
+  @IsString()
+  @IsNotEmpty()
   productTypeId: string;
 
   @IsString()

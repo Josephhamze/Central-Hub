@@ -10,6 +10,10 @@ export class CreateHaulingEntryDto {
 
   @IsString()
   @IsNotEmpty()
+  projectId: string;
+
+  @IsString()
+  @IsNotEmpty()
   truckId: string;
 
   @IsString()

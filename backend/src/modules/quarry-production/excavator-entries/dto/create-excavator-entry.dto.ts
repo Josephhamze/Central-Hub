@@ -10,6 +10,10 @@ export class CreateExcavatorEntryDto {
 
   @IsString()
   @IsNotEmpty()
+  projectId: string;
+
+  @IsString()
+  @IsNotEmpty()
   excavatorId: string;
 
   @IsString()

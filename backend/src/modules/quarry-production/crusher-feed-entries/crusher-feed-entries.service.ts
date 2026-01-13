@@ -118,9 +118,10 @@ export class CrusherFeedEntriesService {
     // Check for duplicate entry
     const existing = await this.prisma.crusherFeedEntry.findUnique({
       where: {
-        date_shift_crusherId: {
+        date_shift_projectId_crusherId: {
           date: new Date(dto.date),
           shift: dto.shift,
+          projectId: dto.projectId,
           crusherId: dto.crusherId,
         },
       },

@@ -110,9 +110,10 @@ export class HaulingEntriesService {
     // Check for duplicate entry
     const existing = await this.prisma.haulingEntry.findUnique({
       where: {
-        date_shift_truckId_driverId: {
+        date_shift_projectId_truckId_driverId: {
           date: new Date(dto.date),
           shift: dto.shift,
+          projectId: dto.projectId,
           truckId: dto.truckId,
           driverId: dto.driverId,
         },
