@@ -138,6 +138,7 @@ export class CrusherFeedEntriesService {
       data: {
         date: new Date(dto.date),
         shift: dto.shift,
+        projectId: dto.projectId,
         crusherId: dto.crusherId,
         materialTypeId: dto.materialTypeId,
         feedStartTime,
