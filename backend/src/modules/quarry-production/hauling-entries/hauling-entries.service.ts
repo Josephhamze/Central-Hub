@@ -131,6 +131,7 @@ export class HaulingEntriesService {
       data: {
         date: new Date(dto.date),
         shift: dto.shift,
+        projectId: dto.projectId,
         truckId: dto.truckId,
         driverId: dto.driverId,
         excavatorEntryId: dto.excavatorEntryId || null,
