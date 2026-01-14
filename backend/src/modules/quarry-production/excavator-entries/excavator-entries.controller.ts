@@ -25,7 +25,7 @@ export class ExcavatorEntriesController {
   constructor(private readonly excavatorEntriesService: ExcavatorEntriesService) {}
 
   @Post()
-  @Permissions('quarry:excavator:create')
+  @Permissions('quarry:excavator-entries:create')
   create(
     @Body() createDto: CreateExcavatorEntryDto,
     @CurrentUser('id') userId: string,
@@ -34,7 +34,7 @@ export class ExcavatorEntriesController {
   }
 
   @Get()
-  @Permissions('quarry:excavator:view')
+  @Permissions('quarry:excavator-entries:view')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -58,13 +58,13 @@ export class ExcavatorEntriesController {
   }
 
   @Get(':id')
-  @Permissions('quarry:excavator:view')
+  @Permissions('quarry:excavator-entries:view')
   findOne(@Param('id') id: string) {
     return this.excavatorEntriesService.findOne(id);
   }
 
   @Patch(':id')
-  @Permissions('quarry:excavator:update')
+  @Permissions('quarry:excavator-entries:update')
   update(
     @Param('id') id: string,
     @Body() updateDto: UpdateExcavatorEntryDto,
@@ -74,7 +74,7 @@ export class ExcavatorEntriesController {
   }
 
   @Post(':id/approve')
-  @Permissions('quarry:excavator:approve')
+  @Permissions('quarry:excavator-entries:approve')
   approve(
     @Param('id') id: string,
     @Body() approveDto: ApproveEntryDto,
@@ -84,7 +84,7 @@ export class ExcavatorEntriesController {
   }
 
   @Post(':id/reject')
-  @Permissions('quarry:excavator:approve')
+  @Permissions('quarry:excavator-entries:approve')
   reject(
     @Param('id') id: string,
     @Body() rejectDto: RejectEntryDto,
@@ -94,7 +94,7 @@ export class ExcavatorEntriesController {
   }
 
   @Delete(':id')
-  @Permissions('quarry:excavator:delete')
+  @Permissions('quarry:excavator-entries:delete')
   remove(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,

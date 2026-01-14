@@ -34,7 +34,7 @@ export class HaulingEntriesController {
   }
 
   @Get()
-  @Permissions('quarry:hauling:view')
+  @Permissions('quarry:hauling-entries:view')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -58,13 +58,13 @@ export class HaulingEntriesController {
   }
 
   @Get(':id')
-  @Permissions('quarry:hauling:view')
+  @Permissions('quarry:hauling-entries:view')
   findOne(@Param('id') id: string) {
     return this.haulingEntriesService.findOne(id);
   }
 
   @Patch(':id')
-  @Permissions('quarry:hauling:update')
+  @Permissions('quarry:hauling-entries:update')
   update(
     @Param('id') id: string,
     @Body() updateDto: UpdateHaulingEntryDto,
@@ -74,7 +74,7 @@ export class HaulingEntriesController {
   }
 
   @Post(':id/approve')
-  @Permissions('quarry:hauling:approve')
+  @Permissions('quarry:hauling-entries:approve')
   approve(
     @Param('id') id: string,
     @Body() approveDto: ApproveEntryDto,
@@ -84,7 +84,7 @@ export class HaulingEntriesController {
   }
 
   @Post(':id/reject')
-  @Permissions('quarry:hauling:approve')
+  @Permissions('quarry:hauling-entries:approve')
   reject(
     @Param('id') id: string,
     @Body() rejectDto: RejectEntryDto,
@@ -94,7 +94,7 @@ export class HaulingEntriesController {
   }
 
   @Delete(':id')
-  @Permissions('quarry:hauling:delete')
+  @Permissions('quarry:hauling-entries:delete')
   remove(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
