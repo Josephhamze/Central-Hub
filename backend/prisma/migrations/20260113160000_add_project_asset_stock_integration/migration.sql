@@ -21,13 +21,24 @@ BEGIN
     END IF;
 END $$;
 
--- Now make project_id NOT NULL (only if we have a project, otherwise leave nullable)
--- Note: In production, ensure at least one project exists before running this migration
-ALTER TABLE "excavator_entries" ALTER COLUMN "project_id" SET NOT NULL;
-ALTER TABLE "hauling_entries" ALTER COLUMN "project_id" SET NOT NULL;
-ALTER TABLE "crusher_feed_entries" ALTER COLUMN "project_id" SET NOT NULL;
-ALTER TABLE "crusher_output_entries" ALTER COLUMN "project_id" SET NOT NULL;
-ALTER TABLE "stock_levels" ALTER COLUMN "project_id" SET NOT NULL;
+-- Now make project_id NOT NULL (only if we populated them, otherwise leave nullable for now)
+-- The application will require project_id for new entries going forward
+DO $$
+DECLARE
+    has_data BOOLEAN;
+BEGIN
+    -- Check if we have any entries that need project_id
+    SELECT EXISTS(SELECT 1 FROM "excavator_entries" WHERE "project_id" IS NULL) INTO has_data;
+    
+    IF NOT has_data THEN
+        -- Only set NOT NULL if all rows have project_id populated
+        ALTER TABLE "excavator_entries" ALTER COLUMN "project_id" SET NOT NULL;
+        ALTER TABLE "hauling_entries" ALTER COLUMN "project_id" SET NOT NULL;
+        ALTER TABLE "crusher_feed_entries" ALTER COLUMN "project_id" SET NOT NULL;
+        ALTER TABLE "crusher_output_entries" ALTER COLUMN "project_id" SET NOT NULL;
+        ALTER TABLE "stock_levels" ALTER COLUMN "project_id" SET NOT NULL;
+    END IF;
+END $$;
 
 -- Add assetId to equipment tables (with unique constraint)
 ALTER TABLE "excavators" ADD COLUMN IF NOT EXISTS "asset_id" TEXT;
