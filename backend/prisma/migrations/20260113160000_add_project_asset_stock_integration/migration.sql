@@ -216,7 +216,7 @@ BEGIN
         AND column_name = 'project_id' 
         AND is_nullable = 'NO'
     ) THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexname = 'excavator_entries_date_shift_projectId_excavatorId_operatorId_key') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'excavator_entries_date_shift_projectId_excavatorId_operatorId_key') THEN
             CREATE UNIQUE INDEX "excavator_entries_date_shift_projectId_excavatorId_operatorId_key" 
                 ON "excavator_entries"("date", "shift", "project_id", "excavator_id", "operator_id");
         END IF;
@@ -228,7 +228,7 @@ BEGIN
         AND column_name = 'project_id' 
         AND is_nullable = 'NO'
     ) THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexname = 'hauling_entries_date_shift_projectId_truckId_driverId_key') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'hauling_entries_date_shift_projectId_truckId_driverId_key') THEN
             CREATE UNIQUE INDEX "hauling_entries_date_shift_projectId_truckId_driverId_key" 
                 ON "hauling_entries"("date", "shift", "project_id", "truck_id", "driver_id");
         END IF;
@@ -240,7 +240,7 @@ BEGIN
         AND column_name = 'project_id' 
         AND is_nullable = 'NO'
     ) THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexname = 'crusher_feed_entries_date_shift_projectId_crusherId_key') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'crusher_feed_entries_date_shift_projectId_crusherId_key') THEN
             CREATE UNIQUE INDEX "crusher_feed_entries_date_shift_projectId_crusherId_key" 
                 ON "crusher_feed_entries"("date", "shift", "project_id", "crusher_id");
         END IF;
@@ -252,7 +252,7 @@ BEGIN
         AND column_name = 'project_id' 
         AND is_nullable = 'NO'
     ) THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexname = 'crusher_output_entries_date_shift_projectId_crusherId_productTypeId_stockpileLocationId_key') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'crusher_output_entries_date_shift_projectId_crusherId_productTypeId_stockpileLocationId_key') THEN
             CREATE UNIQUE INDEX "crusher_output_entries_date_shift_projectId_crusherId_productTypeId_stockpileLocationId_key" 
                 ON "crusher_output_entries"("date", "shift", "project_id", "crusher_id", "product_type_id", "stockpile_location_id");
         END IF;
@@ -264,7 +264,7 @@ BEGIN
         AND column_name = 'project_id' 
         AND is_nullable = 'NO'
     ) THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexname = 'stock_levels_date_projectId_productTypeId_stockpileLocationId_key') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'stock_levels_date_projectId_productTypeId_stockpileLocationId_key') THEN
             CREATE UNIQUE INDEX "stock_levels_date_projectId_productTypeId_stockpileLocationId_key" 
                 ON "stock_levels"("date", "project_id", "product_type_id", "stockpile_location_id");
         END IF;
