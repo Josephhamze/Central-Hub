@@ -132,26 +132,30 @@ BEGIN
         END IF;
     END IF;
     
-    -- Add asset foreign keys (nullable, so always safe)
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'excavators_asset_id_fkey') THEN
-        ALTER TABLE "excavators" ADD CONSTRAINT "excavators_asset_id_fkey" 
-            FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    -- Add asset foreign keys (only if assets table exists)
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'assets') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'excavators_asset_id_fkey') THEN
+            ALTER TABLE "excavators" ADD CONSTRAINT "excavators_asset_id_fkey" 
+                FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'trucks_asset_id_fkey') THEN
+            ALTER TABLE "trucks" ADD CONSTRAINT "trucks_asset_id_fkey" 
+                FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'crushers_asset_id_fkey') THEN
+            ALTER TABLE "crushers" ADD CONSTRAINT "crushers_asset_id_fkey" 
+                FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
     END IF;
     
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'trucks_asset_id_fkey') THEN
-        ALTER TABLE "trucks" ADD CONSTRAINT "trucks_asset_id_fkey" 
-            FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'crushers_asset_id_fkey') THEN
-        ALTER TABLE "crushers" ADD CONSTRAINT "crushers_asset_id_fkey" 
-            FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-    END IF;
-    
-    -- Add stock item foreign key (nullable, so always safe)
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'stock_levels_stock_item_id_fkey') THEN
-        ALTER TABLE "stock_levels" ADD CONSTRAINT "stock_levels_stock_item_id_fkey" 
-            FOREIGN KEY ("stock_item_id") REFERENCES "stock_items"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    -- Add stock item foreign key (only if stock_items table exists)
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'stock_items') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'stock_levels_stock_item_id_fkey') THEN
+            ALTER TABLE "stock_levels" ADD CONSTRAINT "stock_levels_stock_item_id_fkey" 
+                FOREIGN KEY ("stock_item_id") REFERENCES "stock_items"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
     END IF;
     
     -- Add QuarrySettings foreign keys (nullable, so always safe)
