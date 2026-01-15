@@ -54,20 +54,19 @@ export function QuotesAdminPage() {
   });
 
   const handleRefresh = () => {
-    // Invalidate and refetch to ensure fresh data from database
-    queryClient.invalidateQueries({ queryKey: ['quotes'] });
-    queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-    refetchQuotes();
-    refetchKPIs();
+    // Invalidate ALL quotes-related queries and force refetch
+    queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+    queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+    queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
   };
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote approved successfully');
       setApproveModalOpen(false);
       setApproveNotes('');
@@ -82,10 +81,10 @@ export function QuotesAdminPage() {
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => quotesApi.reject(id, reason),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote rejected');
       setRejectModalOpen(false);
     },
@@ -96,10 +95,10 @@ export function QuotesAdminPage() {
     mutationFn: ({ id, outcome, lossReasonCategory, reasonNotes }: { id: string; outcome: 'WON' | 'LOST'; lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER'; reasonNotes?: string }) =>
       quotesApi.markOutcome(id, outcome, lossReasonCategory, reasonNotes),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
     },
@@ -108,11 +107,11 @@ export function QuotesAdminPage() {
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => quotesApi.archive(id),
-    onSuccess: (_, id) => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    onSuccess: () => {
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote archived successfully');
     },
     onError: (err: any) => {
@@ -123,11 +122,11 @@ export function QuotesAdminPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => quotesApi.remove(id),
-    onSuccess: (_, id) => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    onSuccess: () => {
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote deleted successfully');
     },
     onError: (err: any) => {
