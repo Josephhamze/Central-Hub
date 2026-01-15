@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { QuarryPlanningController } from './quarry-planning.controller';
 import { QuarryPlanningService } from './quarry-planning.service';
 
