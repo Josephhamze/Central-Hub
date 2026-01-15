@@ -11,12 +11,15 @@ import {
   Warehouse,
   FileText,
   ArrowRight,
+  Settings,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card, CardHeader } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { EmptyState } from '@components/ui/EmptyState';
+import { useAuth } from '@contexts/AuthContext';
+import { PERMISSIONS } from '@config/permissions';
 
 interface StatCardProps {
   title: string;
@@ -65,9 +68,22 @@ function StatCard({ title, value, change, trend, icon: Icon }: StatCardProps) {
   );
 }
 
+interface QuickAccessSection {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  path: string;
+  color: string;
+  permissions?: string[];
+  adminOnly?: boolean;
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
-  
+  const { hasPermission, hasRole } = useAuth();
+
+  const isAdmin = hasRole('Administrator') || hasRole('Admin');
+
   // Placeholder stats for demonstration
   const stats: StatCardProps[] = [
     {
@@ -93,13 +109,14 @@ export function DashboardPage() {
   ];
 
   // Quick access sections matching new navigation
-  const quickAccessSections = [
+  const allQuickAccessSections: QuickAccessSection[] = [
     {
       title: 'Operations & Production',
       description: 'Manage operational activities and production processes',
       icon: Factory,
       path: '/operations-production',
       color: 'bg-blue-500/10 text-blue-500',
+      permissions: [PERMISSIONS.QUOTES_VIEW, PERMISSIONS.LOGISTICS_ROUTES_VIEW],
     },
     {
       title: 'Finance & Reporting',
@@ -107,6 +124,7 @@ export function DashboardPage() {
       icon: Calculator,
       path: '/finance-reporting',
       color: 'bg-green-500/10 text-green-500',
+      permissions: [PERMISSIONS.REPORTING_VIEW_SALES_KPIS],
     },
     {
       title: 'Inventory & Assets',
@@ -114,6 +132,7 @@ export function DashboardPage() {
       icon: Warehouse,
       path: '/inventory-assets',
       color: 'bg-purple-500/10 text-purple-500',
+      permissions: [PERMISSIONS.WAREHOUSES_VIEW, PERMISSIONS.STOCK_VIEW, PERMISSIONS.ASSETS_VIEW],
     },
     {
       title: 'Quotes',
@@ -121,8 +140,26 @@ export function DashboardPage() {
       icon: FileText,
       path: '/sales/quotes',
       color: 'bg-orange-500/10 text-orange-500',
+      permissions: [PERMISSIONS.QUOTES_VIEW],
+    },
+    {
+      title: 'Administration',
+      description: 'Manage users, roles, and system settings',
+      icon: Settings,
+      path: '/administration',
+      color: 'bg-red-500/10 text-red-500',
+      permissions: [PERMISSIONS.USERS_VIEW, PERMISSIONS.ROLES_VIEW],
+      adminOnly: true,
     },
   ];
+
+  // Filter sections based on permissions
+  const quickAccessSections = allQuickAccessSections.filter((section) => {
+    if (isAdmin) return true;
+    if (section.adminOnly) return false;
+    if (!section.permissions || section.permissions.length === 0) return true;
+    return section.permissions.some((p) => hasPermission(p));
+  });
 
   return (
     <PageContainer
@@ -212,36 +249,31 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Module Status */}
-      <Card className="mt-6">
-        <CardHeader
-          title="Module Implementation Status"
-          description="Current state of each module in the system"
-        />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { name: 'Dashboard', status: 'Active', path: '/dashboard' },
-            { name: 'Operations & Production', status: 'Active', path: '/operations-production' },
-            { name: 'Finance & Reporting', status: 'Active', path: '/finance-reporting' },
-            { name: 'Inventory & Assets', status: 'Active', path: '/inventory-assets' },
-            { name: 'Quotes', status: 'Active', path: '/sales/quotes' },
-            { name: 'Administration', status: 'Active', path: '/administration' },
-          ].map((module) => (
-            <div
-              key={module.name}
-              className="p-4 rounded-lg bg-background-secondary border border-border-subtle cursor-pointer hover:border-accent-primary transition-colors"
-              onClick={() => navigate(module.path)}
-            >
-              <p className="text-sm font-medium text-content-primary mb-2">
-                {module.name}
-              </p>
-              <Badge variant="success" size="sm">
-                {module.status}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* Module Status - only show modules user has access to */}
+      {quickAccessSections.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader
+            title="Available Modules"
+            description="Modules you have access to"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {quickAccessSections.map((module) => (
+              <div
+                key={module.path}
+                className="p-4 rounded-lg bg-background-secondary border border-border-subtle cursor-pointer hover:border-accent-primary transition-colors"
+                onClick={() => navigate(module.path)}
+              >
+                <p className="text-sm font-medium text-content-primary mb-2">
+                  {module.title}
+                </p>
+                <Badge variant="success" size="sm">
+                  Active
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </PageContainer>
   );
 }
