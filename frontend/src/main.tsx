@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true, // Refetch when window regains focus to get fresh data
       refetchOnMount: true, // Always refetch on mount to get fresh data from database
       staleTime: 0, // Data is immediately stale, always fetch from database
-      gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (for navigation) - renamed from cacheTime in v5
+      gcTime: 30 * 1000, // Keep unused data in cache for 30 seconds only (reduced from 5 minutes to prevent stale data issues)
     },
     mutations: {
       onError: (error: any) => {

@@ -2,7 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,9 +13,14 @@ import { UpdateThemeDto } from './dto/update-theme.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ThemePreference } from '@prisma/client';
 
+const USER_PROFILE_CACHE_TTL = 60 * 1000; // 1 minute cache for user profiles
+
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async findAll(page = 1, limit = 20) {
     // Convert to numbers since query params come as strings
@@ -118,6 +126,13 @@ export class UsersService {
   }
 
   async getProfile(userId: string) {
+    // Check Redis cache first
+    const cacheKey = `user:profile:${userId}`;
+    const cachedProfile = await this.cacheManager.get(cacheKey);
+    if (cachedProfile) {
+      return cachedProfile;
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -169,7 +184,7 @@ export class UsersService {
       });
     });
 
-    return {
+    const profile = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -178,6 +193,17 @@ export class UsersService {
       roles: Array.from(roles),
       permissions: Array.from(permissions),
     };
+
+    // Cache the profile in Redis
+    await this.cacheManager.set(cacheKey, profile, USER_PROFILE_CACHE_TTL);
+
+    return profile;
+  }
+
+  // Helper method to invalidate user profile cache
+  async invalidateUserProfileCache(userId: string) {
+    const cacheKey = `user:profile:${userId}`;
+    await this.cacheManager.del(cacheKey);
   }
 
   async updateProfile(userId: string, dto: UpdateUserDto) {
@@ -227,6 +253,9 @@ export class UsersService {
       },
     });
 
+    // Invalidate user profile cache
+    await this.invalidateUserProfileCache(userId);
+
     return updated;
   }
 
@@ -250,6 +279,9 @@ export class UsersService {
       },
     });
 
+    // Invalidate user profile cache
+    await this.invalidateUserProfileCache(userId);
+
     return updated;
   }
 
@@ -271,6 +303,9 @@ export class UsersService {
       data: { accountStatus: 'DISABLED', deactivatedAt: new Date(), deactivatedBy: currentUserId },
     });
 
+    // Invalidate user profile cache
+    await this.invalidateUserProfileCache(id);
+
     return { message: 'User deactivated successfully' };
   }
 
@@ -287,6 +322,9 @@ export class UsersService {
       where: { id },
       data: { accountStatus: 'ACTIVE', deactivatedAt: null, deactivatedBy: null },
     });
+
+    // Invalidate user profile cache
+    await this.invalidateUserProfileCache(id);
 
     return { message: 'User activated successfully' };
   }
@@ -321,6 +359,9 @@ export class UsersService {
         })),
       }),
     ]);
+
+    // Invalidate user profile cache since roles changed
+    await this.invalidateUserProfileCache(userId);
 
     return this.findOne(userId);
   }

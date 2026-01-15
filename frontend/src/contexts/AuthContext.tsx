@@ -6,6 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, setAuthToken, clearAuthToken } from '@services/api';
 
 interface User {
@@ -48,6 +49,7 @@ const TOKEN_KEY = 'auth_tokens';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const fetchUser = useCallback(async () => {
     try {
@@ -85,6 +87,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [initAuth]);
 
   const login = async (email: string, password: string) => {
+    // Clear any cached data from previous session
+    queryClient.clear();
+
     const response = await api.post('/auth/login', { email, password });
     const tokens: AuthTokens = response.data.data;
 
@@ -100,6 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastName: string,
     inviteCode: string
   ) => {
+    // Clear any cached data from previous session
+    queryClient.clear();
+
     const response = await api.post('/auth/register', {
       email,
       password,
@@ -126,6 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearAuthToken();
       localStorage.removeItem(TOKEN_KEY);
+      // Clear all cached data to prevent stale data on next login
+      queryClient.clear();
       setUser(null);
     }
   };
