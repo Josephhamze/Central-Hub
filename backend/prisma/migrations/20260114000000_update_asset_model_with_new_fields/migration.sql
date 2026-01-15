@@ -1,6 +1,14 @@
--- CreateEnum
-CREATE TYPE "IndexType" AS ENUM ('HOURS', 'KILOMETERS', 'MILES', 'CYCLES', 'UNITS', 'OTHER');
-CREATE TYPE "AssetLifecycleStatus" AS ENUM ('NEW', 'IN_SERVICE', 'UNDER_MAINTENANCE', 'IDLE', 'RETIRED', 'DISPOSED');
+-- CreateEnum (only if they don't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'IndexType') THEN
+        CREATE TYPE "IndexType" AS ENUM ('HOURS', 'KILOMETERS', 'MILES', 'CYCLES', 'UNITS', 'OTHER');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'AssetLifecycleStatus') THEN
+        CREATE TYPE "AssetLifecycleStatus" AS ENUM ('NEW', 'IN_SERVICE', 'UNDER_MAINTENANCE', 'IDLE', 'RETIRED', 'DISPOSED');
+    END IF;
+END $$;
 
 -- Rename name column to asset_name (only if it exists and is named 'name')
 DO $$
