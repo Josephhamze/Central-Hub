@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await api.get('/users/me');
+      // Add cache-busting parameter to ensure fresh data on login
+      const response = await api.get(`/users/me?_t=${Date.now()}`);
       const userData = response.data.data;
       // Ensure permissions and roles are always arrays
       if (userData) {
