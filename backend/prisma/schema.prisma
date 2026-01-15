@@ -300,6 +300,7 @@ model Company {
   projects       Project[]
   warehouses     Warehouse[]
   quotes         Quote[]
+  assets         Asset[]
   quarrySettings QuarrySettings? @relation("QuarryDefaultCompany")
 
   @@map("companies")
@@ -927,47 +928,123 @@ enum AssetHistoryEventType {
   RETIRED
 }
 
+enum IndexType {
+  HOURS
+  KILOMETERS
+  MILES
+  CYCLES
+  UNITS
+  OTHER
+}
+
+enum AssetLifecycleStatus {
+  NEW
+  IN_SERVICE
+  UNDER_MAINTENANCE
+  IDLE
+  RETIRED
+  DISPOSED
+}
+
 // Asset Registry
 model Asset {
   id                String            @id @default(cuid())
   assetTag          String            @unique @map("asset_tag")
-  name              String
+  
+  // ASSET IDENTITY
+  name              String            @map("asset_name")
   category          String            // Crusher, Truck, Generator, etc.
+  type              String?           // Specific type of asset
+  family            String?           // System generated asset family
   manufacturer      String?
   model             String?
-  serialNumber      String?           @map("serial_number")
-  acquisitionDate   DateTime          @map("acquisition_date")
-  acquisitionCost   Decimal           @map("acquisition_cost") @db.Decimal(12, 2)
-  currentValue      Decimal           @map("current_value") @db.Decimal(12, 2)
-  status            AssetStatus       @default(OPERATIONAL)
-  location          String?           // site / project / warehouse
+  yearModel         Int?              @map("year_model")
+  color             String?
+  
+  // ALLOCATION
+  companyId         String?           @map("company_id")
   projectId         String?           @map("project_id")
+  companyCode       String?           @map("company_code")
+  countryOfRegistration String?       @map("country_of_registration")
+  currentLocation   String?           @map("current_location")
+  parentAssetId     String?           @map("parent_asset_id")
+  
+  // IDENTIFICATION
+  serialNumber      String?           @map("serial_number")
+  chassisNumber     String?           @map("chassis_number")
+  engineNumber      String?           @map("engine_number")
+  registrationNumber String?          @map("registration_number")
+  
+  // FINANCIAL INFORMATION
+  purchaseDate      DateTime?         @map("purchase_date")
+  purchaseValue     Decimal?          @map("purchase_value") @db.Decimal(12, 2)
+  currency          String?           @default("USD")
+  brandNewValue     Decimal?          @map("brand_new_value") @db.Decimal(12, 2)
+  currentMarketValue Decimal?         @map("current_market_value") @db.Decimal(12, 2)
+  residualValue     Decimal?          @map("residual_value") @db.Decimal(12, 2)
+  purchaseOrder     String?           @map("purchase_order")
+  glAccount         String?           @map("gl_account")
+  
+  // LIFECYCLE
+  installDate       DateTime?         @map("install_date")
+  endOfLifeDate     DateTime?         @map("end_of_life_date")
+  disposalDate      DateTime?         @map("disposal_date")
+  assetLifecycleStatus AssetLifecycleStatus? @map("asset_lifecycle_status")
+  
+  // INDEX DETAILS
+  indexType         IndexType?        @map("index_type")
+  currentIndex      Decimal?          @map("current_index") @db.Decimal(12, 2)
+  indexAtPurchase   Decimal?         @map("index_at_purchase") @db.Decimal(12, 2)
+  lastIndexDate     DateTime?         @map("last_index_date")
+  
+  // STATUS
+  status            AssetStatus       @default(OPERATIONAL)
+  statusSince       DateTime?         @map("status_since")
+  availabilityPercent Decimal?       @map("availability_percent") @db.Decimal(5, 2)
+  lastOperator      String?           @map("last_operator")
+  
+  // MAINTENANCE
+  lastMaintenanceDate DateTime?       @map("last_maintenance_date")
+  nextMaintenanceDate DateTime?       @map("next_maintenance_date")
+  maintenanceBudget Decimal?          @map("maintenance_budget") @db.Decimal(12, 2)
+  
+  // Legacy fields (kept for backward compatibility)
+  acquisitionDate   DateTime?         @map("acquisition_date")
+  acquisitionCost   Decimal?          @map("acquisition_cost") @db.Decimal(12, 2)
+  currentValue      Decimal?          @map("current_value") @db.Decimal(12, 2)
+  location          String?           // site / project / warehouse
   warehouseId       String?           @map("warehouse_id")
   assignedTo        String?           @map("assigned_to") // operator or department
   criticality        AssetCriticality  @default(MEDIUM)
   expectedLifeYears Int?              @map("expected_life_years")
   notes             String?
+  
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  project            Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  warehouse          Warehouse?       @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  company           Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  project           Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  warehouse         Warehouse?       @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  parentAsset       Asset?           @relation("AssetHierarchy", fields: [parentAssetId], references: [id], onDelete: SetNull)
+  childAssets       Asset[]          @relation("AssetHierarchy")
   maintenanceSchedules MaintenanceSchedule[]
   workOrders        WorkOrder[]
   history           AssetHistory[]
   depreciationProfile DepreciationProfile?
   depreciationEntries DepreciationEntry[]
   // Quarry Production Relations
-  excavator          Excavator?        @relation("ExcavatorAsset")
-  truck              Truck?            @relation("TruckAsset")
-  crusher            Crusher?          @relation("CrusherAsset")
+  excavator         Excavator?       @relation("ExcavatorAsset")
+  truck             Truck?           @relation("TruckAsset")
+  crusher           Crusher?        @relation("CrusherAsset")
 
   @@index([assetTag])
   @@index([status])
   @@index([category])
   @@index([projectId])
+  @@index([companyId])
   @@index([warehouseId])
+  @@index([parentAssetId])
   @@map("assets")
 }
 

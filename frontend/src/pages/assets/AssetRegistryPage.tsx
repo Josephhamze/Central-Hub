@@ -8,9 +8,10 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
-import { assetsApi, type CreateAssetDto } from '@services/assets/assets';
+import { assetsApi, type CreateAssetDto, type IndexType, type AssetLifecycleStatus } from '@services/assets/assets';
 import { projectsApi } from '@services/sales/projects';
 import { warehousesApi } from '@services/sales/warehouses';
+import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
 
@@ -25,23 +26,30 @@ export function AssetRegistryPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState<CreateAssetDto>({
-    assetTag: '',
-    name: '',
+    // ASSET IDENTITY
+    assetName: '',
     category: '',
+    type: '',
     manufacturer: '',
     model: '',
-    serialNumber: '',
-    acquisitionDate: new Date().toISOString().split('T')[0],
-    acquisitionCost: 0,
-    currentValue: 0,
-    status: 'OPERATIONAL',
-    location: '',
+    // ALLOCATION
+    companyId: '',
     projectId: '',
-    warehouseId: '',
-    assignedTo: '',
-    criticality: 'MEDIUM',
-    expectedLifeYears: undefined,
-    notes: '',
+    companyCode: '',
+    // IDENTIFICATION
+    serialNumber: '',
+    registrationNumber: '',
+    // FINANCIAL INFORMATION
+    purchaseDate: new Date().toISOString().split('T')[0],
+    purchaseValue: 0,
+    currency: 'USD',
+    // LIFECYCLE
+    installDate: new Date().toISOString().split('T')[0],
+    endOfLifeDate: '',
+    // INDEX DETAILS
+    indexType: 'HOURS',
+    // STATUS
+    status: 'OPERATIONAL',
   });
 
   // Check for action=create in URL params
@@ -57,7 +65,15 @@ export function AssetRegistryPage() {
     queryFn: () => assetsApi.findAll(1, 50, search || undefined, statusFilter || undefined),
   });
 
-  // Fetch projects and warehouses for dropdowns
+  // Fetch companies, projects, warehouses, and assets for dropdowns
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const res = await companiesApi.findAll(1, 100);
+      return res.data.data;
+    },
+  });
+
   const { data: projectsData } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
@@ -66,13 +82,12 @@ export function AssetRegistryPage() {
     },
   });
 
-  const { data: warehousesData } = useQuery({
-    queryKey: ['warehouses', formData.projectId],
+  const { data: assetsData } = useQuery({
+    queryKey: ['assets', 'all'],
     queryFn: async () => {
-      const res = await warehousesApi.findAll(undefined, formData.projectId || undefined, 1, 100);
+      const res = await assetsApi.findAll(1, 1000);
       return res.data.data;
     },
-    enabled: !!formData.projectId || true, // Fetch all warehouses if no project selected
   });
 
   const canCreate = hasPermission('assets:create');
@@ -87,23 +102,23 @@ export function AssetRegistryPage() {
       setSearchParams({}); // Clear URL params
       // Reset form
       setFormData({
-        assetTag: '',
-        name: '',
+        assetName: '',
         category: '',
+        type: '',
         manufacturer: '',
         model: '',
-        serialNumber: '',
-        acquisitionDate: new Date().toISOString().split('T')[0],
-        acquisitionCost: 0,
-        currentValue: 0,
-        status: 'OPERATIONAL',
-        location: '',
+        companyId: '',
         projectId: '',
-        warehouseId: '',
-        assignedTo: '',
-        criticality: 'MEDIUM',
-        expectedLifeYears: undefined,
-        notes: '',
+        companyCode: '',
+        serialNumber: '',
+        registrationNumber: '',
+        purchaseDate: new Date().toISOString().split('T')[0],
+        purchaseValue: 0,
+        currency: 'USD',
+        installDate: new Date().toISOString().split('T')[0],
+        endOfLifeDate: '',
+        indexType: 'HOURS',
+        status: 'OPERATIONAL',
       });
     },
     onError: (err: any) => {
@@ -113,33 +128,16 @@ export function AssetRegistryPage() {
 
   const handleCreate = () => {
     // Validate required fields
-    if (!formData.assetTag || !formData.name || !formData.category || !formData.acquisitionDate || formData.acquisitionCost === undefined || formData.currentValue === undefined) {
-      showError('Please fill in all required fields');
+    if (!formData.assetName || !formData.category || !formData.type || !formData.manufacturer || !formData.model || 
+        !formData.companyId || !formData.projectId || !formData.companyCode || 
+        (!formData.serialNumber && !formData.registrationNumber) ||
+        !formData.purchaseDate || !formData.purchaseValue || !formData.currency ||
+        !formData.installDate || !formData.endOfLifeDate || !formData.indexType) {
+      showError('Please fill in all required fields. Note: Either Serial Number or Registration Number is required.');
       return;
     }
 
-    // Prepare data - remove empty strings for optional fields
-    const submitData: CreateAssetDto = {
-      assetTag: formData.assetTag,
-      name: formData.name,
-      category: formData.category,
-      acquisitionDate: formData.acquisitionDate,
-      acquisitionCost: Number(formData.acquisitionCost),
-      currentValue: Number(formData.currentValue),
-      status: formData.status,
-      criticality: formData.criticality,
-      ...(formData.manufacturer && { manufacturer: formData.manufacturer }),
-      ...(formData.model && { model: formData.model }),
-      ...(formData.serialNumber && { serialNumber: formData.serialNumber }),
-      ...(formData.location && { location: formData.location }),
-      ...(formData.projectId && { projectId: formData.projectId }),
-      ...(formData.warehouseId && { warehouseId: formData.warehouseId }),
-      ...(formData.assignedTo && { assignedTo: formData.assignedTo }),
-      ...(formData.expectedLifeYears && { expectedLifeYears: Number(formData.expectedLifeYears) }),
-      ...(formData.notes && { notes: formData.notes }),
-    };
-
-    createMutation.mutate(submitData);
+    createMutation.mutate(formData);
   };
 
   const handleCloseModal = () => {
@@ -308,194 +306,425 @@ export function AssetRegistryPage() {
         description="Add a new asset to the registry"
         size="xl"
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Asset Tag *"
-              value={formData.assetTag}
-              onChange={(e) => setFormData({ ...formData, assetTag: e.target.value })}
-              placeholder="e.g., ASSET-001"
-              required
-            />
-            <Input
-              label="Asset Name *"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Primary Crusher"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Category *"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="e.g., Crusher, Truck, Generator"
-              required
-            />
-            <div>
-              <label className="block text-sm font-medium text-content-primary mb-1">
-                Status *
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-              >
-                <option value="OPERATIONAL">Operational</option>
-                <option value="MAINTENANCE">Maintenance</option>
-                <option value="BROKEN">Broken</option>
-                <option value="RETIRED">Retired</option>
-              </select>
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+          {/* ASSET IDENTITY */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">ASSET IDENTITY</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Asset Name *"
+                value={formData.assetName}
+                onChange={(e) => setFormData({ ...formData, assetName: e.target.value })}
+                placeholder="Enter the clear name of the asset"
+                required
+              />
+              <Input
+                label="Category *"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="Select the main category the asset belongs to"
+                required
+              />
+              <Input
+                label="Type *"
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                placeholder="Select the specific type of asset"
+                required
+              />
+              <Input
+                label="Family"
+                value={formData.family || ''}
+                onChange={(e) => setFormData({ ...formData, family: e.target.value })}
+                placeholder="System generated asset family"
+                disabled
+              />
+              <Input
+                label="Manufacturer *"
+                value={formData.manufacturer}
+                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                placeholder="Enter the manufacturer of the asset"
+                required
+              />
+              <Input
+                label="Model *"
+                value={formData.model}
+                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                placeholder="Enter the model of the asset"
+                required
+              />
+              <Input
+                label="Year Model"
+                type="number"
+                value={formData.yearModel || ''}
+                onChange={(e) => setFormData({ ...formData, yearModel: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the manufacturing year of the asset"
+              />
+              <Input
+                label="Color"
+                value={formData.color || ''}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                placeholder="Enter the primary color of the asset"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Manufacturer"
-              value={formData.manufacturer}
-              onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-              placeholder="Manufacturer name"
-            />
-            <Input
-              label="Model"
-              value={formData.model}
-              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-              placeholder="Model number"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Serial Number"
-              value={formData.serialNumber}
-              onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-              placeholder="Serial number"
-            />
-            <Input
-              label="Acquisition Date *"
-              type="date"
-              value={formData.acquisitionDate}
-              onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Acquisition Cost *"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.acquisitionCost}
-              onChange={(e) => setFormData({ ...formData, acquisitionCost: Number(e.target.value) })}
-              placeholder="0.00"
-              required
-            />
-            <Input
-              label="Current Value *"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.currentValue}
-              onChange={(e) => setFormData({ ...formData, currentValue: Number(e.target.value) })}
-              placeholder="0.00"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Location"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="Physical location"
-            />
-            <div>
-              <label className="block text-sm font-medium text-content-primary mb-1">
-                Criticality
-              </label>
-              <select
-                value={formData.criticality}
-                onChange={(e) => setFormData({ ...formData, criticality: e.target.value as any })}
-                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-content-primary mb-1">
-                Project
-              </label>
-              <select
-                value={formData.projectId}
-                onChange={(e) => setFormData({ ...formData, projectId: e.target.value, warehouseId: '' })}
-                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-              >
-                <option value="">None</option>
-                {projectsData?.items.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-content-primary mb-1">
-                Warehouse
-              </label>
-              <select
-                value={formData.warehouseId}
-                onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
-                disabled={!formData.projectId}
-              >
-                <option value="">None</option>
-                {warehousesData?.items
-                  .filter((w) => !formData.projectId || w.projectId === formData.projectId)
-                  .map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
+          {/* ALLOCATION */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">ALLOCATION</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Company * <span className="text-content-tertiary text-xs">(Select the company that owns this asset)</span>
+                </label>
+                <select
+                  value={formData.companyId}
+                  onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                  required
+                >
+                  <option value="">Select company</option>
+                  {companiesData?.items.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
                     </option>
                   ))}
-              </select>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Project * <span className="text-content-tertiary text-xs">(Select the project the asset is allocated on)</span>
+                </label>
+                <select
+                  value={formData.projectId}
+                  onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                  required
+                >
+                  <option value="">Select project</option>
+                  {projectsData?.items.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Input
+                label="Company Code *"
+                value={formData.companyCode}
+                onChange={(e) => setFormData({ ...formData, companyCode: e.target.value })}
+                placeholder="Enter the internal company code for the owning company"
+                required
+              />
+              <Input
+                label="Country of Registration"
+                value={formData.countryOfRegistration || ''}
+                onChange={(e) => setFormData({ ...formData, countryOfRegistration: e.target.value })}
+                placeholder="Select the country where the asset is legally registered"
+              />
+              <Input
+                label="Current Location"
+                value={formData.currentLocation || ''}
+                onChange={(e) => setFormData({ ...formData, currentLocation: e.target.value })}
+                placeholder="Enter the site or location where the asset is currently based"
+              />
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Parent Asset <span className="text-content-tertiary text-xs">(Select the parent asset if this asset is attached to or part of another)</span>
+                </label>
+                <select
+                  value={formData.parentAssetId || ''}
+                  onChange={(e) => setFormData({ ...formData, parentAssetId: e.target.value || undefined })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                >
+                  <option value="">None</option>
+                  {assetsData?.items.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {asset.assetTag} - {asset.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Assigned To"
-              value={formData.assignedTo}
-              onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              placeholder="Operator or department"
-            />
-            <Input
-              label="Expected Life (Years)"
-              type="number"
-              min="1"
-              value={formData.expectedLifeYears || ''}
-              onChange={(e) => setFormData({ ...formData, expectedLifeYears: e.target.value ? Number(e.target.value) : undefined })}
-              placeholder="Years"
-            />
+          {/* IDENTIFICATION */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">IDENTIFICATION</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Serial Number *"
+                value={formData.serialNumber || ''}
+                onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                placeholder="Enter the manufacturer serial number of the asset"
+                required={!formData.registrationNumber}
+              />
+              <Input
+                label="Registration Number *"
+                value={formData.registrationNumber || ''}
+                onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                placeholder="Enter the legal registration or plate number"
+                required={!formData.serialNumber}
+              />
+              <Input
+                label="Chassis Number"
+                value={formData.chassisNumber || ''}
+                onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value })}
+                placeholder="Enter the chassis or frame identification number"
+              />
+              <Input
+                label="Engine Number"
+                value={formData.engineNumber || ''}
+                onChange={(e) => setFormData({ ...formData, engineNumber: e.target.value })}
+                placeholder="Enter the engine serial number"
+              />
+            </div>
           </div>
 
+          {/* FINANCIAL INFORMATION */}
           <div>
-            <label className="block text-sm font-medium text-content-primary mb-1">
-              Notes
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional notes..."
-              rows={3}
-              className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary resize-none"
-            />
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">FINANCIAL INFORMATION</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Purchase Date *"
+                type="date"
+                value={formData.purchaseDate}
+                onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                required
+              />
+              <Input
+                label="Purchase Value *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.purchaseValue}
+                onChange={(e) => setFormData({ ...formData, purchaseValue: Number(e.target.value) })}
+                placeholder="Enter the purchase cost of the asset"
+                required
+              />
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Currency * <span className="text-content-tertiary text-xs">(Select the currency of the purchase value)</span>
+                </label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                  required
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="XOF">XOF</option>
+                </select>
+              </div>
+              <Input
+                label="Brand New Value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.brandNewValue || ''}
+                onChange={(e) => setFormData({ ...formData, brandNewValue: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the cost to replace this asset with a new one"
+              />
+              <Input
+                label="Current Market Value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.currentMarketValue || ''}
+                onChange={(e) => setFormData({ ...formData, currentMarketValue: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the current estimated resale value"
+              />
+              <Input
+                label="Residual Value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.residualValue || ''}
+                onChange={(e) => setFormData({ ...formData, residualValue: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the expected value of the asset at the end of its life"
+              />
+              <Input
+                label="Purchase Order"
+                value={formData.purchaseOrder || ''}
+                onChange={(e) => setFormData({ ...formData, purchaseOrder: e.target.value })}
+                placeholder="Enter the purchase order reference number"
+              />
+              <Input
+                label="GL Account"
+                value={formData.glAccount || ''}
+                onChange={(e) => setFormData({ ...formData, glAccount: e.target.value })}
+                placeholder="Enter the accounting general ledger account"
+              />
+            </div>
+          </div>
+
+          {/* LIFECYCLE */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">LIFECYCLE</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Install Date *"
+                type="date"
+                value={formData.installDate}
+                onChange={(e) => setFormData({ ...formData, installDate: e.target.value })}
+                required
+              />
+              <Input
+                label="End of Life Date *"
+                type="date"
+                value={formData.endOfLifeDate}
+                onChange={(e) => setFormData({ ...formData, endOfLifeDate: e.target.value })}
+                required
+              />
+              <Input
+                label="Disposal Date"
+                type="date"
+                value={formData.disposalDate || ''}
+                onChange={(e) => setFormData({ ...formData, disposalDate: e.target.value || undefined })}
+              />
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Asset Lifecycle Status <span className="text-content-tertiary text-xs">(Select the current lifecycle phase of the asset)</span>
+                </label>
+                <select
+                  value={formData.assetLifecycleStatus || ''}
+                  onChange={(e) => setFormData({ ...formData, assetLifecycleStatus: e.target.value as AssetLifecycleStatus || undefined })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                >
+                  <option value="">Select status</option>
+                  <option value="NEW">New</option>
+                  <option value="IN_SERVICE">In Service</option>
+                  <option value="UNDER_MAINTENANCE">Under Maintenance</option>
+                  <option value="IDLE">Idle</option>
+                  <option value="RETIRED">Retired</option>
+                  <option value="DISPOSED">Disposed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* INDEX DETAILS */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">Index Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Index Type * <span className="text-content-tertiary text-xs">(Select how usage of the asset is measured)</span>
+                </label>
+                <select
+                  value={formData.indexType}
+                  onChange={(e) => setFormData({ ...formData, indexType: e.target.value as IndexType })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                  required
+                >
+                  <option value="HOURS">Hours</option>
+                  <option value="KILOMETERS">Kilometers</option>
+                  <option value="MILES">Miles</option>
+                  <option value="CYCLES">Cycles</option>
+                  <option value="UNITS">Units</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <Input
+                label="Current Index"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.currentIndex || ''}
+                onChange={(e) => setFormData({ ...formData, currentIndex: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the current usage reading"
+              />
+              <Input
+                label="Index at Purchase"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.indexAtPurchase || ''}
+                onChange={(e) => setFormData({ ...formData, indexAtPurchase: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the usage reading when the asset was purchased"
+              />
+              <Input
+                label="Last Index Date"
+                type="date"
+                value={formData.lastIndexDate || ''}
+                onChange={(e) => setFormData({ ...formData, lastIndexDate: e.target.value || undefined })}
+              />
+            </div>
+          </div>
+
+          {/* STATUS */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">STATUS</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-content-primary mb-1">
+                  Status * <span className="text-content-tertiary text-xs">(Select the current operational state of the asset)</span>
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
+                  required
+                >
+                  <option value="OPERATIONAL">Operational</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="BROKEN">Broken</option>
+                  <option value="RETIRED">Retired</option>
+                </select>
+              </div>
+              <Input
+                label="Status Since"
+                type="date"
+                value={formData.statusSince || ''}
+                onChange={(e) => setFormData({ ...formData, statusSince: e.target.value || undefined })}
+              />
+              <Input
+                label="Availability Percent"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.availabilityPercent || ''}
+                onChange={(e) => setFormData({ ...formData, availabilityPercent: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the percentage of time the asset is available for use"
+              />
+              <Input
+                label="Last Operator"
+                value={formData.lastOperator || ''}
+                onChange={(e) => setFormData({ ...formData, lastOperator: e.target.value })}
+                placeholder="Enter the name or ID of the last person who operated the asset"
+              />
+            </div>
+          </div>
+
+          {/* MAINTENANCE */}
+          <div>
+            <h3 className="text-lg font-semibold text-content-primary mb-4 pb-2 border-b border-border-default">MAINTENANCE</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Last Maintenance Date"
+                type="date"
+                value={formData.lastMaintenanceDate || ''}
+                onChange={(e) => setFormData({ ...formData, lastMaintenanceDate: e.target.value || undefined })}
+              />
+              <Input
+                label="Next Maintenance Date"
+                type="date"
+                value={formData.nextMaintenanceDate || ''}
+                onChange={(e) => setFormData({ ...formData, nextMaintenanceDate: e.target.value || undefined })}
+              />
+              <Input
+                label="Maintenance Budget"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.maintenanceBudget || ''}
+                onChange={(e) => setFormData({ ...formData, maintenanceBudget: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="Enter the planned maintenance budget for this asset"
+              />
+            </div>
           </div>
         </div>
         <ModalFooter>

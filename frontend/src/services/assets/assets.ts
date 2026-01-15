@@ -1,28 +1,70 @@
 import { api } from '../api';
 
+export type IndexType = 'HOURS' | 'KILOMETERS' | 'MILES' | 'CYCLES' | 'UNITS' | 'OTHER';
+export type AssetLifecycleStatus = 'NEW' | 'IN_SERVICE' | 'UNDER_MAINTENANCE' | 'IDLE' | 'RETIRED' | 'DISPOSED';
+export type AssetStatus = 'OPERATIONAL' | 'MAINTENANCE' | 'BROKEN' | 'RETIRED';
+export type AssetCriticality = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export interface Asset {
   id: string;
   assetTag: string;
   name: string;
   category: string;
+  type?: string;
+  family?: string;
   manufacturer?: string;
   model?: string;
-  serialNumber?: string;
-  acquisitionDate: string;
-  acquisitionCost: number;
-  currentValue: number;
-  status: 'OPERATIONAL' | 'MAINTENANCE' | 'BROKEN' | 'RETIRED';
-  location?: string;
+  yearModel?: number;
+  color?: string;
+  companyId?: string;
   projectId?: string;
+  companyCode?: string;
+  countryOfRegistration?: string;
+  currentLocation?: string;
+  parentAssetId?: string;
+  serialNumber?: string;
+  chassisNumber?: string;
+  engineNumber?: string;
+  registrationNumber?: string;
+  purchaseDate?: string;
+  purchaseValue?: number;
+  currency?: string;
+  brandNewValue?: number;
+  currentMarketValue?: number;
+  residualValue?: number;
+  purchaseOrder?: string;
+  glAccount?: string;
+  installDate?: string;
+  endOfLifeDate?: string;
+  disposalDate?: string;
+  assetLifecycleStatus?: AssetLifecycleStatus;
+  indexType?: IndexType;
+  currentIndex?: number;
+  indexAtPurchase?: number;
+  lastIndexDate?: string;
+  status: AssetStatus;
+  statusSince?: string;
+  availabilityPercent?: number;
+  lastOperator?: string;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  maintenanceBudget?: number;
+  // Legacy fields
+  acquisitionDate?: string;
+  acquisitionCost?: number;
+  currentValue?: number;
+  location?: string;
   warehouseId?: string;
   assignedTo?: string;
-  criticality: 'LOW' | 'MEDIUM' | 'HIGH';
+  criticality: AssetCriticality;
   expectedLifeYears?: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  company?: { id: string; name: string };
   project?: { id: string; name: string };
   warehouse?: { id: string; name: string };
+  parentAsset?: { id: string; name: string; assetTag: string };
   _count?: {
     workOrders: number;
     maintenanceSchedules: number;
@@ -30,21 +72,64 @@ export interface Asset {
 }
 
 export interface CreateAssetDto {
-  assetTag: string;
-  name: string;
+  // ASSET IDENTITY
+  assetName: string;
   category: string;
-  manufacturer?: string;
-  model?: string;
+  type: string;
+  family?: string;
+  manufacturer: string;
+  model: string;
+  yearModel?: number;
+  color?: string;
+  // ALLOCATION
+  companyId: string;
+  projectId: string;
+  companyCode: string;
+  countryOfRegistration?: string;
+  currentLocation?: string;
+  parentAssetId?: string;
+  // IDENTIFICATION
   serialNumber?: string;
-  acquisitionDate: string;
-  acquisitionCost: number;
-  currentValue: number;
-  status?: 'OPERATIONAL' | 'MAINTENANCE' | 'BROKEN' | 'RETIRED';
+  chassisNumber?: string;
+  engineNumber?: string;
+  registrationNumber?: string;
+  // FINANCIAL INFORMATION
+  purchaseDate: string;
+  purchaseValue: number;
+  currency: string;
+  brandNewValue?: number;
+  currentMarketValue?: number;
+  residualValue?: number;
+  purchaseOrder?: string;
+  glAccount?: string;
+  // LIFECYCLE
+  installDate: string;
+  endOfLifeDate: string;
+  disposalDate?: string;
+  assetLifecycleStatus?: AssetLifecycleStatus;
+  // INDEX DETAILS
+  indexType: IndexType;
+  currentIndex?: number;
+  indexAtPurchase?: number;
+  lastIndexDate?: string;
+  // STATUS
+  status?: AssetStatus;
+  statusSince?: string;
+  availabilityPercent?: number;
+  lastOperator?: string;
+  // MAINTENANCE
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  maintenanceBudget?: number;
+  // Legacy fields
+  assetTag?: string;
+  acquisitionDate?: string;
+  acquisitionCost?: number;
+  currentValue?: number;
   location?: string;
-  projectId?: string;
   warehouseId?: string;
   assignedTo?: string;
-  criticality?: 'LOW' | 'MEDIUM' | 'HIGH';
+  criticality?: AssetCriticality;
   expectedLifeYears?: number;
   notes?: string;
 }
