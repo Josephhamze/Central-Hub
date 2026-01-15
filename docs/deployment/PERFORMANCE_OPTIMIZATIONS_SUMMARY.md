@@ -13,7 +13,7 @@
 
 ### 3. ✅ Response Caching Headers (Reduced server load)
 - **Added**: Caching middleware to `backend/src/main.ts`
-- **Impact**: 
+- **Impact**:
   - Static assets: 1 year cache
   - API GET responses: 5 minutes cache
   - Reduced server load, faster repeat visits
@@ -27,16 +27,13 @@
   - `createdAt` - for date-based queries and sorting
 - **Impact**: 5-10x faster database queries
 
-### 5. ✅ Redis Caching Setup (Optional)
-- **Added**: `CacheModule` with in-memory cache (works without Redis)
+### 5. ✅ Redis Caching Setup
+- **Added**: `CacheModule` with Redis support
 - **Added**: Cache packages to `package.json`
-- **Impact**: Can enable Redis later for 80-95% faster cached data
-- **Note**: Currently using in-memory cache. To enable Redis:
-  1. Add Redis service in Railway
-  2. Set `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
-  3. Uncomment Redis store in `cache.module.ts`
+- **Impact**: 80-95% faster cached data retrieval
+- **Configuration**: Set `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` environment variables
 
-## Next Steps
+## Deployment Steps
 
 ### 1. Install Dependencies
 ```bash
@@ -50,7 +47,7 @@ cd backend
 pnpm prisma migrate dev --name add_performance_indexes
 ```
 
-### 3. Deploy to Railway
+### 3. Deploy to AWS EC2
 ```bash
 git add .
 git commit -m "perf: Add compression, caching, and database indexes"
@@ -60,7 +57,7 @@ git push origin main
 ### 4. Test Performance
 ```bash
 # Test API response time
-curl -w "Time: %{time_total}s\n" -o /dev/null -s https://api.initiativehub.org/api/v1/health
+curl -w "Time: %{time_total}s\n" -o /dev/null -s https://api.alphapms.app/api/v1/health
 ```
 
 ## Expected Results
@@ -76,7 +73,7 @@ After deployment:
 1. ✅ `backend/package.json` - Added compression and cache-manager
 2. ✅ `backend/src/main.ts` - Added compression and caching headers
 3. ✅ `backend/src/app.module.ts` - Added CacheModule
-4. ✅ `backend/src/common/cache/cache.module.ts` - New cache module
+4. ✅ `backend/src/common/cache/cache.module.ts` - Redis cache module
 5. ✅ `backend/prisma/schema.prisma` - Added database indexes
 6. ✅ `frontend/vite.config.ts` - Added code splitting
 7. ✅ `backend/prisma/migrations/add_performance_indexes.sql` - Migration file

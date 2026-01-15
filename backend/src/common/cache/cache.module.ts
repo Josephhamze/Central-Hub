@@ -3,14 +3,14 @@ import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /**
- * Cache Module - Optional Redis caching
- * 
- * To enable Redis caching:
- * 1. Add Redis service in Railway dashboard
- * 2. Set REDIS_HOST, REDIS_PORT, REDIS_PASSWORD environment variables
- * 3. Uncomment the Redis store configuration below
- * 
- * For now, using in-memory cache (works without Redis)
+ * Cache Module - Redis caching for AWS EC2 deployment
+ *
+ * Required environment variables for Redis:
+ * - REDIS_HOST: Redis server hostname
+ * - REDIS_PORT: Redis server port (default: 6379)
+ * - REDIS_PASSWORD: Redis authentication password
+ *
+ * Falls back to in-memory cache if Redis is not configured.
  */
 @Module({
   imports: [
@@ -18,25 +18,26 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const redisHost = configService.get<string>('REDIS_HOST');
-        const redisPort = configService.get<number>('REDIS_PORT');
+        const redisPort = configService.get<number>('REDIS_PORT', 6379);
         const redisPassword = configService.get<string>('REDIS_PASSWORD');
 
-        // If Redis is configured, use it. Otherwise use in-memory cache
-        if (redisHost && redisPort) {
-          // Uncomment when Redis is available:
-          // const { redisStore } = await import('cache-manager-redis-store');
-          // return {
-          //   store: redisStore,
-          //   host: redisHost,
-          //   port: redisPort,
-          //   password: redisPassword,
-          //   ttl: 300, // 5 minutes default
-          // };
+        // If Redis is configured, use it
+        if (redisHost) {
+          const { redisStore } = await import('cache-manager-redis-yet');
+          return {
+            store: redisStore,
+            socket: {
+              host: redisHost,
+              port: redisPort,
+            },
+            password: redisPassword,
+            ttl: 300 * 1000, // 5 minutes in milliseconds
+          };
         }
 
-        // Default: in-memory cache
+        // Fallback: in-memory cache for local development
         return {
-          ttl: 300, // 5 minutes
+          ttl: 300 * 1000, // 5 minutes
           max: 100, // max items in cache
         };
       },

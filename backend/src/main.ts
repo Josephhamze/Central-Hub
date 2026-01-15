@@ -25,8 +25,8 @@ async function bootstrap() {
     : [
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://initiativehub.org',
-        'https://www.initiativehub.org',
+        'https://alphapms.app',
+        'https://www.alphapms.app',
       ];
 
   app.enableCors({

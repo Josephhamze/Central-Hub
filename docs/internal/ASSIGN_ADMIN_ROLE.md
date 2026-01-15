@@ -4,20 +4,20 @@
 
 I've created a script to assign the Administrator role (which has ALL permissions) to your account.
 
-### On Railway Backend:
+### On AWS EC2 Backend:
 
-1. Go to your Railway backend service
-2. Open the terminal/console
+1. SSH into your EC2 instance
+2. Navigate to the backend directory
 3. Run:
    ```bash
-   pnpm ts-node scripts/assign-admin-to-user.ts jj@efertongroup.com
+   docker-compose exec backend pnpm ts-node scripts/assign-admin-to-user.ts your-email@example.com
    ```
 
 ### Locally:
 
 ```bash
 cd backend
-pnpm ts-node scripts/assign-admin-to-user.ts jj@efertongroup.com
+pnpm ts-node scripts/assign-admin-to-user.ts your-email@example.com
 ```
 
 ## What This Does:
@@ -39,7 +39,7 @@ If you prefer to do it manually via SQL:
 
 ```sql
 -- Get your user ID
-SELECT id, email FROM users WHERE email = 'jj@efertongroup.com';
+SELECT id, email FROM users WHERE email = 'your-email@example.com';
 
 -- Get Administrator role ID
 SELECT id, name FROM roles WHERE name = 'Administrator';

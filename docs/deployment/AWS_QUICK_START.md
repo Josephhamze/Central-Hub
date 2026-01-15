@@ -1,12 +1,10 @@
-# AWS Migration - Quick Start
+# AWS EC2 Deployment - Quick Start
 
 ## Files Created
 
-✅ **`backend/apprunner.yaml`** - App Runner configuration
+✅ **`backend/apprunner.yaml`** - App Runner configuration (optional)
+✅ **`docker-compose.yml`** - Docker Compose for EC2 deployment
 ✅ **`AWS_MIGRATION_GUIDE.md`** - Complete step-by-step guide
-✅ **`scripts/migrate-database.sh`** - Database migration script
-✅ **`.github/workflows/deploy-backend.yml`** - Backend auto-deploy
-✅ **`.github/workflows/deploy-frontend.yml`** - Frontend auto-deploy
 
 ## Quick Start Checklist
 
@@ -16,43 +14,49 @@
 - [ ] AWS CLI configured (`aws configure`)
 - [ ] Get your AWS Account ID: `aws sts get-caller-identity --query Account --output text`
 
-### 2. Database Setup (30 minutes)
-- [ ] Create RDS PostgreSQL instance (see Phase 1 in guide)
-- [ ] Export data from Railway: `./scripts/migrate-database.sh`
-- [ ] Import to RDS (script will do this)
+### 2. EC2 Instance Setup (20 minutes)
+- [ ] Launch EC2 instance (t3.medium or larger recommended)
+- [ ] Configure security groups (ports 80, 443, 22)
+- [ ] Install Docker and Docker Compose
+- [ ] Clone repository to EC2
 
-### 3. Secrets Setup (10 minutes)
-- [ ] Create secrets in AWS Secrets Manager:
-  - `ocp-database-url`
-  - `ocp-jwt-secret`
-  - `ocp-jwt-refresh-secret`
-- [ ] Get secret ARNs
-- [ ] Update `backend/apprunner.yaml` with ARNs (replace REGION and ACCOUNT_ID)
+### 3. Database Setup (15 minutes)
+- [ ] PostgreSQL 15.5 via Docker Compose (included)
+- [ ] Or use RDS PostgreSQL 15.5 for production
+- [ ] Run migrations: `docker-compose exec backend pnpm prisma migrate deploy`
 
-### 4. Backend Deployment (20 minutes)
-- [ ] Create App Runner service (connect to GitHub)
-- [ ] Wait for first deployment
-- [ ] Test: `curl https://YOUR_URL/api/v1/health`
+### 4. Redis Setup (included in Docker Compose)
+- [ ] Redis 7 runs automatically with Docker Compose
+- [ ] Configure `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
 
-### 5. Frontend Deployment (30 minutes)
-- [ ] Create S3 bucket: `ocp-frontend`
-- [ ] Request SSL certificate in ACM
-- [ ] Create CloudFront distribution
-- [ ] Build and upload: See Phase 4 in guide
+### 5. Deploy with Docker Compose (10 minutes)
+```bash
+# Copy environment file
+cp .env.example .env
+# Update with production values
+
+# Start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+```
 
 ### 6. DNS Setup (5 minutes + wait for propagation)
-- [ ] Point `initiativehub.org` → CloudFront
-- [ ] Point `api.initiativehub.org` → App Runner
+- [ ] Point `alphapms.app` → EC2 public IP (or Load Balancer)
+- [ ] Point `api.alphapms.app` → EC2 public IP (or Load Balancer)
+- [ ] Configure SSL with Let's Encrypt or AWS ACM
 
-### 7. GitHub Actions (5 minutes)
-- [ ] Add secrets to GitHub:
-  - `AWS_ACCESS_KEY_ID`
-  - `AWS_SECRET_ACCESS_KEY`
-  - `AWS_REGION`
-  - `VITE_API_URL`
-  - `CLOUDFRONT_DISTRIBUTION_ID`
+### 7. Verify Deployment
+```bash
+# Test health endpoint
+curl https://api.alphapms.app/api/v1/health
 
-## Estimated Time: 2-3 hours total
+# Test frontend
+curl https://alphapms.app
+```
+
+## Estimated Time: 1-2 hours total
 
 ## Need Help?
 
@@ -60,4 +64,4 @@ See `AWS_MIGRATION_GUIDE.md` for detailed instructions for each step.
 
 ## Cost Estimate
 
-~$42-91/month (similar to Railway)
+~$30-80/month depending on EC2 instance size

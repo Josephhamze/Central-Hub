@@ -1,305 +1,310 @@
-# AWS Migration Guide - Step by Step
+# AWS EC2 Deployment Guide - Step by Step
 
-This guide will walk you through migrating your application from Railway to AWS.
+This guide will walk you through deploying your application to AWS EC2 with Docker Compose.
 
 ## Prerequisites
 
 - AWS Account with billing enabled
 - AWS CLI installed and configured (`aws configure`)
-- Access to Railway dashboard (for database export)
 - Domain DNS access (for Route 53 or external DNS)
+- SSH key pair for EC2 access
 
 ---
 
-## Phase 1: Setup RDS PostgreSQL Database (Day 1)
+## Phase 1: Setup EC2 Instance
 
-### Step 1.1: Create RDS PostgreSQL Instance
+### Step 1.1: Launch EC2 Instance
 
 **Via AWS Console:**
-1. Go to AWS Console → RDS → Databases
-2. Click "Create database"
-3. Choose:
-   - **Engine**: PostgreSQL
-   - **Version**: PostgreSQL 16
-   - **Template**: Free tier (or Production if needed)
-   - **DB instance identifier**: `ocp-postgres`
-   - **Master username**: `ocp_admin` (or your choice)
-   - **Master password**: Create a strong password (save it!)
-   - **DB instance class**: `db.t3.micro` (free tier) or `db.t3.small` (production)
-   - **Storage**: 20 GB (gp3)
-   - **VPC**: Default VPC (or create new)
-   - **Public access**: Yes (for App Runner to connect)
-   - **Security group**: Create new (we'll configure it)
-4. Click "Create database"
-5. Wait 5-10 minutes for creation
+1. Go to AWS Console → EC2 → Launch Instance
+2. Choose:
+   - **Name**: `alphapms-server`
+   - **AMI**: Amazon Linux 2023 or Ubuntu 22.04
+   - **Instance type**: `t3.medium` (or larger for production)
+   - **Key pair**: Create or select existing
+   - **Network settings**:
+     - Allow SSH (port 22)
+     - Allow HTTP (port 80)
+     - Allow HTTPS (port 443)
+   - **Storage**: 30 GB gp3
+3. Click "Launch instance"
 
-**Via AWS CLI:**
+### Step 1.2: Connect to EC2 Instance
+
 ```bash
-aws rds create-db-instance \
-  --db-instance-identifier ocp-postgres \
-  --db-instance-class db.t3.micro \
-  --engine postgres \
-  --engine-version 16.1 \
-  --master-username ocp_admin \
-  --master-user-password 'YOUR_SECURE_PASSWORD' \
-  --allocated-storage 20 \
-  --storage-type gp3 \
-  --publicly-accessible \
-  --backup-retention-period 7 \
-  --no-multi-az
+# Connect via SSH
+ssh -i your-key.pem ec2-user@YOUR_EC2_PUBLIC_IP
+
+# Or for Ubuntu
+ssh -i your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 ```
 
-### Step 1.2: Configure Security Group
-
-1. Go to RDS → Your database → Connectivity & security
-2. Click on the Security group
-3. Click "Edit inbound rules"
-4. Add rule:
-   - **Type**: PostgreSQL
-   - **Port**: 5432
-   - **Source**: Custom (0.0.0.0/0) - or restrict to App Runner IPs later
-5. Save rules
-
-### Step 1.3: Get Database Connection String
-
-1. Go to RDS → Your database → Connectivity & security
-2. Copy the **Endpoint** (e.g., `ocp-postgres.xxxxx.us-east-1.rds.amazonaws.com`)
-3. Connection string format:
-   ```
-   postgresql://ocp_admin:YOUR_PASSWORD@ocp-postgres.xxxxx.us-east-1.rds.amazonaws.com:5432/postgres?schema=public
-   ```
-
-### Step 1.4: Export Data from Railway
+### Step 1.3: Install Docker and Docker Compose
 
 ```bash
-# Get Railway database URL from Railway dashboard
-# Then export:
-pg_dump $RAILWAY_DATABASE_URL > railway_backup.sql
+# For Amazon Linux 2023
+sudo yum update -y
+sudo yum install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -a -G docker ec2-user
 
-# Or if you have Railway CLI:
-railway connect postgres
-pg_dump > railway_backup.sql
-```
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
-### Step 1.5: Import Data to RDS
-
-```bash
-# Import to RDS
-psql "postgresql://ocp_admin:YOUR_PASSWORD@ocp-postgres.xxxxx.us-east-1.rds.amazonaws.com:5432/postgres" < railway_backup.sql
+# Verify installation
+docker --version
+docker-compose --version
 ```
 
 ---
 
-## Phase 2: Setup AWS Secrets Manager (Day 1)
+## Phase 2: Deploy Application
 
-### Step 2.1: Create Secrets
+### Step 2.1: Clone Repository
 
-**Via AWS Console:**
-1. Go to AWS Secrets Manager
-2. Click "Store a new secret"
-3. Create these secrets:
-
-**Secret 1: Database URL**
-- Secret type: Other type of secret
-- Key/value:
-  - Key: `DATABASE_URL`
-  - Value: `postgresql://ocp_admin:PASSWORD@ocp-postgres.xxxxx.us-east-1.rds.amazonaws.com:5432/postgres?schema=public`
-- Secret name: `ocp-database-url`
-- Click "Store"
-
-**Secret 2: JWT Secret**
-- Secret type: Other type of secret
-- Key/value:
-  - Key: `JWT_SECRET`
-  - Value: `your-jwt-secret-here` (use a strong random string)
-- Secret name: `ocp-jwt-secret`
-- Click "Store"
-
-**Secret 3: JWT Refresh Secret**
-- Secret type: Other type of secret
-- Key/value:
-  - Key: `JWT_REFRESH_SECRET`
-  - Value: `your-jwt-refresh-secret-here` (use a strong random string)
-- Secret name: `ocp-jwt-refresh-secret`
-- Click "Store"
-
-**Via AWS CLI:**
 ```bash
-# Database URL
-aws secretsmanager create-secret \
-  --name ocp-database-url \
-  --secret-string '{"DATABASE_URL":"postgresql://ocp_admin:PASSWORD@ocp-postgres.xxxxx.us-east-1.rds.amazonaws.com:5432/postgres?schema=public"}'
-
-# JWT Secret
-aws secretsmanager create-secret \
-  --name ocp-jwt-secret \
-  --secret-string '{"JWT_SECRET":"your-jwt-secret-here"}'
-
-# JWT Refresh Secret
-aws secretsmanager create-secret \
-  --name ocp-jwt-refresh-secret \
-  --secret-string '{"JWT_REFRESH_SECRET":"your-jwt-refresh-secret-here"}'
+cd ~
+git clone https://github.com/your-org/your-repo.git app
+cd app
 ```
 
-### Step 2.2: Get Secret ARNs
-
-1. Go to each secret in Secrets Manager
-2. Copy the **ARN** (e.g., `arn:aws:secretsmanager:us-east-1:123456789:secret:ocp-database-url-xxxxx`)
-3. Update `backend/apprunner.yaml` with these ARNs (replace `REGION` and `ACCOUNT_ID`)
-
----
-
-## Phase 3: Setup AWS App Runner for Backend (Day 2)
-
-### Step 3.1: Update apprunner.yaml
-
-1. Open `backend/apprunner.yaml`
-2. Replace `REGION` with your AWS region (e.g., `us-east-1`)
-3. Replace `ACCOUNT_ID` with your AWS account ID
-4. Get your account ID:
-   ```bash
-   aws sts get-caller-identity --query Account --output text
-   ```
-
-### Step 3.2: Create App Runner Service
-
-**Via AWS Console:**
-1. Go to AWS App Runner
-2. Click "Create service"
-3. Choose "Source code repository"
-4. Connect to GitHub:
-   - Click "Add new"
-   - Authorize AWS App Runner
-   - Select your repository
-   - Branch: `main`
-   - Deployment trigger: Automatic
-5. Configure build:
-   - Build type: Use a configuration file
-   - Configuration file: `backend/apprunner.yaml`
-6. Configure service:
-   - Service name: `ocp-backend`
-   - Virtual CPU: 1 vCPU
-   - Memory: 2 GB
-   - Port: 3000
-   - Environment variables: (already in apprunner.yaml)
-7. Click "Create & deploy"
-8. Wait 5-10 minutes for first deployment
-
-### Step 3.3: Get App Runner Service URL
-
-1. Go to App Runner → Your service
-2. Copy the **Service URL** (e.g., `https://xxxxx.us-east-1.awsapprunner.com`)
-3. This will be your backend API URL
-
-### Step 3.4: Test Backend
+### Step 2.2: Configure Environment
 
 ```bash
-# Health check
-curl https://YOUR_APP_RUNNER_URL/api/v1/health
+# Copy environment template
+cp .env.example .env
+
+# Edit with production values
+nano .env
+```
+
+Update these values in `.env`:
+```env
+# PostgreSQL
+POSTGRES_USER=alphapms_user
+POSTGRES_PASSWORD=YOUR_SECURE_PASSWORD
+POSTGRES_DB=alphapms_database
+
+# Redis
+REDIS_PASSWORD=YOUR_SECURE_REDIS_PASSWORD
+
+# JWT (use strong random strings)
+JWT_SECRET=your-production-jwt-secret
+JWT_REFRESH_SECRET=your-production-refresh-secret
+
+# Frontend API URL
+VITE_API_URL=https://api.alphapms.app/api/v1
+```
+
+### Step 2.3: Start Services
+
+```bash
+# Build and start all services
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f backend
+```
+
+### Step 2.4: Run Database Migrations
+
+```bash
+# Run migrations
+docker-compose exec backend pnpm prisma migrate deploy
+
+# Seed database (optional, for initial data)
+docker-compose exec backend pnpm prisma db seed
+```
+
+### Step 2.5: Test Deployment
+
+```bash
+# Test backend health
+curl http://localhost:3000/api/v1/health
 
 # Should return: {"status":"ok"}
 ```
 
 ---
 
-## Phase 4: Setup S3 + CloudFront for Frontend (Day 3)
+## Phase 3: Setup SSL with Let's Encrypt
 
-### Step 4.1: Create S3 Bucket
+### Step 3.1: Install Certbot
 
-**Via AWS Console:**
-1. Go to S3 → Create bucket
-2. Bucket name: `ocp-frontend` (must be globally unique)
-3. Region: Same as your backend
-4. Block Public Access: Uncheck "Block all public access" (we'll use CloudFront)
-5. Click "Create bucket"
-
-**Via AWS CLI:**
 ```bash
-aws s3 mb s3://ocp-frontend --region us-east-1
+# For Amazon Linux 2023
+sudo yum install certbot python3-certbot-nginx -y
 ```
 
-### Step 4.2: Request SSL Certificate
+### Step 3.2: Configure Nginx as Reverse Proxy
 
-1. Go to AWS Certificate Manager (ACM)
-2. Request certificate
-3. Domain name: `initiativehub.org`
-4. Additional names: `*.initiativehub.org` (for subdomains)
-5. Validation: DNS validation
-6. Click "Request"
-7. Follow DNS validation instructions (add CNAME records to your domain)
+Create `/etc/nginx/conf.d/alphapms.conf`:
+```nginx
+server {
+    listen 80;
+    server_name alphapms.app www.alphapms.app;
 
-### Step 4.3: Create CloudFront Distribution
+    location / {
+        proxy_pass http://localhost:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
 
-1. Go to CloudFront → Create distribution
-2. Origin:
-   - Origin domain: Select your S3 bucket (`ocp-frontend.s3.us-east-1.amazonaws.com`)
-   - Origin access: Origin access control settings (recommended)
-3. Default cache behavior:
-   - Viewer protocol policy: Redirect HTTP to HTTPS
-   - Allowed HTTP methods: GET, HEAD, OPTIONS
-   - Cache policy: CachingOptimized
-4. Settings:
-   - Alternate domain names (CNAMEs): `initiativehub.org`, `www.initiativehub.org`
-   - SSL certificate: Select your ACM certificate
-   - Default root object: `index.html`
-   - Custom error responses:
-     - 403 → 200 → `/index.html` (for React Router)
-     - 404 → 200 → `/index.html`
-5. Click "Create distribution"
-6. Wait 10-15 minutes for deployment
+server {
+    listen 80;
+    server_name api.alphapms.app;
 
-### Step 4.4: Build and Upload Frontend
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### Step 3.3: Obtain SSL Certificates
 
 ```bash
-cd frontend
+# Get certificates
+sudo certbot --nginx -d alphapms.app -d www.alphapms.app -d api.alphapms.app
 
-# Build with new API URL
-VITE_API_URL=https://YOUR_APP_RUNNER_URL/api/v1 pnpm build
-
-# Upload to S3
-aws s3 sync dist/ s3://ocp-frontend/ --delete
-
-# Invalidate CloudFront cache
-aws cloudfront create-invalidation \
-  --distribution-id YOUR_DISTRIBUTION_ID \
-  --paths "/*"
+# Test auto-renewal
+sudo certbot renew --dry-run
 ```
 
 ---
 
-## Phase 5: Setup DNS (Day 4)
+## Phase 4: Setup DNS
 
-### Step 5.1: Update DNS Records
+### Step 4.1: Update DNS Records
 
-**For Frontend (initiativehub.org):**
-- Type: CNAME
+**For Frontend (alphapms.app):**
+- Type: A
 - Name: @ (or leave blank)
-- Value: Your CloudFront distribution domain (e.g., `d1234567890.cloudfront.net`)
+- Value: Your EC2 public IP
 
-**For Backend API (api.initiativehub.org):**
+**For WWW (www.alphapms.app):**
 - Type: CNAME
+- Name: www
+- Value: alphapms.app
+
+**For Backend API (api.alphapms.app):**
+- Type: A
 - Name: api
-- Value: Your App Runner service URL (e.g., `xxxxx.us-east-1.awsapprunner.com`)
+- Value: Your EC2 public IP
 
 **Wait for DNS propagation** (can take up to 48 hours, usually 1-2 hours)
+
+---
+
+## Phase 5: Production Optimizations
+
+### Step 5.1: Setup Elastic IP
+
+1. Go to EC2 → Elastic IPs
+2. Allocate new address
+3. Associate with your instance
+4. Update DNS records with Elastic IP
+
+### Step 5.2: Configure Auto-Start on Boot
+
+```bash
+# Enable Docker to start on boot
+sudo systemctl enable docker
+
+# Create systemd service for docker-compose
+sudo nano /etc/systemd/system/alphapms.service
+```
+
+Add:
+```ini
+[Unit]
+Description=AlphaPMS Docker Compose
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ec2-user/app
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable:
+```bash
+sudo systemctl enable alphapms
+```
+
+### Step 5.3: Setup Automated Backups
+
+```bash
+# Create backup script
+nano ~/backup-db.sh
+```
+
+```bash
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+docker-compose exec -T postgres pg_dump -U alphapms_user alphapms_database > ~/backups/db_$DATE.sql
+# Upload to S3 (optional)
+# aws s3 cp ~/backups/db_$DATE.sql s3://your-backup-bucket/
+```
 
 ---
 
 ## Cost Estimate
 
 **Monthly Costs (Approximate):**
-- RDS PostgreSQL (db.t3.micro): ~$15-25/month
-- App Runner (1 vCPU, 2GB): ~$25-60/month
-- S3 Storage: ~$0.50/month
-- CloudFront: ~$1-5/month
-- Secrets Manager: ~$0.40/month
-- **Total: ~$42-91/month**
+- EC2 t3.medium: ~$30/month
+- EBS Storage (30GB): ~$3/month
+- Elastic IP: ~$4/month (if not attached to running instance)
+- Data Transfer: ~$5-10/month
+- **Total: ~$40-50/month**
+
+---
+
+## Troubleshooting
+
+### View Logs
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f postgres
+docker-compose logs -f redis
+```
+
+### Restart Services
+```bash
+docker-compose restart
+
+# Or specific service
+docker-compose restart backend
+```
+
+### Database Access
+```bash
+# Connect to PostgreSQL
+docker-compose exec postgres psql -U alphapms_user -d alphapms_database
+```
 
 ---
 
 ## Next Steps
 
-1. Set up GitHub Actions for auto-deployment (see `.github/workflows/` files)
-2. Configure automated backups for RDS
+1. Set up monitoring (CloudWatch or external service)
+2. Configure automated deployments with GitHub Actions
 3. Set up staging environment
-4. Configure custom domain for App Runner (if needed)
+4. Configure RDS for managed database (optional)
