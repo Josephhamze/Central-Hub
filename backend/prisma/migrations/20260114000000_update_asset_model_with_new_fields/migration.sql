@@ -1,10 +1,22 @@
 -- CreateEnum (only if they don't exist)
 DO $$
 BEGIN
+    -- Create AssetStatus enum if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'AssetStatus') THEN
+        CREATE TYPE "AssetStatus" AS ENUM ('OPERATIONAL', 'MAINTENANCE', 'BROKEN', 'RETIRED');
+    END IF;
+    
+    -- Create AssetCriticality enum if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'AssetCriticality') THEN
+        CREATE TYPE "AssetCriticality" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
+    END IF;
+    
+    -- Create IndexType enum if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'IndexType') THEN
         CREATE TYPE "IndexType" AS ENUM ('HOURS', 'KILOMETERS', 'MILES', 'CYCLES', 'UNITS', 'OTHER');
     END IF;
     
+    -- Create AssetLifecycleStatus enum if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'AssetLifecycleStatus') THEN
         CREATE TYPE "AssetLifecycleStatus" AS ENUM ('NEW', 'IN_SERVICE', 'UNDER_MAINTENANCE', 'IDLE', 'RETIRED', 'DISPOSED');
     END IF;
