@@ -10,6 +10,8 @@ import { Badge } from '@components/ui/Badge';
 import { useToast } from '@contexts/ToastContext';
 import { usersApi, rolesApi, type User, type CreateUserDto } from '@services/system/users';
 import { useAuth } from '@contexts/AuthContext';
+import { PermissionGate } from '@components/common/PermissionGate';
+import { PERMISSIONS } from '@config/permissions';
 
 export function UsersManagementPage() {
   const { hasPermission, hasRole, user: currentUser } = useAuth();
@@ -166,8 +168,10 @@ export function UsersManagementPage() {
     }
   };
 
-  const canCreate = hasPermission('system:manage_users') || hasRole('Administrator');
-  const canManageRoles = hasPermission('system:manage_roles') || hasRole('Administrator');
+  const isAdmin = hasRole('Administrator') || hasRole('Admin');
+  const canView = hasPermission(PERMISSIONS.USERS_VIEW) || isAdmin;
+  const canCreate = hasPermission(PERMISSIONS.USERS_CREATE) || isAdmin;
+  const canManageRoles = hasPermission(PERMISSIONS.ROLES_UPDATE) || isAdmin;
 
   const filteredUsers = (data?.items || []).filter((user) =>
     !search ||
@@ -175,6 +179,15 @@ export function UsersManagementPage() {
     user.firstName?.toLowerCase().includes(search.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Check view permission
+  if (!canView) {
+    return (
+      <PermissionGate permissions={[PERMISSIONS.USERS_VIEW]} showAccessDenied>
+        <div />
+      </PermissionGate>
+    );
+  }
 
   return (
     <PageContainer

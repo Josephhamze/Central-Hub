@@ -29,6 +29,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasAnyRole: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -149,12 +150,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user?.roles?.includes(role) ?? false;
   };
 
+  // Check if user has any roles assigned
+  const hasAnyRole = (user?.roles?.length ?? 0) > 0;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         isLoading,
+        hasAnyRole,
         login,
         register,
         logout,

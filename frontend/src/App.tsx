@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@components/common/ProtectedRoute';
 // Pages
 import { LoginPage } from '@pages/auth/LoginPage';
 import { RegisterPage } from '@pages/auth/RegisterPage';
+import { WelcomePage } from '@pages/WelcomePage';
 import { DashboardPage } from '@pages/dashboard/DashboardPage';
 import { AdministrationPage } from '@pages/administration/AdministrationPage';
 import { InviteCodesPage } from '@pages/administration/InviteCodesPage';
@@ -67,7 +68,7 @@ import { StockHistoryPage } from '@pages/quarry-production/stock/StockHistoryPag
 
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, hasAnyRole } = useAuth();
 
   if (isLoading) {
     return (
@@ -93,6 +94,20 @@ function App() {
         path="/register"
         element={
           isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
+        }
+      />
+
+      {/* Welcome page for users without roles */}
+      <Route
+        path="/welcome"
+        element={
+          !isAuthenticated ? (
+            <Navigate to="/login" replace />
+          ) : hasAnyRole ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <WelcomePage />
+          )
         }
       />
 

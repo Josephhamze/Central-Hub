@@ -12,6 +12,8 @@ import { useToast } from '@contexts/ToastContext';
 import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
 import { cn } from '@utils/cn';
+import { PermissionGate } from '@components/common/PermissionGate';
+import { PERMISSIONS } from '@config/permissions';
 
 export function QuotesAdminPage() {
   const navigate = useNavigate();
@@ -143,6 +145,16 @@ export function QuotesAdminPage() {
 
   // Check if user is admin
   const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+  const canViewQuotes = hasPermission(PERMISSIONS.QUOTES_VIEW) || isAdmin;
+
+  // Render access denied if user cannot view quotes
+  if (!canViewQuotes) {
+    return (
+      <PermissionGate permissions={[PERMISSIONS.QUOTES_VIEW]} showAccessDenied>
+        <div />
+      </PermissionGate>
+    );
+  }
 
   // Check if user can approve (has permission OR is sales manager OR is admin)
   // Admins can approve their own quotes
