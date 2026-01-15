@@ -65,7 +65,7 @@ export function LoginPage() {
             <span className="text-white font-bold text-xl">O</span>
           </div>
           <h1 className="text-2xl font-semibold text-content-primary">
-            Welcome back
+            Welcome back 🐄
           </h1>
           <p className="mt-2 text-content-tertiary">
             Sign in to your account to continue
