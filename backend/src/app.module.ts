@@ -55,6 +55,7 @@ import { CrusherFeedEntriesModule } from './modules/quarry-production/crusher-fe
 import { CrusherOutputEntriesModule } from './modules/quarry-production/crusher-output-entries/crusher-output-entries.module';
 import { StockLevelsModule } from './modules/quarry-production/stock-levels/stock-levels.module';
 import { DashboardModule as QuarryDashboardModule } from './modules/quarry-production/dashboard/dashboard.module';
+import { QuarryPlanningModule } from './modules/quarry-planning/quarry-planning.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -121,6 +122,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     CrusherOutputEntriesModule,
     StockLevelsModule,
     QuarryDashboardModule,
+    QuarryPlanningModule,
   ],
   providers: [
     // Global JWT guard - all routes protected by default
