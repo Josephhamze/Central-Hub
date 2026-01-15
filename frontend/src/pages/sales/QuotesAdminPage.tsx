@@ -36,19 +36,21 @@ export function QuotesAdminPage() {
       const res = await quotesApi.getKPIs(filters);
       return res.data.data;
     },
+    refetchOnMount: 'always', // Always fetch fresh data when page is visited
   });
 
   const { data, isLoading, refetch: refetchQuotes } = useQuery({
     queryKey: ['quotes', filters, activeTab],
     queryFn: async () => {
-      const res = await quotesApi.findAll({ 
-        ...filters, 
-        page: 1, 
+      const res = await quotesApi.findAll({
+        ...filters,
+        page: 1,
         limit: 50,
         includeArchived: activeTab === 'all-quotes' ? true : false // Show all statuses except archived on main quotes tab
       });
       return res.data.data;
     },
+    refetchOnMount: 'always', // Always fetch fresh data when page is visited
   });
 
   const handleRefresh = () => {
