@@ -16,7 +16,6 @@ import {
   Minus,
   RefreshCw,
 } from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
@@ -24,10 +23,8 @@ import { Input } from '@components/ui/Input';
 import {
   quarryPlanningService,
   QuarryMachine,
-  MachinesGrouped,
   QuarryPlanningResult,
   CreateQuarryPlanDto,
-  MachineCategory,
 } from '@services/quarry-planning/quarry-planning';
 
 // ============================================================================
@@ -86,7 +83,7 @@ function MachineCard({
         <div className="mt-3 flex items-center justify-center gap-2">
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={(e) => {
               e.stopPropagation();
               if (onCountChange && count && count > 1) onCountChange(count - 1);
@@ -97,7 +94,7 @@ function MachineCard({
           <span className="w-8 text-center font-medium">{count || 1}</span>
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={(e) => {
               e.stopPropagation();
               if (onCountChange) onCountChange((count || 1) + 1);
@@ -428,11 +425,18 @@ export function QuarryPlanningPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Quarry Planning"
-        description="Calculate production rates, costs, and quarry life based on equipment configuration"
-        icon={<Calculator className="w-6 h-6" />}
-      />
+      {/* Page Header */}
+      <div className="flex items-center gap-4 mb-2">
+        <div className="p-2 bg-accent-primary/10 rounded-lg">
+          <Calculator className="w-6 h-6 text-accent-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-content-primary">Quarry Planning</h1>
+          <p className="text-sm text-content-secondary">
+            Calculate production rates, costs, and quarry life based on equipment configuration
+          </p>
+        </div>
+      </div>
 
       {/* Configuration Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
