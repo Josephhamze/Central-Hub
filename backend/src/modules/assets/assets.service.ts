@@ -102,14 +102,14 @@ export class AssetsService {
             },
           },
         },
-        // depreciationProfile: {
-        //   include: {
-        //     entries: {
-        //       orderBy: { period: 'desc' },
-        //       take: 12,
-        //     },
-        //   },
-        // },
+        depreciationProfile: {
+          include: {
+            entries: {
+              orderBy: { period: 'desc' },
+              take: 12,
+            },
+          },
+        },
       },
     });
 
