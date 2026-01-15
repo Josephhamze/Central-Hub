@@ -152,21 +152,7 @@ export function QuotesAdminPage() {
     const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
     const isSalesManager = hasRole('Sales Manager') || hasRole('SALES_MANAGER') || hasRole('sales_manager');
     const hasApprovePermission = hasPermission('quotes:approve');
-    
-    // Debug logging (remove in production)
-    if (quote.status === 'PENDING_APPROVAL') {
-      console.log('Quote approval check:', {
-        quoteId: quote.id,
-        status: quote.status,
-        isAdmin,
-        isSalesManager,
-        hasApprovePermission,
-        userId: user?.id,
-        quoteCreatorId: quote.salesRepUserId,
-        isOwnQuote: user?.id === quote.salesRepUserId,
-      });
-    }
-    
+
     // If admin, can always approve (including own quotes)
     if (isAdmin) return true;
     

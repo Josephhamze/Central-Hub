@@ -73,8 +73,8 @@ export function ProfilePage() {
       await api.patch('/users/me/theme', {
         theme: newTheme.toUpperCase(),
       });
-    } catch (err) {
-      console.error('Failed to save theme preference:', err);
+    } catch {
+      // Theme preference save failed - user will just use default next time
     }
   };
 

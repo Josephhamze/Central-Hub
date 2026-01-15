@@ -42,16 +42,16 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
-    // Don't log 401/403 errors as they're handled
-    if (error.response?.status !== 401 && error.response?.status !== 403) {
+    // Only log unexpected errors in development
+    if (import.meta.env.DEV && error.response?.status !== 401 && error.response?.status !== 403) {
       const errorData = error.response?.data as ApiError | undefined;
       const errorMessage = errorData?.error?.message || (errorData as any)?.message || error.message;
+      // eslint-disable-next-line no-console
       console.error('API Error:', {
         url: error.config?.url,
         method: error.config?.method,
         status: error.response?.status,
         message: errorMessage,
-        fullError: errorData,
       });
     }
 

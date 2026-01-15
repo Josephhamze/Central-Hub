@@ -257,8 +257,7 @@ export function QuoteDetailPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       success('PDF downloaded successfully');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
+    } catch {
       showError('Failed to generate PDF');
     }
   };

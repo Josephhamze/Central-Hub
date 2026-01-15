@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
@@ -10,6 +11,8 @@ import { AssetStatus } from '@prisma/client';
 
 @Injectable()
 export class AssetsService {
+  private readonly logger = new Logger(AssetsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, search?: string, status?: AssetStatus) {
@@ -381,7 +384,7 @@ export class AssetsService {
         openWorkOrders,
       };
     } catch (error) {
-      console.error('Error in getOverview:', error);
+      this.logger.error('Error in getOverview:', error);
       // Return default values on error
       return {
         totalAssets: 0,

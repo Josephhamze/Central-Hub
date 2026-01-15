@@ -34,8 +34,9 @@ const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error: any) => {
-        // Only log unexpected errors
-        if (error?.response?.status !== 401 && error?.response?.status !== 403) {
+        // Only log unexpected errors in development
+        if (import.meta.env.DEV && error?.response?.status !== 401 && error?.response?.status !== 403) {
+          // eslint-disable-next-line no-console
           console.error('Mutation error:', error);
         }
       },

@@ -53,7 +53,6 @@ export function UsersManagementPage() {
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create user';
       showError(errorMessage);
-      console.error('User creation error:', err.response?.data);
     },
   });
 

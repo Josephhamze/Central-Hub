@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, type: string, title: string, message: string, link?: string) {
@@ -30,7 +32,7 @@ export class NotificationsService {
         take: 50,
       });
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      this.logger.error('Error fetching notifications:', error);
       return [];
     }
   }
@@ -70,7 +72,7 @@ export class NotificationsService {
         },
       });
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      this.logger.error('Error fetching unread count:', error);
       return 0;
     }
   }

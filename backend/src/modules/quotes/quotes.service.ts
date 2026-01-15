@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { QuoteArchivingService } from './quote-archiving.service';
@@ -9,6 +9,8 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class QuotesService {
+  private readonly logger = new Logger(QuotesService.name);
+
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
@@ -842,7 +844,7 @@ export class QuotesService {
         );
       } catch (error) {
         // Log but don't fail the approval if notification fails
-        console.error('Failed to create approval notification:', error);
+        this.logger.error('Failed to create approval notification:', error);
       }
     }
     

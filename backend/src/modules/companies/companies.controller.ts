@@ -12,6 +12,7 @@ import {
   UploadedFile,
   BadRequestException,
   UsePipes,
+  Logger,
 } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -36,6 +37,8 @@ import { ResponseInterceptor } from '../../common/interceptors/response.intercep
 @Controller('companies')
 @UseInterceptors(ResponseInterceptor)
 export class CompaniesController {
+  private readonly logger = new Logger(CompaniesController.name);
+
   constructor(private readonly companiesService: CompaniesService) {}
 
   @Get()
@@ -64,14 +67,6 @@ export class CompaniesController {
       fileSize: 5 * 1024 * 1024, // 5MB limit
     },
     fileFilter: (req, file, cb) => {
-      // Log incoming file info
-      console.log('File interceptor - received file:', {
-        fieldname: file.fieldname,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        encoding: file.encoding,
-      });
-
       const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
       if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
@@ -97,13 +92,6 @@ export class CompaniesController {
   @ApiResponse({ status: 201, description: 'Logo uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing file' })
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
-    console.log('uploadLogo called, file:', file ? {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      hasBuffer: !!file.buffer,
-    } : 'null');
-
     if (!file) {
       throw new BadRequestException('No file uploaded. Please select an image file.');
     }
@@ -122,7 +110,7 @@ export class CompaniesController {
     try {
       return await this.companiesService.uploadLogo(file);
     } catch (error: any) {
-      console.error('Logo upload error:', error);
+      this.logger.error('Logo upload error:', error);
       throw new BadRequestException(error.message || 'Failed to upload logo');
     }
   }

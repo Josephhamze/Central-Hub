@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto';
@@ -12,6 +13,8 @@ import { WorkOrderStatus, WorkOrderType, AssetStatus } from '@prisma/client';
 
 @Injectable()
 export class WorkOrdersService {
+  private readonly logger = new Logger(WorkOrdersService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, status?: WorkOrderStatus, assetId?: string) {
@@ -58,7 +61,7 @@ export class WorkOrdersService {
         },
       };
     } catch (error) {
-      console.error('Error in workOrders.findAll:', error);
+      this.logger.error('Error in workOrders.findAll:', error);
       // Return empty result on error
       return {
         items: [],
