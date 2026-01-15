@@ -16,6 +16,7 @@ import { CostingPage } from '@pages/costing/CostingPage';
 import { InventoryPage } from '@pages/inventory/InventoryPage';
 import { AssetsPage } from '@pages/assets/AssetsPage';
 import { AssetRegistryPage } from '@pages/assets/AssetRegistryPage';
+import { AssetDetailPage } from '@pages/assets/AssetDetailPage';
 import { WorkOrdersPage } from '@pages/assets/WorkOrdersPage';
 import { MaintenanceSchedulesPage } from '@pages/assets/MaintenanceSchedulesPage';
 import { SparePartsPage } from '@pages/assets/SparePartsPage';
@@ -138,7 +139,7 @@ function App() {
         <Route path="inventory/stock-items" element={<StockItemsPage />} />
         <Route path="assets" element={<AssetsPage />} />
         <Route path="assets/registry" element={<AssetRegistryPage />} />
-        <Route path="assets/:id" element={<AssetRegistryPage />} />
+        <Route path="assets/:id" element={<AssetDetailPage />} />
         <Route path="assets/work-orders" element={<WorkOrdersPage />} />
         <Route path="assets/work-orders/:id" element={<AssetRegistryPage />} />
         <Route path="assets/maintenance/schedules" element={<MaintenanceSchedulesPage />} />
