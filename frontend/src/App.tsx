@@ -48,6 +48,7 @@ import { TollStationsPage } from '@pages/logistics/toll-stations/TollStationsPag
 import { TollPaymentsPage } from '@pages/logistics/toll-payments/TollPaymentsPage';
 import { RouteCostingPage } from '@pages/logistics/costing/RouteCostingPage';
 import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
+import { QuarryPlanningPage } from '@pages/quarry-planning/QuarryPlanningPage';
 
 
 function App() {
@@ -144,6 +145,7 @@ function App() {
         <Route path="sales/quotes/:id" element={<QuoteDetailPage />} />
         <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="quarry-planning" element={<QuarryPlanningPage />} />
       </Route>
 
       {/* 404 */}

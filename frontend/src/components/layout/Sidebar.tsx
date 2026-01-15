@@ -7,7 +7,8 @@ import {
   Truck,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  Calculator
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { PERMISSIONS } from '@config/permissions';
@@ -49,6 +50,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       path: '/sales/quotes',
       icon: FileText,
       permissions: [PERMISSIONS.QUOTES_VIEW]
+    },
+    {
+      name: 'Quarry Planning',
+      path: '/quarry-planning',
+      icon: Calculator,
+      permissions: [PERMISSIONS.ASSETS_VIEW]
     },
     {
       name: 'Administration',
