@@ -144,7 +144,7 @@ export function AssetDetailPage() {
       case 'MAINTENANCE':
         return <Badge variant="warning">Maintenance</Badge>;
       case 'BROKEN':
-        return <Badge variant="danger">Broken</Badge>;
+        return <Badge variant="error">Broken</Badge>;
       case 'RETIRED':
         return <Badge variant="default">Retired</Badge>;
       default:
@@ -155,7 +155,7 @@ export function AssetDetailPage() {
   const getCriticalityBadge = (criticality: string) => {
     switch (criticality) {
       case 'HIGH':
-        return <Badge variant="danger" size="sm">High</Badge>;
+        return <Badge variant="error" size="sm">High</Badge>;
       case 'MEDIUM':
         return <Badge variant="warning" size="sm">Medium</Badge>;
       case 'LOW':
