@@ -30,7 +30,7 @@ export function QuotesAdminPage() {
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<'quotes' | 'all-quotes' | 'customers' | 'logistics'>('quotes');
 
-  const { data: kpiData, isLoading: isLoadingKPIs, refetch: refetchKPIs } = useQuery({
+  const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['quotes-kpis', filters],
     queryFn: async () => {
       const res = await quotesApi.getKPIs(filters);
@@ -39,7 +39,7 @@ export function QuotesAdminPage() {
     refetchOnMount: 'always', // Always fetch fresh data when page is visited
   });
 
-  const { data, isLoading, refetch: refetchQuotes } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['quotes', filters, activeTab],
     queryFn: async () => {
       const res = await quotesApi.findAll({

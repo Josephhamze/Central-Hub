@@ -53,7 +53,7 @@ export function QuoteDetailPage() {
   const [lossReasonCategory, setLossReasonCategory] = useState<'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER' | ''>('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
 
-  const { data: quoteData, isLoading, refetch: refetchQuote } = useQuery({
+  const { data: quoteData, isLoading } = useQuery({
     queryKey: ['quote', id],
     queryFn: async () => {
       const res = await quotesApi.findOne(id!);
