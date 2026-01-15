@@ -35,7 +35,7 @@ interface AssetImportRow {
   'Notes'?: string;
 }
 
-interface ImportResult {
+export interface ImportResult {
   success: number;
   failed: number;
   errors: { row: number; error: string }[];
