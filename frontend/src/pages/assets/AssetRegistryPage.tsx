@@ -8,9 +8,8 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
-import { assetsApi, type CreateAssetDto, type IndexType, type AssetLifecycleStatus } from '@services/assets/assets';
+import { assetsApi, type CreateAssetDto, type IndexType, type AssetLifecycleStatus, type Asset } from '@services/assets/assets';
 import { projectsApi } from '@services/sales/projects';
-import { warehousesApi } from '@services/sales/warehouses';
 import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '@contexts/ToastContext';
@@ -85,8 +84,7 @@ export function AssetRegistryPage() {
   const { data: assetsData } = useQuery({
     queryKey: ['assets', 'all'],
     queryFn: async () => {
-      const res = await assetsApi.findAll(1, 1000);
-      return res.data.data;
+      return await assetsApi.findAll(1, 1000);
     },
   });
 
@@ -438,7 +436,7 @@ export function AssetRegistryPage() {
                   className="w-full px-4 py-2 rounded-lg border border-border-default bg-background-primary text-content-primary"
                 >
                   <option value="">None</option>
-                  {assetsData?.items.map((asset) => (
+                  {assetsData?.items.map((asset: Asset) => (
                     <option key={asset.id} value={asset.id}>
                       {asset.assetTag} - {asset.name}
                     </option>
