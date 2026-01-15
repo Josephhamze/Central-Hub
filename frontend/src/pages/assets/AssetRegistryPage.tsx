@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Eye, Edit, Package } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Package, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '@components/layout/PageContainer';
 import { Card } from '@components/ui/Card';
@@ -24,6 +24,10 @@ export function AssetRegistryPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: { row: number; error: string }[] } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [formData, setFormData] = useState<CreateAssetDto>({
     // ASSET IDENTITY
     assetName: '',
@@ -143,6 +147,57 @@ export function AssetRegistryPage() {
     setSearchParams({}); // Clear URL params
   };
 
+  const importMutation = useMutation({
+    mutationFn: (file: File) => assetsApi.importAssets(file),
+    onSuccess: (result) => {
+      setImportResult(result);
+      if (result.success > 0) {
+        success(`Successfully imported ${result.success} asset(s)`);
+        queryClient.invalidateQueries({ queryKey: ['assets'] });
+      }
+      if (result.failed > 0) {
+        showError(`Failed to import ${result.failed} asset(s)`);
+      }
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.error?.message || 'Failed to import assets');
+    },
+  });
+
+  const handleExport = async (includeData: boolean) => {
+    setIsExporting(true);
+    try {
+      const blob = await assetsApi.exportTemplate(includeData);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = includeData ? 'assets-export.xlsx' : 'assets-template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      success(includeData ? 'Assets exported successfully' : 'Template downloaded successfully');
+    } catch (err: any) {
+      showError(err.response?.data?.error?.message || 'Failed to export');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImport = () => {
+    if (!importFile) {
+      showError('Please select a file');
+      return;
+    }
+    importMutation.mutate(importFile);
+  };
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+    setImportFile(null);
+    setImportResult(null);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'OPERATIONAL':
@@ -176,15 +231,42 @@ export function AssetRegistryPage() {
       title="Asset Registry"
       description="View and manage all assets"
       actions={
-        canCreate ? (
+        <div className="flex gap-2">
           <Button
-            variant="primary"
-            onClick={() => navigate('/assets/registry?action=create')}
-            leftIcon={<Plus className="w-4 h-4" />}
+            variant="ghost"
+            onClick={() => handleExport(false)}
+            isLoading={isExporting}
+            leftIcon={<Download className="w-4 h-4" />}
           >
-            Create Asset
+            Template
           </Button>
-        ) : undefined
+          <Button
+            variant="ghost"
+            onClick={() => handleExport(true)}
+            isLoading={isExporting}
+            leftIcon={<FileSpreadsheet className="w-4 h-4" />}
+          >
+            Export
+          </Button>
+          {canCreate && (
+            <Button
+              variant="secondary"
+              onClick={() => setIsImportModalOpen(true)}
+              leftIcon={<Upload className="w-4 h-4" />}
+            >
+              Import
+            </Button>
+          )}
+          {canCreate && (
+            <Button
+              variant="primary"
+              onClick={() => navigate('/assets/registry?action=create')}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Create Asset
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="mb-6 flex gap-4">
@@ -732,6 +814,101 @@ export function AssetRegistryPage() {
           <Button variant="primary" onClick={handleCreate} isLoading={createMutation.isPending}>
             Create Asset
           </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Import Modal */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={handleCloseImportModal}
+        title="Import Assets"
+        description="Upload an Excel file to bulk import assets"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {!importResult ? (
+            <>
+              <div className="border-2 border-dashed border-border-default rounded-lg p-8 text-center">
+                <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 text-content-tertiary" />
+                <p className="text-content-secondary mb-4">
+                  Select an Excel file (.xlsx) to import assets
+                </p>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-content-secondary
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-accent-primary file:text-white
+                    hover:file:bg-accent-primary/90
+                    cursor-pointer"
+                />
+                {importFile && (
+                  <p className="mt-4 text-sm text-content-primary">
+                    Selected: {importFile.name}
+                  </p>
+                )}
+              </div>
+              <div className="bg-background-secondary rounded-lg p-4">
+                <h4 className="font-medium text-content-primary mb-2">Instructions:</h4>
+                <ul className="text-sm text-content-secondary space-y-1 list-disc list-inside">
+                  <li>Download the template first to see the required format</li>
+                  <li>Fill in the asset data in the "Assets" sheet</li>
+                  <li>Required fields: Name, Category, Type, Manufacturer, Model, Company Code, Serial/Registration Number, Purchase Date, Value, Currency, Install Date, End of Life Date, Index Type</li>
+                  <li>Dates must be in YYYY-MM-DD format</li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4 text-center bg-green-50 dark:bg-green-900/20">
+                  <p className="text-2xl font-bold text-green-600">{importResult.success}</p>
+                  <p className="text-sm text-green-600">Imported Successfully</p>
+                </Card>
+                <Card className="p-4 text-center bg-red-50 dark:bg-red-900/20">
+                  <p className="text-2xl font-bold text-red-600">{importResult.failed}</p>
+                  <p className="text-sm text-red-600">Failed</p>
+                </Card>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <h4 className="font-medium text-red-600 mb-2">Errors:</h4>
+                  <ul className="text-sm text-red-600 space-y-1">
+                    {importResult.errors.map((err, idx) => (
+                      <li key={idx}>Row {err.row}: {err.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <ModalFooter>
+          {!importResult ? (
+            <>
+              <Button variant="ghost" onClick={() => handleExport(false)}>
+                Download Template
+              </Button>
+              <Button variant="secondary" onClick={handleCloseImportModal}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleImport}
+                isLoading={importMutation.isPending}
+                disabled={!importFile}
+              >
+                Import
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" onClick={handleCloseImportModal}>
+              Close
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     </PageContainer>

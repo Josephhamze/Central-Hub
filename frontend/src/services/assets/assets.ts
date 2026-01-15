@@ -195,4 +195,22 @@ export const assetsApi = {
     const res = await api.patch(`/assets/${id}/retire`);
     return res.data.data;
   },
+
+  exportTemplate: async (includeData = false): Promise<Blob> => {
+    const res = await api.get(`/assets/export/template?includeData=${includeData}`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+
+  importAssets: async (file: File): Promise<{ success: number; failed: number; errors: { row: number; error: string }[] }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/assets/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data.data;
+  },
 };
