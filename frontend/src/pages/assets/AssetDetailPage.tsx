@@ -8,7 +8,7 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Modal, ModalFooter } from '@components/ui/Modal';
-import { assetsApi, type UpdateAssetDto, type Asset, type IndexType, type AssetLifecycleStatus } from '@services/assets/assets';
+import { assetsApi, type UpdateAssetDto } from '@services/assets/assets';
 import { projectsApi } from '@services/sales/projects';
 import { companiesApi } from '@services/sales/companies';
 import { useAuth } from '@contexts/AuthContext';
@@ -53,13 +53,6 @@ export function AssetDetailPage() {
     enabled: isEditMode,
   });
 
-  const { data: assetsData } = useQuery({
-    queryKey: ['assets', 'all'],
-    queryFn: async () => {
-      return await assetsApi.findAll(1, 1000);
-    },
-    enabled: isEditMode,
-  });
 
   useEffect(() => {
     if (asset && isEditMode) {
@@ -151,7 +144,7 @@ export function AssetDetailPage() {
       case 'MAINTENANCE':
         return <Badge variant="warning">Maintenance</Badge>;
       case 'BROKEN':
-        return <Badge variant="error">Broken</Badge>;
+        return <Badge variant="danger">Broken</Badge>;
       case 'RETIRED':
         return <Badge variant="default">Retired</Badge>;
       default:
@@ -162,7 +155,7 @@ export function AssetDetailPage() {
   const getCriticalityBadge = (criticality: string) => {
     switch (criticality) {
       case 'HIGH':
-        return <Badge variant="error" size="sm">High</Badge>;
+        return <Badge variant="danger" size="sm">High</Badge>;
       case 'MEDIUM':
         return <Badge variant="warning" size="sm">Medium</Badge>;
       case 'LOW':
@@ -309,7 +302,7 @@ export function AssetDetailPage() {
             <Card className="p-6 border-red-500">
               <h3 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h3>
               <p className="text-content-secondary mb-4">Retiring an asset is irreversible. The asset will be marked as retired and cannot be edited.</p>
-              <Button variant="error" onClick={() => setIsRetireModalOpen(true)} leftIcon={<AlertTriangle className="w-4 h-4" />}>
+              <Button variant="danger" onClick={() => setIsRetireModalOpen(true)} leftIcon={<AlertTriangle className="w-4 h-4" />}>
                 Retire Asset
               </Button>
             </Card>
@@ -413,7 +406,7 @@ export function AssetDetailPage() {
         </p>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsRetireModalOpen(false)}>Cancel</Button>
-          <Button variant="error" onClick={() => retireMutation.mutate()} isLoading={retireMutation.isPending}>Retire Asset</Button>
+          <Button variant="danger" onClick={() => retireMutation.mutate()} isLoading={retireMutation.isPending}>Retire Asset</Button>
         </ModalFooter>
       </Modal>
     </PageContainer>
