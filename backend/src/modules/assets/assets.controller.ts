@@ -9,15 +9,22 @@ import {
   Query,
   UseGuards,
   UseInterceptors,
+  Res,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { AssetsService } from './assets.service';
+import { AssetsImportExportService } from './assets-import-export.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -32,7 +39,10 @@ import { AssetStatus } from '@prisma/client';
 @UseInterceptors(ResponseInterceptor)
 @UseGuards(RbacGuard)
 export class AssetsController {
-  constructor(private readonly assetsService: AssetsService) {}
+  constructor(
+    private readonly assetsService: AssetsService,
+    private readonly importExportService: AssetsImportExportService,
+  ) {}
 
   @Get('overview')
   @Permissions('assets:view')
@@ -40,6 +50,52 @@ export class AssetsController {
   @ApiResponse({ status: 200, description: 'Assets overview' })
   async getOverview() {
     return this.assetsService.getOverview();
+  }
+
+  @Get('export/template')
+  @Permissions('assets:view')
+  @ApiOperation({ summary: 'Download Excel template for asset import' })
+  @ApiQuery({ name: 'includeData', required: false, type: Boolean })
+  @ApiResponse({ status: 200, description: 'Excel file' })
+  async exportTemplate(
+    @Query('includeData') includeData: string,
+    @Res() res: Response,
+  ) {
+    const includeDataBool = includeData === 'true';
+    const buffer = await this.importExportService.exportTemplate(includeDataBool);
+    const filename = includeDataBool ? 'assets-export.xlsx' : 'assets-template.xlsx';
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  }
+
+  @Post('import')
+  @Permissions('assets:create')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Import assets from Excel file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Import result' })
+  @ApiResponse({ status: 400, description: 'Invalid file format' })
+  async importAssets(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser('id') userId: string,
+  ) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    return this.importExportService.importAssets(file.buffer, userId);
   }
 
   @Get()
