@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateMaintenanceScheduleDto } from './dto/create-maintenance-schedule.dto';
@@ -10,6 +11,8 @@ import { MaintenanceScheduleType } from '@prisma/client';
 
 @Injectable()
 export class MaintenanceSchedulesService {
+  private readonly logger = new Logger(MaintenanceSchedulesService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, assetId?: string, isActive?: boolean) {
@@ -220,7 +223,7 @@ export class MaintenanceSchedulesService {
 
       return overdue;
     } catch (error) {
-      console.error('Error in getOverdue:', error);
+      this.logger.error('Error in getOverdue:', error);
       // Return empty array on error
       return [];
     }

@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { Request, Response, NextFunction } from 'express';
@@ -11,6 +11,7 @@ import { AppModule } from './app.module';
 const compression = require('compression');
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
   // Serve static files from uploads directory
@@ -24,8 +25,8 @@ async function bootstrap() {
     : [
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://initiativehub.org',
-        'https://www.initiativehub.org',
+        'https://alphapms.app',
+        'https://www.alphapms.app',
       ];
 
   app.enableCors({
@@ -37,8 +38,8 @@ async function bootstrap() {
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        // Log for debugging but allow for now to fix CORS issues
-        console.log(`CORS: Allowing origin ${origin} (not in strict list)`);
+        // Allow origin but log for debugging
+        logger.warn(`CORS: Allowing origin ${origin} (not in strict list)`);
         callback(null, true);
       }
     },
@@ -132,8 +133,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

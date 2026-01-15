@@ -33,10 +33,10 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 # Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Railway sets PORT env var - nginx:alpine auto-substitutes ${PORT} in templates
+# Default port
 ENV PORT=80
 
-# Expose port (Railway will override)
+# Expose port
 EXPOSE 80
 
 # Health check

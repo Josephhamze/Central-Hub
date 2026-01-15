@@ -2,64 +2,94 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16-alpine
-    container_name: ocp-postgres
+    image: postgres:15.5-alpine
+    container_name: alphapms-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ocp_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ocp_password}
-      POSTGRES_DB: ${POSTGRES_DB:-ocp_database}
+      POSTGRES_USER: ${POSTGRES_USER:-alphapms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-alphapms_password}
+      POSTGRES_DB: ${POSTGRES_DB:-alphapms_database}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ocp_user} -d ${POSTGRES_DB:-ocp_database}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-alphapms_user} -d ${POSTGRES_DB:-alphapms_database}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - alphapms-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: alphapms-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-alphapms_redis_password}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-alphapms_redis_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alphapms-network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ocp-backend
+    container_name: alphapms-backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-ocp_user}:${POSTGRES_PASSWORD:-ocp_password}@postgres:5432/${POSTGRES_DB:-ocp_database}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-alphapms_user}:${POSTGRES_PASSWORD:-alphapms_password}@postgres:5432/${POSTGRES_DB:-alphapms_database}?schema=public
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-alphapms_redis_password}
+      CORS_ORIGIN: https://alphapms.app,https://www.alphapms.app
       PORT: 3000
     ports:
       - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - alphapms-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api/v1}
-    container_name: ocp-frontend
+        VITE_API_URL: ${VITE_API_URL:-https://api.alphapms.app/api/v1}
+    container_name: alphapms-frontend
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - alphapms-network
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
-  default:
-    name: ocp-network
+  alphapms-network:
+    name: alphapms-network

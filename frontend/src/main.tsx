@@ -30,12 +30,13 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true, // Refetch when window regains focus to get fresh data
       refetchOnMount: true, // Always refetch on mount to get fresh data from database
       staleTime: 0, // Data is immediately stale, always fetch from database
-      gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (for navigation) - renamed from cacheTime in v5
+      gcTime: 30 * 1000, // Keep unused data in cache for 30 seconds only (reduced from 5 minutes to prevent stale data issues)
     },
     mutations: {
       onError: (error: any) => {
-        // Only log unexpected errors
-        if (error?.response?.status !== 401 && error?.response?.status !== 403) {
+        // Only log unexpected errors in development
+        if (import.meta.env.DEV && error?.response?.status !== 401 && error?.response?.status !== 403) {
+          // eslint-disable-next-line no-console
           console.error('Mutation error:', error);
         }
       },

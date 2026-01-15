@@ -56,7 +56,14 @@ export function InviteCodesPage() {
   });
 
   const handleCreate = () => {
-    createMutation.mutate(formData);
+    // Only include expiresAt if it has a value (empty string fails validation)
+    const payload: CreateInviteCodeDto = {
+      maxUses: formData.maxUses,
+    };
+    if (formData.expiresAt) {
+      payload.expiresAt = formData.expiresAt;
+    }
+    createMutation.mutate(payload);
   };
 
   const handleCopy = async (code: string) => {

@@ -27,7 +27,8 @@
       "@types/*": ["src/types/*"],
       "@utils/*": ["src/utils/*"],
       "@styles/*": ["src/styles/*"],
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": ["src/lib/*"],
+      "@config/*": ["src/config/*"]
     }
   },
   "include": ["src"]

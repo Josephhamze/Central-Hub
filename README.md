@@ -113,7 +113,10 @@ docker-compose up -d
 │   │   └── config/           # Configuration
 │   ├── prisma/               # Database schema and migrations
 │   └── ...
-├── AI_PROMPT_CONTEXT.md      # AI companion file for development
+├── docs/                     # Documentation
+│   ├── deployment/           # AWS deployment guides
+│   ├── features/             # Feature implementation docs
+│   └── internal/             # Internal docs and guides
 └── docker-compose.yml        # Docker configuration
 ```
 
@@ -138,9 +141,12 @@ After seeding, use these credentials:
 - **Email**: admin@example.com
 - **Password**: Admin123!
 
-## AI-Assisted Development
+## Documentation
 
-This project includes an `AI_PROMPT_CONTEXT.md` file that documents the system architecture, design system, and conventions. Use this file when prompting AI assistants to build new features while maintaining consistency.
+Project documentation is organized in the `docs/` folder:
+- **deployment/** - AWS EC2 deployment guides
+- **features/** - Feature implementation status docs
+- **internal/** - Admin guides and internal documentation
 
 ## License
 

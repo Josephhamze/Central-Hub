@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
@@ -12,6 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CompaniesService {
+  private readonly logger = new Logger(CompaniesService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20, search?: string) {
@@ -153,7 +156,7 @@ export class CompaniesService {
       } catch (mkdirError: any) {
         // If directory creation fails, check if it already exists
         if (mkdirError.code !== 'EEXIST') {
-          console.error(`Failed to create uploads directory: ${mkdirError.message}`, mkdirError);
+          this.logger.error(`Failed to create uploads directory: ${mkdirError.message}`, mkdirError);
           throw new BadRequestException(`Failed to create uploads directory: ${mkdirError.message}`);
         }
       }
@@ -171,7 +174,7 @@ export class CompaniesService {
       
       return { logoUrl };
     } catch (error: any) {
-      console.error('Error uploading logo:', error);
+      this.logger.error('Error uploading logo:', error);
       throw new BadRequestException(`Failed to upload logo: ${error.message || 'Unknown error'}`);
     }
   }

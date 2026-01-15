@@ -12,6 +12,8 @@ import { useToast } from '@contexts/ToastContext';
 import { quotesApi, type Quote, type QuoteStatus } from '@services/sales/quotes';
 import { useAuth } from '@contexts/AuthContext';
 import { cn } from '@utils/cn';
+import { PermissionGate } from '@components/common/PermissionGate';
+import { PERMISSIONS } from '@config/permissions';
 
 export function QuotesAdminPage() {
   const navigate = useNavigate();
@@ -30,42 +32,43 @@ export function QuotesAdminPage() {
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [activeTab, setActiveTab] = useState<'quotes' | 'all-quotes' | 'customers' | 'logistics'>('quotes');
 
-  const { data: kpiData, isLoading: isLoadingKPIs, refetch: refetchKPIs } = useQuery({
+  const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['quotes-kpis', filters],
     queryFn: async () => {
       const res = await quotesApi.getKPIs(filters);
       return res.data.data;
     },
+    refetchOnMount: 'always', // Always fetch fresh data when page is visited
   });
 
-  const { data, isLoading, refetch: refetchQuotes } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['quotes', filters, activeTab],
     queryFn: async () => {
-      const res = await quotesApi.findAll({ 
-        ...filters, 
-        page: 1, 
+      const res = await quotesApi.findAll({
+        ...filters,
+        page: 1,
         limit: 50,
         includeArchived: activeTab === 'all-quotes' ? true : false // Show all statuses except archived on main quotes tab
       });
       return res.data.data;
     },
+    refetchOnMount: 'always', // Always fetch fresh data when page is visited
   });
 
   const handleRefresh = () => {
-    // Invalidate and refetch to ensure fresh data from database
-    queryClient.invalidateQueries({ queryKey: ['quotes'] });
-    queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] });
-    refetchQuotes();
-    refetchKPIs();
+    // Invalidate ALL quotes-related queries and force refetch
+    queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+    queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+    queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
   };
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => quotesApi.approve(id, notes),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote approved successfully');
       setApproveModalOpen(false);
       setApproveNotes('');
@@ -80,10 +83,10 @@ export function QuotesAdminPage() {
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => quotesApi.reject(id, reason),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote rejected');
       setRejectModalOpen(false);
     },
@@ -94,10 +97,10 @@ export function QuotesAdminPage() {
     mutationFn: ({ id, outcome, lossReasonCategory, reasonNotes }: { id: string; outcome: 'WON' | 'LOST'; lossReasonCategory?: 'PRICE_TOO_HIGH' | 'FOUND_BETTER_DEAL' | 'PROJECT_CANCELLED' | 'DELIVERY_TIMING' | 'QUALITY_CONCERNS' | 'OTHER'; reasonNotes?: string }) =>
       quotesApi.markOutcome(id, outcome, lossReasonCategory, reasonNotes),
     onSuccess: () => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', selectedQuote?.id] });
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success(`Quote marked as ${outcomeType}`);
       setOutcomeModalOpen(false);
     },
@@ -106,11 +109,11 @@ export function QuotesAdminPage() {
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => quotesApi.archive(id),
-    onSuccess: (_, id) => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    onSuccess: () => {
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote archived successfully');
     },
     onError: (err: any) => {
@@ -121,11 +124,11 @@ export function QuotesAdminPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => quotesApi.remove(id),
-    onSuccess: (_, id) => {
-      // Invalidate only the specific queries that need updating
-      queryClient.invalidateQueries({ queryKey: ['quotes', filters, activeTab] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'] }); // Invalidate all KPI queries regardless of filters
-      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    onSuccess: () => {
+      // Invalidate ALL quotes queries to ensure sync across all views
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quotes-kpis'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['quote'], refetchType: 'all' });
       success('Quote deleted successfully');
     },
     onError: (err: any) => {
@@ -142,6 +145,16 @@ export function QuotesAdminPage() {
 
   // Check if user is admin
   const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
+  const canViewQuotes = hasPermission(PERMISSIONS.QUOTES_VIEW) || isAdmin;
+
+  // Render access denied if user cannot view quotes
+  if (!canViewQuotes) {
+    return (
+      <PermissionGate permissions={[PERMISSIONS.QUOTES_VIEW]} showAccessDenied>
+        <div />
+      </PermissionGate>
+    );
+  }
 
   // Check if user can approve (has permission OR is sales manager OR is admin)
   // Admins can approve their own quotes
@@ -152,21 +165,7 @@ export function QuotesAdminPage() {
     const isAdmin = hasRole('Administrator') || hasRole('Admin') || hasRole('ADMIN') || hasRole('admin');
     const isSalesManager = hasRole('Sales Manager') || hasRole('SALES_MANAGER') || hasRole('sales_manager');
     const hasApprovePermission = hasPermission('quotes:approve');
-    
-    // Debug logging (remove in production)
-    if (quote.status === 'PENDING_APPROVAL') {
-      console.log('Quote approval check:', {
-        quoteId: quote.id,
-        status: quote.status,
-        isAdmin,
-        isSalesManager,
-        hasApprovePermission,
-        userId: user?.id,
-        quoteCreatorId: quote.salesRepUserId,
-        isOwnQuote: user?.id === quote.salesRepUserId,
-      });
-    }
-    
+
     // If admin, can always approve (including own quotes)
     if (isAdmin) return true;
     

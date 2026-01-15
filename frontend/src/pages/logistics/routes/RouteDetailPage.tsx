@@ -277,7 +277,6 @@ function RouteStationsTab({
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update stations';
       showError(errorMessage);
-      console.error('Failed to save stations:', err.response?.data);
     },
   });
 

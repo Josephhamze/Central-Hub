@@ -6,6 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, setAuthToken, clearAuthToken } from '@services/api';
 
 interface User {
@@ -28,6 +29,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasAnyRole: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -48,10 +50,12 @@ const TOKEN_KEY = 'auth_tokens';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await api.get('/users/me');
+      // Add cache-busting parameter to ensure fresh data on login
+      const response = await api.get(`/users/me?_t=${Date.now()}`);
       const userData = response.data.data;
       // Ensure permissions and roles are always arrays
       if (userData) {
@@ -85,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [initAuth]);
 
   const login = async (email: string, password: string) => {
+    // Clear any cached data from previous session
+    queryClient.clear();
+
     const response = await api.post('/auth/login', { email, password });
     const tokens: AuthTokens = response.data.data;
 
@@ -100,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastName: string,
     inviteCode: string
   ) => {
+    // Clear any cached data from previous session
+    queryClient.clear();
+
     const response = await api.post('/auth/register', {
       email,
       password,
@@ -126,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearAuthToken();
       localStorage.removeItem(TOKEN_KEY);
+      // Clear all cached data to prevent stale data on next login
+      queryClient.clear();
       setUser(null);
     }
   };
@@ -138,12 +150,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user?.roles?.includes(role) ?? false;
   };
 
+  // Check if user has any roles assigned
+  const hasAnyRole = (user?.roles?.length ?? 0) > 0;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         isLoading,
+        hasAnyRole,
         login,
         register,
         logout,

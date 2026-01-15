@@ -1,6 +1,6 @@
 #!/bin/bash
-# Script to run migration and seed for Routes & Tolls system
-# This can be run manually or added to Railway deployment
+# Script to run database migration and seed
+# Run this after deploying to AWS EC2
 
 set -e
 

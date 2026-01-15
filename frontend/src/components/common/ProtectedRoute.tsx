@@ -13,11 +13,16 @@ export function ProtectedRoute({
   requiredPermissions = [],
   requiredRoles = [],
 }: ProtectedRouteProps) {
-  const { isAuthenticated, hasPermission, hasRole } = useAuth();
+  const { isAuthenticated, hasPermission, hasRole, hasAnyRole } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Redirect users without any roles to the welcome page
+  if (!hasAnyRole) {
+    return <Navigate to="/welcome" replace />;
   }
 
   // Check permissions

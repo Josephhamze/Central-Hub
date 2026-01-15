@@ -6,10 +6,9 @@
 
 The seed script automatically assigns all permissions to the Administrator role. To run it:
 
-**On Railway:**
-1. Go to your Railway backend service
-2. Open the terminal/console
-3. Run: `pnpm prisma db seed`
+**On AWS EC2:**
+1. SSH into your EC2 instance
+2. Run: `docker-compose exec backend pnpm prisma db seed`
 
 **Locally:**
 ```bash
@@ -21,10 +20,9 @@ pnpm prisma db seed
 
 I've created a script specifically to fix admin permissions:
 
-**On Railway:**
-1. Go to your Railway backend service
-2. Open the terminal/console
-3. Run: `pnpm ts-node scripts/fix-admin-permissions.ts`
+**On AWS EC2:**
+1. SSH into your EC2 instance
+2. Run: `docker-compose exec backend pnpm ts-node scripts/fix-admin-permissions.ts`
 
 **Locally:**
 ```bash
@@ -32,9 +30,9 @@ cd backend
 pnpm ts-node scripts/fix-admin-permissions.ts
 ```
 
-### Option 3: Wait for Auto-Deploy
+### Option 3: Manual Database Fix
 
-The latest code changes I just pushed include a fallback that allows any user with the "Administrator" role to access user management, even without explicit permissions. After Railway redeploys (2-5 minutes), you should see the "Create User" button.
+If scripts don't work, you can fix permissions directly in the database.
 
 ## After Fixing Permissions
 
@@ -50,4 +48,4 @@ The latest code changes I just pushed include a fallback that allows any user wi
 
 ## If You Still Don't See the Button
 
-The latest code update ensures that if you have the "Administrator" role, you'll see the button regardless of permissions. After the next deployment, refresh your browser and log out/in again.
+The code ensures that if you have the "Administrator" role, you'll see the button regardless of permissions. After restarting the backend, refresh your browser and log out/in again.

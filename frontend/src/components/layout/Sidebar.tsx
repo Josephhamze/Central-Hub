@@ -9,8 +9,11 @@ import {
   Truck,
   Mountain,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
+import { useAuth } from '@contexts/AuthContext';
+import { PERMISSIONS } from '@config/permissions';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -21,19 +24,77 @@ interface NavItem {
   name: string;
   path: string;
   icon: React.ElementType;
+  permissions?: string[]; // Any of these permissions grants access
+  adminOnly?: boolean;
 }
 
-const navigation: NavItem[] = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Operations & Production', path: '/operations-production', icon: Factory },
-  { name: 'Finance & Reporting', path: '/finance-reporting', icon: Calculator },
-  { name: 'Inventory & Assets', path: '/inventory-assets', icon: Warehouse },
-  { name: 'Logistics', path: '/logistics', icon: Truck },
-  { name: 'Quotes', path: '/sales/quotes', icon: FileText },
-  { name: 'Quarry Production', path: '/quarry-production', icon: Mountain },
-];
-
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { hasPermission, hasRole } = useAuth();
+
+  const isAdmin = hasRole('Administrator') || hasRole('Admin');
+
+  const navigation: NavItem[] = [
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    {
+      name: 'Operations & Production',
+      path: '/operations-production',
+      icon: Factory,
+      permissions: [PERMISSIONS.QUOTES_VIEW, PERMISSIONS.LOGISTICS_ROUTES_VIEW]
+    },
+    {
+      name: 'Finance & Reporting',
+      path: '/finance-reporting',
+      icon: Calculator,
+      permissions: [PERMISSIONS.REPORTING_VIEW_SALES_KPIS]
+    },
+    {
+      name: 'Inventory & Assets',
+      path: '/inventory-assets',
+      icon: Warehouse,
+      permissions: [PERMISSIONS.WAREHOUSES_VIEW, PERMISSIONS.STOCK_VIEW, PERMISSIONS.ASSETS_VIEW]
+    },
+    {
+      name: 'Logistics',
+      path: '/logistics',
+      icon: Truck,
+      permissions: [PERMISSIONS.LOGISTICS_ROUTES_VIEW, PERMISSIONS.LOGISTICS_TOLLS_VIEW, PERMISSIONS.LOGISTICS_COSTING_VIEW]
+    },
+    {
+      name: 'Quotes',
+      path: '/sales/quotes',
+      icon: FileText,
+      permissions: [PERMISSIONS.QUOTES_VIEW]
+    },
+    {
+      name: 'Quarry Production',
+      path: '/quarry-production',
+      icon: Mountain,
+      permissions: [PERMISSIONS.QUARRY_DASHBOARD_VIEW]
+    },
+    {
+      name: 'Administration',
+      path: '/administration',
+      icon: Settings,
+      permissions: [PERMISSIONS.USERS_VIEW, PERMISSIONS.ROLES_VIEW],
+      adminOnly: true
+    },
+  ];
+
+  // Filter navigation items based on permissions
+  const visibleNavigation = navigation.filter((item) => {
+    // Admins can see everything
+    if (isAdmin) return true;
+
+    // Admin-only items require admin role
+    if (item.adminOnly) return false;
+
+    // No permissions required = visible to all authenticated users
+    if (!item.permissions || item.permissions.length === 0) return true;
+
+    // Check if user has any of the required permissions
+    return item.permissions.some((p) => hasPermission(p));
+  });
+
   return (
     <aside
       className={clsx(
@@ -59,7 +120,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navigation.map((item) => (
+        {visibleNavigation.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

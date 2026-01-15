@@ -156,7 +156,6 @@ export function QuoteWizardPage() {
     onError: (err: any) => {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to create quote';
       showError(errorMessage);
-      console.error('Quote creation error:', err.response?.data || err);
     },
   });
 

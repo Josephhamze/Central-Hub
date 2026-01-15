@@ -29,4 +29,4 @@ run:
     - name: JWT_REFRESH_SECRET
       value-from: "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:ocp-jwt-refresh-secret"
     - name: CORS_ORIGIN
-      value: "https://initiativehub.org,https://www.initiativehub.org"
+      value: "https://alphapms.app,https://www.alphapms.app"
