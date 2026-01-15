@@ -15,12 +15,15 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+    // Convert to numbers since query params come as strings
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 20;
+    const skip = (pageNum - 1) * limitNum;
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
-        take: limit,
+        take: limitNum,
         select: {
           id: true,
           email: true,
@@ -52,10 +55,10 @@ export class UsersService {
         roles: user.roles.map((ur) => ur.role).filter((role) => role !== null),
       })),
       pagination: {
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
