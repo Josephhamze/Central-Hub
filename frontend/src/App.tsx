@@ -47,25 +47,7 @@ import { RouteRequestsPage } from '@pages/logistics/routes/RouteRequestsPage';
 import { TollStationsPage } from '@pages/logistics/toll-stations/TollStationsPage';
 import { TollPaymentsPage } from '@pages/logistics/toll-payments/TollPaymentsPage';
 import { RouteCostingPage } from '@pages/logistics/costing/RouteCostingPage';
-import { OperationsProductionPage } from '@pages/operations-production/OperationsProductionPage';
-import { FinanceReportingPage } from '@pages/finance-reporting/FinanceReportingPage';
 import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
-
-// Quarry Production pages
-import { QuarryProductionPage } from '@pages/quarry-production/QuarryProductionPage';
-import { ExcavatorsPage } from '@pages/quarry-production/equipment/ExcavatorsPage';
-import { TrucksPage } from '@pages/quarry-production/equipment/TrucksPage';
-import { CrushersPage } from '@pages/quarry-production/equipment/CrushersPage';
-import { MaterialTypesPage } from '@pages/quarry-production/settings/MaterialTypesPage';
-import { PitLocationsPage } from '@pages/quarry-production/settings/PitLocationsPage';
-import { ProductTypesPage } from '@pages/quarry-production/settings/ProductTypesPage';
-import { StockpileLocationsPage } from '@pages/quarry-production/settings/StockpileLocationsPage';
-import { ExcavatorEntriesPage } from '@pages/quarry-production/entries/ExcavatorEntriesPage';
-import { HaulingEntriesPage } from '@pages/quarry-production/entries/HaulingEntriesPage';
-import { CrusherFeedEntriesPage } from '@pages/quarry-production/entries/CrusherFeedEntriesPage';
-import { CrusherOutputEntriesPage } from '@pages/quarry-production/entries/CrusherOutputEntriesPage';
-import { StockLevelsPage } from '@pages/quarry-production/stock/StockLevelsPage';
-import { StockHistoryPage } from '@pages/quarry-production/stock/StockHistoryPage';
 
 
 function App() {
@@ -128,10 +110,8 @@ function App() {
         <Route path="administration/users" element={<UsersManagementPage />} />
         <Route path="administration/roles" element={<RolesManagementPage />} />
         <Route path="administration/invite-codes" element={<InviteCodesPage />} />
-        <Route path="operations-production" element={<OperationsProductionPage />} />
         <Route path="operations/*" element={<OperationsPage />} />
         <Route path="production/*" element={<ProductionPage />} />
-        <Route path="finance-reporting" element={<FinanceReportingPage />} />
         <Route path="costing/*" element={<CostingPage />} />
         <Route path="inventory-assets" element={<InventoryAssetsPage />} />
         <Route path="inventory/*" element={<InventoryPage />} />
@@ -164,22 +144,6 @@ function App() {
         <Route path="sales/quotes/:id" element={<QuoteDetailPage />} />
         <Route path="sales/quotes" element={<QuotesAdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
-        
-        {/* Quarry Production routes */}
-        <Route path="quarry-production" element={<QuarryProductionPage />} />
-        <Route path="quarry-production/equipment/excavators" element={<ExcavatorsPage />} />
-        <Route path="quarry-production/equipment/trucks" element={<TrucksPage />} />
-        <Route path="quarry-production/equipment/crushers" element={<CrushersPage />} />
-        <Route path="quarry-production/settings/pit-locations" element={<PitLocationsPage />} />
-        <Route path="quarry-production/settings/material-types" element={<MaterialTypesPage />} />
-        <Route path="quarry-production/settings/product-types" element={<ProductTypesPage />} />
-        <Route path="quarry-production/settings/stockpile-locations" element={<StockpileLocationsPage />} />
-        <Route path="quarry-production/excavator-entries" element={<ExcavatorEntriesPage />} />
-        <Route path="quarry-production/hauling-entries" element={<HaulingEntriesPage />} />
-        <Route path="quarry-production/crusher-feed" element={<CrusherFeedEntriesPage />} />
-        <Route path="quarry-production/crusher-output" element={<CrusherOutputEntriesPage />} />
-        <Route path="quarry-production/stock" element={<StockLevelsPage />} />
-        <Route path="quarry-production/stock/history" element={<StockHistoryPage />} />
       </Route>
 
       {/* 404 */}

@@ -2,12 +2,9 @@ import { NavLink } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
-  Factory,
-  Calculator,
   Warehouse,
   FileText,
   Truck,
-  Mountain,
   ChevronLeft,
   ChevronRight,
   Settings
@@ -36,18 +33,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navigation: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     {
-      name: 'Operations & Production',
-      path: '/operations-production',
-      icon: Factory,
-      permissions: [PERMISSIONS.QUOTES_VIEW, PERMISSIONS.LOGISTICS_ROUTES_VIEW]
-    },
-    {
-      name: 'Finance & Reporting',
-      path: '/finance-reporting',
-      icon: Calculator,
-      permissions: [PERMISSIONS.REPORTING_VIEW_SALES_KPIS]
-    },
-    {
       name: 'Inventory & Assets',
       path: '/inventory-assets',
       icon: Warehouse,
@@ -64,12 +49,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       path: '/sales/quotes',
       icon: FileText,
       permissions: [PERMISSIONS.QUOTES_VIEW]
-    },
-    {
-      name: 'Quarry Production',
-      path: '/quarry-production',
-      icon: Mountain,
-      permissions: [PERMISSIONS.QUARRY_DASHBOARD_VIEW]
     },
     {
       name: 'Administration',
