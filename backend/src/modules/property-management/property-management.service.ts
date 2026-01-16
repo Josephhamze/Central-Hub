@@ -335,7 +335,9 @@ export class PropertyManagementService {
     if (dto.currency !== undefined) updateData.currency = dto.currency;
     if (dto.purchaseDate !== undefined) updateData.purchaseDate = dto.purchaseDate;
     if (dto.lastValuationDate !== undefined) updateData.lastValuationDate = dto.lastValuationDate;
-    if (dto.parentPropertyId !== undefined) updateData.parentPropertyId = dto.parentPropertyId;
+    if (dto.parentPropertyId !== undefined) {
+      updateData.parentProperty = dto.parentPropertyId ? { connect: { id: dto.parentPropertyId } } : { disconnect: true };
+    }
     if (dto.companyId !== undefined) updateData.companyId = dto.companyId;
 
     // Assign decimal fields explicitly
