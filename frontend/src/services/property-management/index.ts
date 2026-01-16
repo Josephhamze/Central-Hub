@@ -544,22 +544,22 @@ export const propertyManagementService = {
   // Properties
   getProperties: async (params?: Record<string, any>): Promise<PaginatedResponse<Property>> => {
     const response = await api.get(`${BASE_URL}/properties`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getProperty: async (id: string): Promise<Property> => {
     const response = await api.get(`${BASE_URL}/properties/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createProperty: async (data: Partial<Property>): Promise<Property> => {
     const response = await api.post(`${BASE_URL}/properties`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateProperty: async (id: string, data: Partial<Property>): Promise<Property> => {
     const response = await api.put(`${BASE_URL}/properties/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteProperty: async (id: string): Promise<void> => {
@@ -568,33 +568,33 @@ export const propertyManagementService = {
 
   getPropertySummary: async (): Promise<any> => {
     const response = await api.get(`${BASE_URL}/properties/summary`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getVacantProperties: async (): Promise<Property[]> => {
     const response = await api.get(`${BASE_URL}/properties/vacant`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Property Units
   getPropertyUnits: async (propertyId: string, params?: Record<string, any>): Promise<PaginatedResponse<PropertyUnit>> => {
     const response = await api.get(`${BASE_URL}/properties/${propertyId}/units`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getUnit: async (id: string): Promise<PropertyUnit> => {
     const response = await api.get(`${BASE_URL}/units/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createUnit: async (data: Partial<PropertyUnit>): Promise<PropertyUnit> => {
     const response = await api.post(`${BASE_URL}/units`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateUnit: async (id: string, data: Partial<PropertyUnit>): Promise<PropertyUnit> => {
     const response = await api.put(`${BASE_URL}/units/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteUnit: async (id: string): Promise<void> => {
@@ -603,28 +603,28 @@ export const propertyManagementService = {
 
   getVacantUnits: async (): Promise<PropertyUnit[]> => {
     const response = await api.get(`${BASE_URL}/units/vacant`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Tenants
   getTenants: async (params?: Record<string, any>): Promise<PaginatedResponse<Tenant>> => {
     const response = await api.get(`${BASE_URL}/tenants`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getTenant: async (id: string): Promise<Tenant> => {
     const response = await api.get(`${BASE_URL}/tenants/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createTenant: async (data: Partial<Tenant>): Promise<Tenant> => {
     const response = await api.post(`${BASE_URL}/tenants`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateTenant: async (id: string, data: Partial<Tenant>): Promise<Tenant> => {
     const response = await api.put(`${BASE_URL}/tenants/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteTenant: async (id: string): Promise<void> => {
@@ -633,125 +633,125 @@ export const propertyManagementService = {
 
   getTenantLedger: async (tenantId: string, params?: { startDate?: string; endDate?: string }): Promise<TenantLedgerEntry[]> => {
     const response = await api.get(`${BASE_URL}/tenants/${tenantId}/ledger`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getTenantStatistics: async (): Promise<any> => {
     const response = await api.get(`${BASE_URL}/tenants/statistics`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getTenantsInArrears: async (): Promise<Tenant[]> => {
     const response = await api.get(`${BASE_URL}/tenants/arrears`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Leases
   getLeases: async (params?: Record<string, any>): Promise<PaginatedResponse<Lease>> => {
     const response = await api.get(`${BASE_URL}/leases`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getLease: async (id: string): Promise<Lease> => {
     const response = await api.get(`${BASE_URL}/leases/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createLease: async (data: Partial<Lease>): Promise<Lease> => {
     const response = await api.post(`${BASE_URL}/leases`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateLease: async (id: string, data: Partial<Lease>): Promise<Lease> => {
     const response = await api.put(`${BASE_URL}/leases/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   terminateLease: async (id: string, reason: string): Promise<Lease> => {
     const response = await api.post(`${BASE_URL}/leases/${id}/terminate`, { reason });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   renewLease: async (id: string, newEndDate: string, newRentAmount?: number): Promise<Lease> => {
     const response = await api.post(`${BASE_URL}/leases/${id}/renew`, { newEndDate, newRentAmount });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getLeaseStatistics: async (): Promise<any> => {
     const response = await api.get(`${BASE_URL}/leases/statistics`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getExpiringLeases: async (days?: number): Promise<Lease[]> => {
     const response = await api.get(`${BASE_URL}/leases/expiring`, { params: { days } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getRentRoll: async (propertyId?: string): Promise<RentRollEntry[]> => {
     const response = await api.get(`${BASE_URL}/leases/rent-roll`, { params: { propertyId } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getRentSchedules: async (leaseId: string, params?: Record<string, any>): Promise<PaginatedResponse<RentSchedule>> => {
     const response = await api.get(`${BASE_URL}/leases/${leaseId}/schedules`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Payments
   getPayments: async (params?: Record<string, any>): Promise<PaginatedResponse<RentPayment>> => {
     const response = await api.get(`${BASE_URL}/payments`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getPayment: async (id: string): Promise<RentPayment> => {
     const response = await api.get(`${BASE_URL}/payments/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createPayment: async (data: Partial<RentPayment>): Promise<RentPayment> => {
     const response = await api.post(`${BASE_URL}/payments`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   refundPayment: async (id: string, reason: string): Promise<RentPayment> => {
     const response = await api.post(`${BASE_URL}/payments/${id}/refund`, { reason });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getCollectionStatistics: async (params?: Record<string, any>): Promise<any> => {
     const response = await api.get(`${BASE_URL}/payments/statistics`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getArrearsReport: async (): Promise<ArrearsEntry[]> => {
     const response = await api.get(`${BASE_URL}/payments/arrears`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   applyLateFees: async (): Promise<number> => {
     const response = await api.post(`${BASE_URL}/payments/apply-late-fees`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Expenses
   getExpenses: async (params?: Record<string, any>): Promise<PaginatedResponse<PropertyExpense>> => {
     const response = await api.get(`${BASE_URL}/expenses`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getExpense: async (id: string): Promise<PropertyExpense> => {
     const response = await api.get(`${BASE_URL}/expenses/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createExpense: async (data: Partial<PropertyExpense>): Promise<PropertyExpense> => {
     const response = await api.post(`${BASE_URL}/expenses`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateExpense: async (id: string, data: Partial<PropertyExpense>): Promise<PropertyExpense> => {
     const response = await api.put(`${BASE_URL}/expenses/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteExpense: async (id: string): Promise<void> => {
@@ -760,38 +760,38 @@ export const propertyManagementService = {
 
   markExpenseAsPaid: async (id: string, paymentMethod: PaymentMethod, paymentReference?: string): Promise<PropertyExpense> => {
     const response = await api.patch(`${BASE_URL}/expenses/${id}/pay`, { paymentMethod, paymentReference });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getExpenseSummary: async (params?: Record<string, any>): Promise<any> => {
     const response = await api.get(`${BASE_URL}/expenses/summary`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getExpenseForecast: async (propertyId: string, months?: number): Promise<any> => {
     const response = await api.get(`${BASE_URL}/expenses/forecast/${propertyId}`, { params: { months } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Utilities
   getUtilityBills: async (params?: Record<string, any>): Promise<PaginatedResponse<UtilityBill>> => {
     const response = await api.get(`${BASE_URL}/utilities`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getUtilityBill: async (id: string): Promise<UtilityBill> => {
     const response = await api.get(`${BASE_URL}/utilities/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createUtilityBill: async (data: Partial<UtilityBill>): Promise<UtilityBill> => {
     const response = await api.post(`${BASE_URL}/utilities`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateUtilityBill: async (id: string, data: Partial<UtilityBill>): Promise<UtilityBill> => {
     const response = await api.put(`${BASE_URL}/utilities/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteUtilityBill: async (id: string): Promise<void> => {
@@ -800,38 +800,38 @@ export const propertyManagementService = {
 
   markUtilityBillAsPaid: async (id: string, paidAmount: number, paymentReference?: string): Promise<UtilityBill> => {
     const response = await api.patch(`${BASE_URL}/utilities/${id}/pay`, { paidAmount, paymentReference });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getUtilitySummary: async (params?: Record<string, any>): Promise<any> => {
     const response = await api.get(`${BASE_URL}/utilities/summary`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getConsumptionTrend: async (propertyId: string, utilityType: UtilityType, months?: number): Promise<any> => {
     const response = await api.get(`${BASE_URL}/utilities/consumption/${propertyId}`, { params: { utilityType, months } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Maintenance
   getMaintenanceJobs: async (params?: Record<string, any>): Promise<PaginatedResponse<MaintenanceJob>> => {
     const response = await api.get(`${BASE_URL}/maintenance`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getMaintenanceJob: async (id: string): Promise<MaintenanceJob> => {
     const response = await api.get(`${BASE_URL}/maintenance/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createMaintenanceJob: async (data: Partial<MaintenanceJob>): Promise<MaintenanceJob> => {
     const response = await api.post(`${BASE_URL}/maintenance`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   updateMaintenanceJob: async (id: string, data: Partial<MaintenanceJob>): Promise<MaintenanceJob> => {
     const response = await api.put(`${BASE_URL}/maintenance/${id}`, data);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   deleteMaintenanceJob: async (id: string): Promise<void> => {
@@ -840,73 +840,73 @@ export const propertyManagementService = {
 
   scheduleMaintenanceJob: async (id: string, scheduledDate: string, assignedTo: string): Promise<MaintenanceJob> => {
     const response = await api.post(`${BASE_URL}/maintenance/${id}/schedule`, { scheduledDate, assignedTo });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   startMaintenanceJob: async (id: string): Promise<MaintenanceJob> => {
     const response = await api.post(`${BASE_URL}/maintenance/${id}/start`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   completeMaintenanceJob: async (id: string, actualCost: number, resolutionNotes?: string): Promise<MaintenanceJob> => {
     const response = await api.post(`${BASE_URL}/maintenance/${id}/complete`, { actualCost, resolutionNotes });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   cancelMaintenanceJob: async (id: string, reason: string): Promise<MaintenanceJob> => {
     const response = await api.post(`${BASE_URL}/maintenance/${id}/cancel`, { reason });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getMaintenanceSummary: async (params?: Record<string, any>): Promise<any> => {
     const response = await api.get(`${BASE_URL}/maintenance/summary`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getOpenMaintenanceJobs: async (propertyId?: string): Promise<MaintenanceJob[]> => {
     const response = await api.get(`${BASE_URL}/maintenance/open`, { params: { propertyId } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getUrgentMaintenanceJobs: async (): Promise<MaintenanceJob[]> => {
     const response = await api.get(`${BASE_URL}/maintenance/urgent`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // KPIs & Dashboard
   getDashboardData: async (): Promise<DashboardData> => {
     const response = await api.get(`${BASE_URL}/kpi/dashboard`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getPortfolioKPIs: async (params?: { startDate?: string; endDate?: string }): Promise<PortfolioKPIs> => {
     const response = await api.get(`${BASE_URL}/kpi/portfolio`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getPropertyKPIs: async (propertyId: string, params?: { startDate?: string; endDate?: string }): Promise<PropertyKPIs> => {
     const response = await api.get(`${BASE_URL}/kpi/property/${propertyId}`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getPropertyKPIHistory: async (propertyId: string, months?: number): Promise<any[]> => {
     const response = await api.get(`${BASE_URL}/kpi/property/${propertyId}/history`, { params: { months } });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   getPropertyForecast: async (propertyId: string): Promise<any[]> => {
     const response = await api.get(`${BASE_URL}/kpi/property/${propertyId}/forecast`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createKPISnapshot: async (propertyId: string): Promise<any> => {
     const response = await api.post(`${BASE_URL}/kpi/snapshot/${propertyId}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   createAllKPISnapshots: async (): Promise<any> => {
     const response = await api.post(`${BASE_URL}/kpi/snapshot-all`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 };
 
