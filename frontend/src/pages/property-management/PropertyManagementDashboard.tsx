@@ -107,7 +107,35 @@ export function PropertyManagementDashboard() {
     );
   }
 
-  const { portfolioKPIs, problemProperties, expiringLeases, arrearsReport, recentPayments, openMaintenanceJobs } = dashboardData;
+  // Provide default values to handle empty/missing data
+  const portfolioKPIs = dashboardData.portfolioKPIs || {
+    totalProperties: 0,
+    totalUnits: 0,
+    occupiedUnits: 0,
+    vacantUnits: 0,
+    portfolioOccupancyRate: 0,
+    totalMarketValue: 0,
+    totalMonthlyRentalIncome: 0,
+    totalAnnualRentalIncome: 0,
+    totalRentBilled: 0,
+    totalRentCollected: 0,
+    portfolioCollectionRate: 0,
+    totalArrears: 0,
+    arrearsPercentage: 0,
+    totalOperatingExpenses: 0,
+    totalMaintenanceCosts: 0,
+    totalUtilityCosts: 0,
+    portfolioNOI: 0,
+    portfolioGrossYield: 0,
+    portfolioNetYield: 0,
+    propertiesByHealth: {} as Record<PropertyHealthStatus, number>,
+    propertiesByStatus: {} as Record<PropertyStatus, number>,
+  };
+  const problemProperties = dashboardData.problemProperties || [];
+  const expiringLeases = dashboardData.expiringLeases || [];
+  const arrearsReport = dashboardData.arrearsReport || [];
+  const recentPayments = dashboardData.recentPayments || [];
+  const openMaintenanceJobs = dashboardData.openMaintenanceJobs || [];
 
   return (
     <div className="space-y-6">
