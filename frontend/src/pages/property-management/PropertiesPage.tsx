@@ -6,7 +6,6 @@ import {
   Filter,
   MapPin,
   Home,
-  DollarSign,
   Edit,
   Trash2,
   Eye,
@@ -22,8 +21,6 @@ import propertyManagementService, {
   PropertyType,
   PropertyStatus,
   PropertyHealthStatus,
-  OwnershipType,
-  PaginatedResponse,
 } from '@/services/property-management';
 
 const formatCurrency = (value: number | undefined, currency = 'USD') => {

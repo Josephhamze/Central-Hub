@@ -9,7 +9,6 @@ import {
   TrendingDown,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Home,
   Calendar,
   CreditCard,
@@ -21,7 +20,6 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import propertyManagementService, {
   DashboardData,
-  PortfolioKPIs,
   PropertyHealthStatus,
   PropertyStatus,
 } from '@/services/property-management';
