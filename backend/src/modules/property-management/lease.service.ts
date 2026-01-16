@@ -332,10 +332,10 @@ export class LeaseService {
 
     // Assign decimal fields explicitly
     if (dto.rentAmount !== undefined) updateData.rentAmount = new Prisma.Decimal(dto.rentAmount);
-    if (dto.depositAmount !== undefined) updateData.depositAmount = dto.depositAmount ? new Prisma.Decimal(dto.depositAmount) : null;
-    if (dto.lateFeeAmount !== undefined) updateData.lateFeeAmount = dto.lateFeeAmount ? new Prisma.Decimal(dto.lateFeeAmount) : null;
-    if (dto.lateFeePercentage !== undefined) updateData.lateFeePercentage = dto.lateFeePercentage ? new Prisma.Decimal(dto.lateFeePercentage) : null;
-    if (dto.escalationPct !== undefined) updateData.escalationPct = dto.escalationPct ? new Prisma.Decimal(dto.escalationPct) : null;
+    if (dto.depositAmount !== undefined) updateData.depositAmount = dto.depositAmount ? new Prisma.Decimal(dto.depositAmount) : undefined;
+    if (dto.lateFeeAmount !== undefined) updateData.lateFeeAmount = dto.lateFeeAmount ? new Prisma.Decimal(dto.lateFeeAmount) : undefined;
+    if (dto.lateFeePercentage !== undefined) updateData.lateFeePercentage = dto.lateFeePercentage ? new Prisma.Decimal(dto.lateFeePercentage) : undefined;
+    if (dto.escalationPct !== undefined) updateData.escalationPct = dto.escalationPct ? new Prisma.Decimal(dto.escalationPct) : undefined;
 
     return this.prisma.lease.update({
       where: { id },

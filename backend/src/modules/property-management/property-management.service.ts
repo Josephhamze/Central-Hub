@@ -312,33 +312,42 @@ export class PropertyManagementService {
 
     const updateData: Prisma.PropertyUpdateInput = {};
 
-    // Map simple fields
-    const simpleFields = [
-      'name', 'propertyType', 'addressLine1', 'addressLine2', 'city', 'state',
-      'postalCode', 'country', 'unitCount', 'floors', 'bedrooms', 'bathrooms',
-      'parkingSpaces', 'yearBuilt', 'description', 'amenities', 'ownershipType',
-      'status', 'healthStatus', 'currency', 'purchaseDate', 'lastValuationDate',
-      'parentPropertyId', 'companyId',
-    ];
+    // Assign simple fields explicitly
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.propertyType !== undefined) updateData.propertyType = dto.propertyType;
+    if (dto.addressLine1 !== undefined) updateData.addressLine1 = dto.addressLine1;
+    if (dto.addressLine2 !== undefined) updateData.addressLine2 = dto.addressLine2;
+    if (dto.city !== undefined) updateData.city = dto.city;
+    if (dto.state !== undefined) updateData.state = dto.state;
+    if (dto.postalCode !== undefined) updateData.postalCode = dto.postalCode;
+    if (dto.country !== undefined) updateData.country = dto.country;
+    if (dto.unitCount !== undefined) updateData.unitCount = dto.unitCount;
+    if (dto.floors !== undefined) updateData.floors = dto.floors;
+    if (dto.bedrooms !== undefined) updateData.bedrooms = dto.bedrooms;
+    if (dto.bathrooms !== undefined) updateData.bathrooms = dto.bathrooms;
+    if (dto.parkingSpaces !== undefined) updateData.parkingSpaces = dto.parkingSpaces;
+    if (dto.yearBuilt !== undefined) updateData.yearBuilt = dto.yearBuilt;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.amenities !== undefined) updateData.amenities = dto.amenities;
+    if (dto.ownershipType !== undefined) updateData.ownershipType = dto.ownershipType;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.healthStatus !== undefined) updateData.healthStatus = dto.healthStatus;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.purchaseDate !== undefined) updateData.purchaseDate = dto.purchaseDate;
+    if (dto.lastValuationDate !== undefined) updateData.lastValuationDate = dto.lastValuationDate;
+    if (dto.parentPropertyId !== undefined) updateData.parentPropertyId = dto.parentPropertyId;
+    if (dto.companyId !== undefined) updateData.companyId = dto.companyId;
 
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
-
-    // Map decimal fields
-    const decimalFields = [
-      'gpsLatitude', 'gpsLongitude', 'floorArea', 'plotSize',
-      'purchaseValue', 'currentMarketValue', 'currentRentalValue',
-      'marketRentEstimate', 'annualEscalationPct',
-    ];
-
-    for (const field of decimalFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field] ? new Prisma.Decimal(dto[field]) : null;
-      }
-    }
+    // Assign decimal fields explicitly
+    if (dto.gpsLatitude !== undefined) updateData.gpsLatitude = dto.gpsLatitude ? new Prisma.Decimal(dto.gpsLatitude) : null;
+    if (dto.gpsLongitude !== undefined) updateData.gpsLongitude = dto.gpsLongitude ? new Prisma.Decimal(dto.gpsLongitude) : null;
+    if (dto.floorArea !== undefined) updateData.floorArea = dto.floorArea ? new Prisma.Decimal(dto.floorArea) : null;
+    if (dto.plotSize !== undefined) updateData.plotSize = dto.plotSize ? new Prisma.Decimal(dto.plotSize) : null;
+    if (dto.purchaseValue !== undefined) updateData.purchaseValue = dto.purchaseValue ? new Prisma.Decimal(dto.purchaseValue) : null;
+    if (dto.currentMarketValue !== undefined) updateData.currentMarketValue = dto.currentMarketValue ? new Prisma.Decimal(dto.currentMarketValue) : null;
+    if (dto.currentRentalValue !== undefined) updateData.currentRentalValue = dto.currentRentalValue ? new Prisma.Decimal(dto.currentRentalValue) : null;
+    if (dto.marketRentEstimate !== undefined) updateData.marketRentEstimate = dto.marketRentEstimate ? new Prisma.Decimal(dto.marketRentEstimate) : null;
+    if (dto.annualEscalationPct !== undefined) updateData.annualEscalationPct = dto.annualEscalationPct ? new Prisma.Decimal(dto.annualEscalationPct) : null;
 
     const property = await this.prisma.property.update({
       where: { id },
@@ -497,24 +506,26 @@ export class PropertyManagementService {
 
     const updateData: Prisma.PropertyUnitUpdateInput = {};
 
-    const simpleFields = [
-      'name', 'floorNumber', 'bedrooms', 'bathrooms', 'parkingSpaces',
-      'hasBalcony', 'hasFurnished', 'description', 'amenities', 'status',
-      'currency', 'electricityMeter', 'waterMeter', 'gasMeter',
-    ];
+    // Assign simple fields explicitly
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.floorNumber !== undefined) updateData.floorNumber = dto.floorNumber;
+    if (dto.bedrooms !== undefined) updateData.bedrooms = dto.bedrooms;
+    if (dto.bathrooms !== undefined) updateData.bathrooms = dto.bathrooms;
+    if (dto.parkingSpaces !== undefined) updateData.parkingSpaces = dto.parkingSpaces;
+    if (dto.hasBalcony !== undefined) updateData.hasBalcony = dto.hasBalcony;
+    if (dto.hasFurnished !== undefined) updateData.hasFurnished = dto.hasFurnished;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.amenities !== undefined) updateData.amenities = dto.amenities;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.electricityMeter !== undefined) updateData.electricityMeter = dto.electricityMeter;
+    if (dto.waterMeter !== undefined) updateData.waterMeter = dto.waterMeter;
+    if (dto.gasMeter !== undefined) updateData.gasMeter = dto.gasMeter;
 
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
-
-    const decimalFields = ['floorArea', 'baseRentalValue', 'currentRentalValue'];
-    for (const field of decimalFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field] ? new Prisma.Decimal(dto[field]) : null;
-      }
-    }
+    // Assign decimal fields explicitly
+    if (dto.floorArea !== undefined) updateData.floorArea = dto.floorArea ? new Prisma.Decimal(dto.floorArea) : null;
+    if (dto.baseRentalValue !== undefined) updateData.baseRentalValue = dto.baseRentalValue ? new Prisma.Decimal(dto.baseRentalValue) : null;
+    if (dto.currentRentalValue !== undefined) updateData.currentRentalValue = dto.currentRentalValue ? new Prisma.Decimal(dto.currentRentalValue) : null;
 
     return this.prisma.propertyUnit.update({
       where: { id },
