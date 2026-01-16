@@ -90,6 +90,27 @@ export const PERMISSIONS = {
 
   // Dashboard
   DASHBOARD_VIEW: 'dashboard:view',
+
+  // Property Management
+  PROPERTIES_VIEW: 'properties:view',
+  PROPERTIES_CREATE: 'properties:create',
+  PROPERTIES_UPDATE: 'properties:update',
+  PROPERTIES_DELETE: 'properties:delete',
+  TENANTS_VIEW: 'tenants:view',
+  TENANTS_CREATE: 'tenants:create',
+  TENANTS_UPDATE: 'tenants:update',
+  TENANTS_DELETE: 'tenants:delete',
+  LEASES_VIEW: 'leases:view',
+  LEASES_CREATE: 'leases:create',
+  LEASES_UPDATE: 'leases:update',
+  LEASES_DELETE: 'leases:delete',
+  RENT_VIEW: 'rent:view',
+  RENT_CREATE: 'rent:create',
+  RENT_UPDATE: 'rent:update',
+  UTILITIES_VIEW: 'utilities:view',
+  UTILITIES_CREATE: 'utilities:create',
+  UTILITIES_UPDATE: 'utilities:update',
+  PROPERTY_KPI_VIEW: 'property-kpi:view',
 } as const;
 
 // Module-level permissions for sidebar navigation
@@ -102,6 +123,7 @@ export const MODULE_PERMISSIONS = {
   logistics: [PERMISSIONS.LOGISTICS_ROUTES_VIEW, PERMISSIONS.LOGISTICS_TOLLS_VIEW, PERMISSIONS.LOGISTICS_COSTING_VIEW],
   quotes: [PERMISSIONS.QUOTES_VIEW],
   quarryProduction: [PERMISSIONS.QUARRY_DASHBOARD_VIEW],
+  propertyManagement: [PERMISSIONS.PROPERTIES_VIEW, PERMISSIONS.TENANTS_VIEW, PERMISSIONS.LEASES_VIEW, PERMISSIONS.RENT_VIEW],
 };
 
 // Helper to check if user has any of the required permissions

@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings,
-  Calculator
+  Calculator,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { PERMISSIONS } from '@config/permissions';
@@ -56,6 +57,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       path: '/quarry-planning',
       icon: Calculator,
       permissions: [PERMISSIONS.ASSETS_VIEW]
+    },
+    {
+      name: 'Property Management',
+      path: '/property-management',
+      icon: Building2,
+      permissions: [PERMISSIONS.PROPERTIES_VIEW, PERMISSIONS.TENANTS_VIEW, PERMISSIONS.LEASES_VIEW]
     },
     {
       name: 'Administration',
