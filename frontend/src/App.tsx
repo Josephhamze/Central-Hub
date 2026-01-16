@@ -49,7 +49,25 @@ import { TollPaymentsPage } from '@pages/logistics/toll-payments/TollPaymentsPag
 import { RouteCostingPage } from '@pages/logistics/costing/RouteCostingPage';
 import { InventoryAssetsPage } from '@pages/inventory-assets/InventoryAssetsPage';
 import { QuarryPlanningPage } from '@pages/quarry-planning/QuarryPlanningPage';
-import { PropertyManagementDashboard, PropertiesPage, PropertyFormPage, PropertyDetailPage } from '@pages/property-management';
+import {
+  PropertyManagementDashboard,
+  PropertiesPage,
+  PropertyFormPage,
+  PropertyDetailPage,
+  TenantsPage,
+  TenantFormPage,
+  TenantDetailPage,
+  LeasesPage,
+  LeaseFormPage,
+  LeaseDetailPage,
+  PaymentsPage,
+  PaymentFormPage,
+  ExpensesPage,
+  ExpenseFormPage,
+  MaintenancePage,
+  MaintenanceFormPage,
+  MaintenanceDetailPage,
+} from '@pages/property-management';
 
 
 function App() {
@@ -154,6 +172,33 @@ function App() {
         <Route path="property-management/properties/new" element={<PropertyFormPage />} />
         <Route path="property-management/properties/:id" element={<PropertyDetailPage />} />
         <Route path="property-management/properties/:id/edit" element={<PropertyFormPage />} />
+
+        {/* Tenants */}
+        <Route path="property-management/tenants" element={<TenantsPage />} />
+        <Route path="property-management/tenants/new" element={<TenantFormPage />} />
+        <Route path="property-management/tenants/:id" element={<TenantDetailPage />} />
+        <Route path="property-management/tenants/:id/edit" element={<TenantFormPage />} />
+
+        {/* Leases */}
+        <Route path="property-management/leases" element={<LeasesPage />} />
+        <Route path="property-management/leases/new" element={<LeaseFormPage />} />
+        <Route path="property-management/leases/:id" element={<LeaseDetailPage />} />
+        <Route path="property-management/leases/:id/edit" element={<LeaseFormPage />} />
+
+        {/* Payments */}
+        <Route path="property-management/payments" element={<PaymentsPage />} />
+        <Route path="property-management/payments/new" element={<PaymentFormPage />} />
+
+        {/* Expenses */}
+        <Route path="property-management/expenses" element={<ExpensesPage />} />
+        <Route path="property-management/expenses/new" element={<ExpenseFormPage />} />
+        <Route path="property-management/expenses/:id/edit" element={<ExpenseFormPage />} />
+
+        {/* Maintenance */}
+        <Route path="property-management/maintenance" element={<MaintenancePage />} />
+        <Route path="property-management/maintenance/new" element={<MaintenanceFormPage />} />
+        <Route path="property-management/maintenance/:id" element={<MaintenanceDetailPage />} />
+        <Route path="property-management/maintenance/:id/edit" element={<MaintenanceFormPage />} />
       </Route>
 
       {/* 404 */}
