@@ -152,12 +152,21 @@ function StatCard({
   );
 }
 
-function CostBreakdownTable({ costs }: { costs: QuarryPlanningResult['costBreakdown'] }) {
+function CostBreakdownTable({ costs }: { costs: QuarryPlanningResult['costBreakdown'] | undefined }) {
+  if (!costs) return null;
+
+  const defaultCost = { fuelPerHour: 0, maintenancePerHour: 0, ownershipPerHour: 0, totalPerHour: 0 };
+  const drilling = costs.drilling || defaultCost;
+  const excavating = costs.excavating || defaultCost;
+  const hauling = costs.hauling || { ...defaultCost, truckCount: 0 };
+  const crushing = costs.crushing || defaultCost;
+  const total = costs.total || { perHour: 0, perDay: 0, perMonth: 0, perTon: 0 };
+
   const stages = [
-    { name: 'Drilling', data: costs.drilling },
-    { name: 'Excavating', data: costs.excavating },
-    { name: 'Hauling', data: costs.hauling },
-    { name: 'Crushing', data: costs.crushing },
+    { name: 'Drilling', data: drilling },
+    { name: 'Excavating', data: excavating },
+    { name: 'Hauling', data: hauling },
+    { name: 'Crushing', data: crushing },
   ];
 
   return (
@@ -193,16 +202,16 @@ function CostBreakdownTable({ costs }: { costs: QuarryPlanningResult['costBreakd
           <tr className="bg-background-secondary">
             <td className="py-2 px-3 font-semibold text-content-primary">TOTAL</td>
             <td className="py-2 px-3 text-right text-content-secondary">
-              ${(costs.drilling.fuelPerHour + costs.excavating.fuelPerHour + costs.hauling.fuelPerHour + costs.crushing.fuelPerHour).toFixed(0)}
+              ${(drilling.fuelPerHour + excavating.fuelPerHour + hauling.fuelPerHour + crushing.fuelPerHour).toFixed(0)}
             </td>
             <td className="py-2 px-3 text-right text-content-secondary">
-              ${(costs.drilling.maintenancePerHour + costs.excavating.maintenancePerHour + costs.hauling.maintenancePerHour + costs.crushing.maintenancePerHour).toFixed(0)}
+              ${(drilling.maintenancePerHour + excavating.maintenancePerHour + hauling.maintenancePerHour + crushing.maintenancePerHour).toFixed(0)}
             </td>
             <td className="py-2 px-3 text-right text-content-secondary">
-              ${(costs.drilling.ownershipPerHour + costs.excavating.ownershipPerHour + costs.hauling.ownershipPerHour + costs.crushing.ownershipPerHour).toFixed(0)}
+              ${(drilling.ownershipPerHour + excavating.ownershipPerHour + hauling.ownershipPerHour + crushing.ownershipPerHour).toFixed(0)}
             </td>
             <td className="py-2 px-3 text-right font-bold text-content-primary">
-              ${costs.total.perHour.toFixed(0)}
+              ${total.perHour.toFixed(0)}
             </td>
           </tr>
         </tbody>
@@ -211,40 +220,48 @@ function CostBreakdownTable({ costs }: { costs: QuarryPlanningResult['costBreakd
   );
 }
 
-function ProductionFlowChart({ rates }: { rates: QuarryPlanningResult['productionRates'] }) {
+function ProductionFlowChart({ rates }: { rates: QuarryPlanningResult['productionRates'] | undefined }) {
+  if (!rates) return null;
+
+  const drilling = rates.drilling || { tonsPerHour: 0, metersPerHour: 0, cubicMetersPerHour: 0 };
+  const excavating = rates.excavating || { tonsPerHour: 0, cubicMetersPerHour: 0 };
+  const hauling = rates.hauling || { totalTonsPerHour: 0, truckCount: 0, tonsPerHourPerTruck: 0 };
+  const crushing = rates.crushing || { tonsPerHour: 0 };
+  const bottleneck = rates.bottleneck || { stage: '', machine: null, limitingCapacity: 0 };
+
   const stages = [
     {
       name: 'Drilling',
-      tonsPerHour: rates.drilling.tonsPerHour,
-      detail: `${rates.drilling.metersPerHour.toFixed(1)} m/hr`,
+      tonsPerHour: drilling.tonsPerHour,
+      detail: `${drilling.metersPerHour.toFixed(1)} m/hr`,
       icon: Drill,
     },
     {
       name: 'Excavating',
-      tonsPerHour: rates.excavating.tonsPerHour,
-      detail: `${rates.excavating.cubicMetersPerHour.toFixed(0)} m³/hr`,
+      tonsPerHour: excavating.tonsPerHour,
+      detail: `${excavating.cubicMetersPerHour.toFixed(0)} m³/hr`,
       icon: HardHat,
     },
     {
       name: 'Hauling',
-      tonsPerHour: rates.hauling.totalTonsPerHour,
-      detail: `${rates.hauling.truckCount} trucks`,
+      tonsPerHour: hauling.totalTonsPerHour,
+      detail: `${hauling.truckCount} trucks`,
       icon: Truck,
     },
     {
       name: 'Crushing',
-      tonsPerHour: rates.crushing.tonsPerHour,
+      tonsPerHour: crushing.tonsPerHour,
       detail: 'Final output',
       icon: Factory,
     },
   ];
 
-  const maxTons = Math.max(...stages.map((s) => s.tonsPerHour));
+  const maxTons = Math.max(...stages.map((s) => s.tonsPerHour), 1);
 
   return (
     <div className="space-y-3">
       {stages.map((stage, index) => {
-        const isBottleneck = stage.name === rates.bottleneck.stage;
+        const isBottleneck = stage.name === bottleneck.stage;
         const percentage = (stage.tonsPerHour / maxTons) * 100;
 
         return (
@@ -286,66 +303,73 @@ function ProductionFlowChart({ rates }: { rates: QuarryPlanningResult['productio
   );
 }
 
-function WhatIfScenarios({ scenarios }: { scenarios: QuarryPlanningResult['whatIfScenarios'] }) {
+function WhatIfScenarios({ scenarios }: { scenarios: QuarryPlanningResult['whatIfScenarios'] | undefined }) {
+  if (!scenarios || scenarios.length === 0) {
+    return <p className="text-content-secondary text-sm">No scenarios available</p>;
+  }
+
   return (
     <div className="space-y-3">
-      {scenarios.map((scenario, index) => (
-        <div
-          key={index}
-          className="p-4 rounded-lg border border-border-default bg-background-elevated"
-        >
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h4 className="font-medium text-content-primary">{scenario.name}</h4>
-              <p className="text-sm text-content-secondary">{scenario.description}</p>
+      {scenarios.map((scenario, index) => {
+        const result = scenario.result || { newProductionRate: 0, newCostPerTon: 0, newBottleneck: 'Unknown', productionChange: 0, costChange: 0 };
+        return (
+          <div
+            key={index}
+            className="p-4 rounded-lg border border-border-default bg-background-elevated"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h4 className="font-medium text-content-primary">{scenario.name}</h4>
+                <p className="text-sm text-content-secondary">{scenario.description}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+              <div className="text-center p-2 bg-background-secondary rounded">
+                <div className="text-xs text-content-tertiary">Production</div>
+                <div className="text-sm font-medium text-content-primary">
+                  {result.newProductionRate.toFixed(0)} t/hr
+                </div>
+                <div
+                  className={`text-xs flex items-center justify-center gap-1 ${
+                    result.productionChange >= 0 ? 'text-status-success' : 'text-status-error'
+                  }`}
+                >
+                  {result.productionChange >= 0 ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {result.productionChange.toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-center p-2 bg-background-secondary rounded">
+                <div className="text-xs text-content-tertiary">Cost/Ton</div>
+                <div className="text-sm font-medium text-content-primary">
+                  ${result.newCostPerTon.toFixed(2)}
+                </div>
+                <div
+                  className={`text-xs flex items-center justify-center gap-1 ${
+                    result.costChange <= 0 ? 'text-status-success' : 'text-status-error'
+                  }`}
+                >
+                  {result.costChange <= 0 ? (
+                    <TrendingDown className="w-3 h-3" />
+                  ) : (
+                    <TrendingUp className="w-3 h-3" />
+                  )}
+                  {Math.abs(result.costChange).toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-center p-2 bg-background-secondary rounded col-span-2">
+                <div className="text-xs text-content-tertiary">New Bottleneck</div>
+                <div className="text-sm font-medium text-content-primary">
+                  {result.newBottleneck}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-            <div className="text-center p-2 bg-background-secondary rounded">
-              <div className="text-xs text-content-tertiary">Production</div>
-              <div className="text-sm font-medium text-content-primary">
-                {scenario.result.newProductionRate.toFixed(0)} t/hr
-              </div>
-              <div
-                className={`text-xs flex items-center justify-center gap-1 ${
-                  scenario.result.productionChange >= 0 ? 'text-status-success' : 'text-status-error'
-                }`}
-              >
-                {scenario.result.productionChange >= 0 ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : (
-                  <TrendingDown className="w-3 h-3" />
-                )}
-                {scenario.result.productionChange.toFixed(1)}%
-              </div>
-            </div>
-            <div className="text-center p-2 bg-background-secondary rounded">
-              <div className="text-xs text-content-tertiary">Cost/Ton</div>
-              <div className="text-sm font-medium text-content-primary">
-                ${scenario.result.newCostPerTon.toFixed(2)}
-              </div>
-              <div
-                className={`text-xs flex items-center justify-center gap-1 ${
-                  scenario.result.costChange <= 0 ? 'text-status-success' : 'text-status-error'
-                }`}
-              >
-                {scenario.result.costChange <= 0 ? (
-                  <TrendingDown className="w-3 h-3" />
-                ) : (
-                  <TrendingUp className="w-3 h-3" />
-                )}
-                {Math.abs(scenario.result.costChange).toFixed(1)}%
-              </div>
-            </div>
-            <div className="text-center p-2 bg-background-secondary rounded col-span-2">
-              <div className="text-xs text-content-tertiary">New Bottleneck</div>
-              <div className="text-sm font-medium text-content-primary">
-                {scenario.result.newBottleneck}
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -582,28 +606,28 @@ export function QuarryPlanningPage() {
             <div className="grid grid-cols-2 gap-4">
               <StatCard
                 title="Production Rate"
-                value={result.productionRates.effective.tonsPerHour.toFixed(0)}
+                value={(result.productionRates?.effective?.tonsPerHour ?? 0).toFixed(0)}
                 unit="t/hr"
                 icon={TrendingUp}
                 variant="success"
               />
               <StatCard
                 title="Cost per Ton"
-                value={`$${result.costBreakdown.total.perTon.toFixed(2)}`}
+                value={`$${(result.costBreakdown?.total?.perTon ?? 0).toFixed(2)}`}
                 icon={DollarSign}
               />
               <StatCard
                 title="Daily Output"
-                value={result.productionRates.effective.tonsPerDay.toFixed(0)}
+                value={(result.productionRates?.effective?.tonsPerDay ?? 0).toFixed(0)}
                 unit="tons"
                 icon={Factory}
               />
               <StatCard
                 title="Quarry Life"
-                value={result.quarryLife.yearsRemaining.toFixed(1)}
+                value={(result.quarryLife?.yearsRemaining ?? 0).toFixed(1)}
                 unit="years"
                 icon={Clock}
-                variant={result.quarryLife.yearsRemaining < 5 ? 'warning' : 'default'}
+                variant={(result.quarryLife?.yearsRemaining ?? 0) < 5 ? 'warning' : 'default'}
               />
             </div>
           )}
@@ -624,15 +648,15 @@ export function QuarryPlanningPage() {
               </div>
               <div className="bg-status-warning/10 border border-status-warning/20 rounded-lg p-4">
                 <p className="text-content-primary">
-                  <span className="font-semibold">{result.productionRates.bottleneck.stage}</span> is
+                  <span className="font-semibold">{result.productionRates?.bottleneck?.stage ?? 'Unknown'}</span> is
                   the limiting factor, capping production at{' '}
                   <span className="font-semibold">
-                    {result.productionRates.bottleneck.limitingCapacity.toFixed(0)} tons/hour
+                    {(result.productionRates?.bottleneck?.limitingCapacity ?? 0).toFixed(0)} tons/hour
                   </span>
                   .
                 </p>
                 <p className="text-sm text-content-secondary mt-2">
-                  Machine: {result.productionRates.bottleneck.machine.name}
+                  Machine: {result.productionRates?.bottleneck?.machine?.name ?? 'Unknown'}
                 </p>
               </div>
             </div>
@@ -660,19 +684,19 @@ export function QuarryPlanningPage() {
                 <div className="text-center">
                   <div className="text-sm text-content-tertiary">Cost per Day</div>
                   <div className="text-xl font-semibold text-content-primary">
-                    ${result.costBreakdown.total.perDay.toLocaleString()}
+                    ${(result.costBreakdown?.total?.perDay ?? 0).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-content-tertiary">Cost per Month</div>
                   <div className="text-xl font-semibold text-content-primary">
-                    ${result.costBreakdown.total.perMonth.toLocaleString()}
+                    ${(result.costBreakdown?.total?.perMonth ?? 0).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-center bg-accent-primary/10 rounded-lg py-2">
                   <div className="text-sm text-accent-primary">Cost per Ton</div>
                   <div className="text-xl font-bold text-accent-primary">
-                    ${result.costBreakdown.total.perTon.toFixed(2)}
+                    ${(result.costBreakdown?.total?.perTon ?? 0).toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -693,34 +717,34 @@ export function QuarryPlanningPage() {
                 <div className="p-4 bg-background-secondary rounded-lg text-center">
                   <div className="text-sm text-content-tertiary">Total Reserves</div>
                   <div className="text-xl font-semibold text-content-primary">
-                    {(result.quarryLife.totalReserves / 1000000).toFixed(1)}M
+                    {((result.quarryLife?.totalReserves ?? 0) / 1000000).toFixed(1)}M
                   </div>
                   <div className="text-xs text-content-tertiary">tons</div>
                 </div>
                 <div className="p-4 bg-background-secondary rounded-lg text-center">
                   <div className="text-sm text-content-tertiary">Daily Production</div>
                   <div className="text-xl font-semibold text-content-primary">
-                    {result.quarryLife.productionPerDay.toLocaleString()}
+                    {(result.quarryLife?.productionPerDay ?? 0).toLocaleString()}
                   </div>
                   <div className="text-xs text-content-tertiary">tons/day</div>
                 </div>
                 <div className="p-4 bg-background-secondary rounded-lg text-center">
                   <div className="text-sm text-content-tertiary">Annual Production</div>
                   <div className="text-xl font-semibold text-content-primary">
-                    {(result.quarryLife.productionPerYear / 1000000).toFixed(2)}M
+                    {((result.quarryLife?.productionPerYear ?? 0) / 1000000).toFixed(2)}M
                   </div>
                   <div className="text-xs text-content-tertiary">tons/year</div>
                 </div>
                 <div
                   className={`p-4 rounded-lg text-center ${
-                    result.quarryLife.yearsRemaining < 5
+                    (result.quarryLife?.yearsRemaining ?? 0) < 5
                       ? 'bg-status-warning/10'
                       : 'bg-status-success/10'
                   }`}
                 >
                   <div className="text-sm text-content-tertiary">Remaining Life</div>
                   <div className="text-xl font-bold text-content-primary">
-                    {result.quarryLife.yearsRemaining.toFixed(1)}
+                    {(result.quarryLife?.yearsRemaining ?? 0).toFixed(1)}
                   </div>
                   <div className="text-xs text-content-tertiary">years</div>
                 </div>
