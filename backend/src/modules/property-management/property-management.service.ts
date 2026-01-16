@@ -5,6 +5,7 @@ import {
   OwnershipType,
   PropertyStatus,
   PropertyHealthStatus,
+  MaintenanceStatus,
   Prisma,
 } from '@prisma/client';
 
@@ -257,7 +258,7 @@ export class PropertyManagementService {
         },
         maintenanceJobs: {
           where: {
-            status: { notIn: ['COMPLETED', 'CANCELLED'] },
+            status: { notIn: [MaintenanceStatus.COMPLETED, MaintenanceStatus.CANCELLED] },
           },
           orderBy: { reportedDate: 'desc' },
         },
