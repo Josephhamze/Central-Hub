@@ -63,7 +63,7 @@ export interface RentRollEntry {
   unitName?: string;
   rentAmount: number;
   startDate: Date;
-  endDate?: Date;
+  endDate: Date | null;
   status: string;
   balance: number;
 }
@@ -311,29 +311,31 @@ export class LeaseService {
 
     const updateData: Prisma.LeaseUpdateInput = {};
 
-    const simpleFields = [
-      'leaseType', 'startDate', 'endDate', 'signedDate', 'paymentFrequency',
-      'paymentDueDay', 'gracePeriodDays', 'currency', 'hasEscalation',
-      'escalationDate', 'nextEscalationDate', 'preferredPaymentMethod',
-      'utilitiesIncluded', 'contractDocumentUrl', 'specialTerms', 'notes',
-      'isActive', 'terminatedDate', 'terminationReason',
-    ];
+    // Assign simple fields explicitly
+    if (dto.leaseType !== undefined) updateData.leaseType = dto.leaseType;
+    if (dto.startDate !== undefined) updateData.startDate = dto.startDate;
+    if (dto.endDate !== undefined) updateData.endDate = dto.endDate;
+    if (dto.signedDate !== undefined) updateData.signedDate = dto.signedDate;
+    if (dto.paymentFrequency !== undefined) updateData.paymentFrequency = dto.paymentFrequency;
+    if (dto.paymentDueDay !== undefined) updateData.paymentDueDay = dto.paymentDueDay;
+    if (dto.gracePeriodDays !== undefined) updateData.gracePeriodDays = dto.gracePeriodDays;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.hasEscalation !== undefined) updateData.hasEscalation = dto.hasEscalation;
+    if (dto.escalationDate !== undefined) updateData.escalationDate = dto.escalationDate;
+    if (dto.preferredPaymentMethod !== undefined) updateData.preferredPaymentMethod = dto.preferredPaymentMethod;
+    if (dto.utilitiesIncluded !== undefined) updateData.utilitiesIncluded = dto.utilitiesIncluded;
+    if (dto.contractDocumentUrl !== undefined) updateData.contractDocumentUrl = dto.contractDocumentUrl;
+    if (dto.specialTerms !== undefined) updateData.specialTerms = dto.specialTerms;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+    if (dto.terminationReason !== undefined) updateData.terminationReason = dto.terminationReason;
 
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
-
-    const decimalFields = [
-      'rentAmount', 'depositAmount', 'lateFeeAmount', 'lateFeePercentage', 'escalationPct',
-    ];
-
-    for (const field of decimalFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field] ? new Prisma.Decimal(dto[field]) : null;
-      }
-    }
+    // Assign decimal fields explicitly
+    if (dto.rentAmount !== undefined) updateData.rentAmount = new Prisma.Decimal(dto.rentAmount);
+    if (dto.depositAmount !== undefined) updateData.depositAmount = dto.depositAmount ? new Prisma.Decimal(dto.depositAmount) : null;
+    if (dto.lateFeeAmount !== undefined) updateData.lateFeeAmount = dto.lateFeeAmount ? new Prisma.Decimal(dto.lateFeeAmount) : null;
+    if (dto.lateFeePercentage !== undefined) updateData.lateFeePercentage = dto.lateFeePercentage ? new Prisma.Decimal(dto.lateFeePercentage) : null;
+    if (dto.escalationPct !== undefined) updateData.escalationPct = dto.escalationPct ? new Prisma.Decimal(dto.escalationPct) : null;
 
     return this.prisma.lease.update({
       where: { id },

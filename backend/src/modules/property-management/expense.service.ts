@@ -194,18 +194,26 @@ export class ExpenseService {
 
     const updateData: Prisma.PropertyExpenseUpdateInput = {};
 
-    const simpleFields = [
-      'category', 'description', 'vendor', 'expenseDate', 'periodStart',
-      'periodEnd', 'currency', 'isPaid', 'paidDate', 'paymentMethod',
-      'paymentReference', 'isRecurring', 'recurringFrequency', 'invoiceNumber',
-      'invoiceUrl', 'receiptUrl', 'notes', 'budgetCategory', 'isCapex',
-    ];
-
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
+    // Assign simple fields explicitly
+    if (dto.category !== undefined) updateData.category = dto.category;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.vendor !== undefined) updateData.vendor = dto.vendor;
+    if (dto.expenseDate !== undefined) updateData.expenseDate = dto.expenseDate;
+    if (dto.periodStart !== undefined) updateData.periodStart = dto.periodStart;
+    if (dto.periodEnd !== undefined) updateData.periodEnd = dto.periodEnd;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.isPaid !== undefined) updateData.isPaid = dto.isPaid;
+    if (dto.paidDate !== undefined) updateData.paidDate = dto.paidDate;
+    if (dto.paymentMethod !== undefined) updateData.paymentMethod = dto.paymentMethod;
+    if (dto.paymentReference !== undefined) updateData.paymentReference = dto.paymentReference;
+    if (dto.isRecurring !== undefined) updateData.isRecurring = dto.isRecurring;
+    if (dto.recurringFrequency !== undefined) updateData.recurringFrequency = dto.recurringFrequency;
+    if (dto.invoiceNumber !== undefined) updateData.invoiceNumber = dto.invoiceNumber;
+    if (dto.invoiceUrl !== undefined) updateData.invoiceUrl = dto.invoiceUrl;
+    if (dto.receiptUrl !== undefined) updateData.receiptUrl = dto.receiptUrl;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+    if (dto.budgetCategory !== undefined) updateData.budgetCategory = dto.budgetCategory;
+    if (dto.isCapex !== undefined) updateData.isCapex = dto.isCapex;
 
     if (dto.amount !== undefined || dto.taxAmount !== undefined) {
       const expense = await this.findExpenseById(id);
