@@ -213,19 +213,28 @@ export class TenantService {
 
     const updateData: Prisma.TenantUpdateInput = {};
 
-    const fields = [
-      'isCompany', 'firstName', 'lastName', 'companyName', 'email', 'phone',
-      'alternatePhone', 'idType', 'idNumber', 'taxId', 'addressLine1',
-      'addressLine2', 'city', 'state', 'postalCode', 'country',
-      'emergencyContactName', 'emergencyContactPhone', 'notes', 'status',
-      'blacklistReason',
-    ];
-
-    for (const field of fields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
+    // Assign fields explicitly
+    if (dto.isCompany !== undefined) updateData.isCompany = dto.isCompany;
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
+    if (dto.email !== undefined) updateData.email = dto.email;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.alternatePhone !== undefined) updateData.alternatePhone = dto.alternatePhone;
+    if (dto.idType !== undefined) updateData.idType = dto.idType;
+    if (dto.idNumber !== undefined) updateData.idNumber = dto.idNumber;
+    if (dto.taxId !== undefined) updateData.taxId = dto.taxId;
+    if (dto.addressLine1 !== undefined) updateData.addressLine1 = dto.addressLine1;
+    if (dto.addressLine2 !== undefined) updateData.addressLine2 = dto.addressLine2;
+    if (dto.city !== undefined) updateData.city = dto.city;
+    if (dto.state !== undefined) updateData.state = dto.state;
+    if (dto.postalCode !== undefined) updateData.postalCode = dto.postalCode;
+    if (dto.country !== undefined) updateData.country = dto.country;
+    if (dto.emergencyContactName !== undefined) updateData.emergencyContactName = dto.emergencyContactName;
+    if (dto.emergencyContactPhone !== undefined) updateData.emergencyContactPhone = dto.emergencyContactPhone;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.blacklistReason !== undefined) updateData.blacklistReason = dto.blacklistReason;
 
     return this.prisma.tenant.update({
       where: { id },
@@ -369,7 +378,7 @@ export class TenantService {
         description: `Payment received - ${payment.paymentMethod}`,
         amount: -payment.amount.toNumber(),
         balance: runningBalance,
-        reference: payment.referenceNumber || payment.receiptNumber,
+        reference: payment.referenceNumber || payment.receiptNumber || undefined,
       });
     }
 

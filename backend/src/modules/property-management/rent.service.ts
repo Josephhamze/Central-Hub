@@ -272,25 +272,19 @@ export class RentService {
 
     const updateData: Prisma.RentPaymentUpdateInput = {};
 
-    const simpleFields = [
-      'paymentDate', 'paymentMethod', 'referenceNumber', 'status', 'notes',
-    ];
+    // Assign simple fields explicitly
+    if (dto.paymentDate !== undefined) updateData.paymentDate = dto.paymentDate;
+    if (dto.paymentMethod !== undefined) updateData.paymentMethod = dto.paymentMethod;
+    if (dto.referenceNumber !== undefined) updateData.referenceNumber = dto.referenceNumber;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
 
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
-
-    const decimalFields = [
-      'amount', 'rentPortion', 'lateFeesPortion', 'depositPortion', 'otherPortion',
-    ];
-
-    for (const field of decimalFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = new Prisma.Decimal(dto[field]);
-      }
-    }
+    // Assign decimal fields explicitly
+    if (dto.amount !== undefined) updateData.amount = new Prisma.Decimal(dto.amount);
+    if (dto.rentPortion !== undefined) updateData.rentPortion = new Prisma.Decimal(dto.rentPortion);
+    if (dto.lateFeesPortion !== undefined) updateData.lateFeesPortion = new Prisma.Decimal(dto.lateFeesPortion);
+    if (dto.depositPortion !== undefined) updateData.depositPortion = new Prisma.Decimal(dto.depositPortion);
+    if (dto.otherPortion !== undefined) updateData.otherPortion = new Prisma.Decimal(dto.otherPortion);
 
     return this.prisma.rentPayment.update({
       where: { id },
