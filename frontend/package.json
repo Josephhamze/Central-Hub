@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.3.2",
+    "@rollup/rollup-linux-x64-gnu": "^4.55.1",
     "@tanstack/react-query": "^5.62.8",
     "axios": "^1.7.9",
     "buffer": "^6.0.3",
