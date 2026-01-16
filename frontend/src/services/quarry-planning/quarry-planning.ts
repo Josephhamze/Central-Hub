@@ -166,37 +166,37 @@ export const quarryPlanningService = {
   // Get all machines
   getMachines: async (): Promise<QuarryMachine[]> => {
     const response = await api.get('/quarry-planning/machines');
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Get machines grouped by category
   getMachinesGrouped: async (): Promise<MachinesGrouped> => {
     const response = await api.get('/quarry-planning/machines/grouped');
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Get a single machine by ID
   getMachine: async (id: string): Promise<QuarryMachine> => {
     const response = await api.get(`/quarry-planning/machines/${id}`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Get sample configuration
   getSampleConfiguration: async (): Promise<QuarryConfiguration> => {
     const response = await api.get('/quarry-planning/sample-config');
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Get sample plan with calculations
   getSamplePlan: async (): Promise<QuarryPlanningResult> => {
     const response = await api.get('/quarry-planning/sample-plan');
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Calculate a custom quarry plan
   calculatePlan: async (dto: CreateQuarryPlanDto): Promise<QuarryPlanningResult> => {
     const response = await api.post('/quarry-planning/calculate', dto);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Get quick estimate
@@ -207,6 +207,6 @@ export const quarryPlanningService = {
     bottleneck: string;
   }> => {
     const response = await api.post('/quarry-planning/estimate', dto);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 };
