@@ -92,11 +92,11 @@ export function PropertiesPage() {
         search: search || undefined,
         ...filters,
       });
-      setProperties(response.items);
+      setProperties(response?.items || []);
       setPagination(prev => ({
         ...prev,
-        total: response.pagination.total,
-        totalPages: response.pagination.totalPages,
+        total: response?.pagination?.total ?? 0,
+        totalPages: response?.pagination?.totalPages ?? 0,
       }));
     } catch (err: any) {
       error(err.response?.data?.error?.message || 'Failed to load properties');
