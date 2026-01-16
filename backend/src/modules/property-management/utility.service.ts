@@ -219,18 +219,22 @@ export class UtilityService {
 
     const updateData: Prisma.UtilityBillUpdateInput = {};
 
-    const simpleFields = [
-      'utilityType', 'provider', 'accountNumber', 'billingPeriodStart',
-      'billingPeriodEnd', 'billDate', 'dueDate', 'consumptionUnit',
-      'currency', 'allocation', 'status', 'paidDate', 'paymentReference',
-      'billUrl', 'notes',
-    ];
-
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
+    // Assign simple fields explicitly
+    if (dto.utilityType !== undefined) updateData.utilityType = dto.utilityType;
+    if (dto.provider !== undefined) updateData.provider = dto.provider;
+    if (dto.accountNumber !== undefined) updateData.accountNumber = dto.accountNumber;
+    if (dto.billingPeriodStart !== undefined) updateData.billingPeriodStart = dto.billingPeriodStart;
+    if (dto.billingPeriodEnd !== undefined) updateData.billingPeriodEnd = dto.billingPeriodEnd;
+    if (dto.billDate !== undefined) updateData.billDate = dto.billDate;
+    if (dto.dueDate !== undefined) updateData.dueDate = dto.dueDate;
+    if (dto.consumptionUnit !== undefined) updateData.consumptionUnit = dto.consumptionUnit;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.allocation !== undefined) updateData.allocation = dto.allocation;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.paidDate !== undefined) updateData.paidDate = dto.paidDate;
+    if (dto.paymentReference !== undefined) updateData.paymentReference = dto.paymentReference;
+    if (dto.billUrl !== undefined) updateData.billUrl = dto.billUrl;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
 
     // Handle meter readings and consumption
     if (dto.previousReading !== undefined || dto.currentReading !== undefined) {

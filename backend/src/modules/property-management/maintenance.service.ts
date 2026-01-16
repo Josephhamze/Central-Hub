@@ -228,20 +228,29 @@ export class MaintenanceService {
 
     const updateData: Prisma.PropertyMaintenanceJobUpdateInput = {};
 
-    const simpleFields = [
-      'title', 'description', 'category', 'priority', 'status',
-      'scheduledDate', 'startedDate', 'completedDate', 'assignedTo',
-      'contractorId', 'currency', 'budgetCode', 'affectsOccupancy',
-      'vacancyDaysImpact', 'tenantAccessRequired', 'notes', 'resolutionNotes',
-      'beforePhotosJson', 'afterPhotosJson', 'invoiceUrl',
-    ];
+    // Assign simple fields explicitly
+    if (dto.title !== undefined) updateData.title = dto.title;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.category !== undefined) updateData.category = dto.category;
+    if (dto.priority !== undefined) updateData.priority = dto.priority;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.scheduledDate !== undefined) updateData.scheduledDate = dto.scheduledDate;
+    if (dto.startedDate !== undefined) updateData.startedDate = dto.startedDate;
+    if (dto.completedDate !== undefined) updateData.completedDate = dto.completedDate;
+    if (dto.assignedTo !== undefined) updateData.assignedTo = dto.assignedTo;
+    if (dto.contractorId !== undefined) updateData.contractorId = dto.contractorId;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.budgetCode !== undefined) updateData.budgetCode = dto.budgetCode;
+    if (dto.affectsOccupancy !== undefined) updateData.affectsOccupancy = dto.affectsOccupancy;
+    if (dto.vacancyDaysImpact !== undefined) updateData.vacancyDaysImpact = dto.vacancyDaysImpact;
+    if (dto.tenantAccessRequired !== undefined) updateData.tenantAccessRequired = dto.tenantAccessRequired;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+    if (dto.resolutionNotes !== undefined) updateData.resolutionNotes = dto.resolutionNotes;
+    if (dto.beforePhotosJson !== undefined) updateData.beforePhotosJson = dto.beforePhotosJson;
+    if (dto.afterPhotosJson !== undefined) updateData.afterPhotosJson = dto.afterPhotosJson;
+    if (dto.invoiceUrl !== undefined) updateData.invoiceUrl = dto.invoiceUrl;
 
-    for (const field of simpleFields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
-      }
-    }
-
+    // Assign decimal fields explicitly
     if (dto.estimatedCost !== undefined) {
       updateData.estimatedCost = new Prisma.Decimal(dto.estimatedCost);
     }
