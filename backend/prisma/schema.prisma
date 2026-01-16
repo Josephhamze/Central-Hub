@@ -1558,3 +1558,747 @@ model StockLevel {
   @@index([stockItemId])
   @@map("stock_levels")
 }
+
+// ============================================================================
+// PROPERTY MANAGEMENT SYSTEM (PMS)
+// ============================================================================
+
+// Enums for Property Management
+enum PropertyType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED_USE
+  INDUSTRIAL
+  LAND
+}
+
+enum OwnershipType {
+  OWNED
+  LEASED
+  MANAGED
+}
+
+enum PropertyStatus {
+  VACANT
+  OCCUPIED
+  UNDER_MAINTENANCE
+  LISTED
+  INACTIVE
+}
+
+enum TenantStatus {
+  ACTIVE
+  LATE
+  VACATED
+  BLACKLISTED
+  PENDING
+}
+
+enum LeaseType {
+  FIXED
+  MONTH_TO_MONTH
+  YEARLY
+}
+
+enum PaymentFrequency {
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  CREDIT_CARD
+  MOBILE_PAYMENT
+  OTHER
+}
+
+enum RentPaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
+  WAIVED
+  REFUNDED
+}
+
+enum UtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+  INTERNET
+  REFUSE
+  SECURITY
+  SEWAGE
+  OTHER
+}
+
+enum ExpenseCategory {
+  MAINTENANCE
+  REPAIRS
+  MUNICIPAL_TAXES
+  INSURANCE
+  MANAGEMENT_FEE
+  LEGAL
+  MARKETING
+  CLEANING
+  LANDSCAPING
+  PEST_CONTROL
+  OTHER
+}
+
+enum BillAllocation {
+  LANDLORD
+  TENANT
+  SHARED
+}
+
+enum BillStatus {
+  PENDING
+  PAID
+  OVERDUE
+  DISPUTED
+  CANCELLED
+}
+
+enum PropertyHealthStatus {
+  HEALTHY
+  AT_RISK
+  UNDERPERFORMING
+  NON_PERFORMING
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+// Property Asset Registry
+model Property {
+  id                  String            @id @default(cuid())
+  propertyCode        String            @unique @map("property_code") // e.g., PROP-001
+  name                String
+  propertyType        PropertyType      @map("property_type")
+
+  // Address
+  addressLine1        String            @map("address_line1")
+  addressLine2        String?           @map("address_line2")
+  city                String
+  state               String?
+  postalCode          String?           @map("postal_code")
+  country             String
+  gpsLatitude         Decimal?          @map("gps_latitude") @db.Decimal(10, 8)
+  gpsLongitude        Decimal?          @map("gps_longitude") @db.Decimal(11, 8)
+
+  // Physical Details
+  unitCount           Int               @default(1) @map("unit_count")
+  floorArea           Decimal?          @map("floor_area") @db.Decimal(10, 2) // sqm
+  plotSize            Decimal?          @map("plot_size") @db.Decimal(10, 2) // sqm
+  floors              Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  parkingSpaces       Int?              @map("parking_spaces")
+  yearBuilt           Int?              @map("year_built")
+  description         String?
+  amenities           Json?             // Array of amenities
+
+  // Ownership & Status
+  ownershipType       OwnershipType     @map("ownership_type")
+  status              PropertyStatus    @default(VACANT)
+  healthStatus        PropertyHealthStatus? @map("health_status")
+
+  // Financial
+  purchaseDate        DateTime?         @map("purchase_date")
+  purchaseValue       Decimal?          @map("purchase_value") @db.Decimal(14, 2)
+  currentMarketValue  Decimal?          @map("current_market_value") @db.Decimal(14, 2)
+  currentRentalValue  Decimal?          @map("current_rental_value") @db.Decimal(12, 2) // Monthly
+  currency            String            @default("USD")
+
+  // Market Data
+  marketRentEstimate  Decimal?          @map("market_rent_estimate") @db.Decimal(12, 2)
+  lastValuationDate   DateTime?         @map("last_valuation_date")
+
+  // Rental Escalation
+  annualEscalationPct Decimal?          @map("annual_escalation_pct") @db.Decimal(5, 2) // e.g., 5.00 for 5%
+
+  // Documents & Images
+  documentsJson       Json?             @map("documents_json") // Array of document references
+  imagesJson          Json?             @map("images_json") // Array of image URLs
+
+  // Relationships
+  parentPropertyId    String?           @map("parent_property_id")
+  companyId           String?           @map("company_id")
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  parentProperty      Property?         @relation("PropertyHierarchy", fields: [parentPropertyId], references: [id], onDelete: SetNull)
+  childProperties     Property[]        @relation("PropertyHierarchy")
+  units               PropertyUnit[]
+  leases              Lease[]
+  expenses            PropertyExpense[]
+  utilityBills        UtilityBill[]
+  maintenanceJobs     PropertyMaintenanceJob[]
+  kpiSnapshots        PropertyKPISnapshot[]
+
+  @@index([propertyCode])
+  @@index([propertyType])
+  @@index([status])
+  @@index([healthStatus])
+  @@index([city])
+  @@index([companyId])
+  @@index([parentPropertyId])
+  @@map("properties")
+}
+
+// Property Unit (Sub-asset)
+model PropertyUnit {
+  id                  String            @id @default(cuid())
+  propertyId          String            @map("property_id")
+  unitCode            String            @map("unit_code") // e.g., APT-101
+  name                String            // e.g., "Apartment 101"
+
+  // Physical Details
+  floorNumber         Int?              @map("floor_number")
+  floorArea           Decimal?          @map("floor_area") @db.Decimal(10, 2) // sqm
+  bedrooms            Int?
+  bathrooms           Int?
+  parkingSpaces       Int?              @map("parking_spaces")
+  hasBalcony          Boolean           @default(false) @map("has_balcony")
+  hasFurnished        Boolean           @default(false) @map("has_furnished")
+  description         String?
+  amenities           Json?
+
+  // Status
+  status              PropertyStatus    @default(VACANT)
+
+  // Financial
+  baseRentalValue     Decimal?          @map("base_rental_value") @db.Decimal(12, 2)
+  currentRentalValue  Decimal?          @map("current_rental_value") @db.Decimal(12, 2)
+  currency            String            @default("USD")
+
+  // Meters
+  electricityMeter    String?           @map("electricity_meter")
+  waterMeter          String?           @map("water_meter")
+  gasMeter            String?           @map("gas_meter")
+
+  // Documents & Images
+  imagesJson          Json?             @map("images_json")
+
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases              Lease[]
+  utilityBills        UtilityBill[]
+  maintenanceJobs     PropertyMaintenanceJob[]
+
+  @@unique([propertyId, unitCode])
+  @@index([propertyId])
+  @@index([status])
+  @@map("property_units")
+}
+
+// Tenant Registry
+model Tenant {
+  id                  String            @id @default(cuid())
+  tenantCode          String            @unique @map("tenant_code") // e.g., TEN-001
+
+  // Identity
+  isCompany           Boolean           @default(false) @map("is_company")
+  firstName           String?           @map("first_name")
+  lastName            String?           @map("last_name")
+  companyName         String?           @map("company_name")
+
+  // Contact
+  email               String?
+  phone               String?
+  alternatePhone      String?           @map("alternate_phone")
+
+  // Identification
+  idType              String?           @map("id_type") // Passport, National ID, etc.
+  idNumber            String?           @map("id_number")
+  taxId               String?           @map("tax_id")
+
+  // Address (permanent)
+  addressLine1        String?           @map("address_line1")
+  addressLine2        String?           @map("address_line2")
+  city                String?
+  state               String?
+  postalCode          String?           @map("postal_code")
+  country             String?
+
+  // Emergency Contact
+  emergencyContactName  String?         @map("emergency_contact_name")
+  emergencyContactPhone String?         @map("emergency_contact_phone")
+
+  // Status
+  status              TenantStatus      @default(PENDING)
+  currentBalance      Decimal           @default(0) @map("current_balance") @db.Decimal(12, 2) // + credit, - arrears
+
+  // Documents
+  documentsJson       Json?             @map("documents_json")
+
+  // Notes
+  notes               String?
+  blacklistReason     String?           @map("blacklist_reason")
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  leases              Lease[]
+  rentPayments        RentPayment[]
+
+  @@index([tenantCode])
+  @@index([status])
+  @@index([email])
+  @@map("tenants")
+}
+
+// Lease Agreement
+model Lease {
+  id                  String            @id @default(cuid())
+  leaseCode           String            @unique @map("lease_code") // e.g., LSE-001
+
+  // Links
+  tenantId            String            @map("tenant_id")
+  propertyId          String            @map("property_id")
+  unitId              String?           @map("unit_id")
+
+  // Lease Terms
+  leaseType           LeaseType         @map("lease_type")
+  startDate           DateTime          @map("start_date")
+  endDate             DateTime?         @map("end_date")
+  signedDate          DateTime?         @map("signed_date")
+
+  // Financial Terms
+  rentAmount          Decimal           @map("rent_amount") @db.Decimal(12, 2)
+  depositAmount       Decimal           @default(0) @map("deposit_amount") @db.Decimal(12, 2)
+  paymentFrequency    PaymentFrequency  @map("payment_frequency")
+  paymentDueDay       Int               @default(1) @map("payment_due_day") // Day of month
+  gracePeriodDays     Int               @default(5) @map("grace_period_days")
+  lateFeeAmount       Decimal?          @map("late_fee_amount") @db.Decimal(10, 2)
+  lateFeePercentage   Decimal?          @map("late_fee_percentage") @db.Decimal(5, 2)
+  currency            String            @default("USD")
+
+  // Escalation
+  hasEscalation       Boolean           @default(false) @map("has_escalation")
+  escalationPct       Decimal?          @map("escalation_pct") @db.Decimal(5, 2)
+  escalationDate      DateTime?         @map("escalation_date") // Anniversary or fixed date
+  nextEscalationDate  DateTime?         @map("next_escalation_date")
+
+  // Payment Method
+  preferredPaymentMethod PaymentMethod? @map("preferred_payment_method")
+
+  // Status
+  isActive            Boolean           @default(true) @map("is_active")
+  terminatedDate      DateTime?         @map("terminated_date")
+  terminationReason   String?           @map("termination_reason")
+
+  // Utilities Responsibility
+  utilitiesIncluded   Json?             @map("utilities_included") // Array of UtilityType
+
+  // Documents
+  contractDocumentUrl String?           @map("contract_document_url")
+  documentsJson       Json?             @map("documents_json")
+
+  // Notes
+  specialTerms        String?           @map("special_terms")
+  notes               String?
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  unit                PropertyUnit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  rentPayments        RentPayment[]
+  rentSchedules       RentSchedule[]
+
+  @@index([leaseCode])
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+  @@map("leases")
+}
+
+// Rent Schedule (Generated billing periods)
+model RentSchedule {
+  id                  String            @id @default(cuid())
+  leaseId             String            @map("lease_id")
+
+  // Period
+  periodStart         DateTime          @map("period_start")
+  periodEnd           DateTime          @map("period_end")
+  dueDate             DateTime          @map("due_date")
+
+  // Amounts
+  rentAmount          Decimal           @map("rent_amount") @db.Decimal(12, 2)
+  additionalCharges   Decimal           @default(0) @map("additional_charges") @db.Decimal(12, 2)
+  totalDue            Decimal           @map("total_due") @db.Decimal(12, 2)
+
+  // Payment Status
+  amountPaid          Decimal           @default(0) @map("amount_paid") @db.Decimal(12, 2)
+  balance             Decimal           @map("balance") @db.Decimal(12, 2) // totalDue - amountPaid
+  status              RentPaymentStatus @default(PENDING)
+
+  // Late Fee
+  lateFeeApplied      Decimal           @default(0) @map("late_fee_applied") @db.Decimal(10, 2)
+
+  // Notes
+  notes               String?
+
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  lease               Lease             @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  payments            RentPayment[]
+
+  @@unique([leaseId, periodStart])
+  @@index([leaseId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("rent_schedules")
+}
+
+// Rent Payment
+model RentPayment {
+  id                  String            @id @default(cuid())
+  paymentCode         String            @unique @map("payment_code") // e.g., PAY-001
+
+  // Links
+  tenantId            String            @map("tenant_id")
+  leaseId             String            @map("lease_id")
+  rentScheduleId      String?           @map("rent_schedule_id")
+
+  // Payment Details
+  paymentDate         DateTime          @map("payment_date")
+  amount              Decimal           @map("amount") @db.Decimal(12, 2)
+  paymentMethod       PaymentMethod     @map("payment_method")
+  referenceNumber     String?           @map("reference_number") // Check number, transfer ref, etc.
+
+  // Allocation
+  rentPortion         Decimal           @default(0) @map("rent_portion") @db.Decimal(12, 2)
+  lateFeesPortion     Decimal           @default(0) @map("late_fees_portion") @db.Decimal(12, 2)
+  depositPortion      Decimal           @default(0) @map("deposit_portion") @db.Decimal(12, 2)
+  otherPortion        Decimal           @default(0) @map("other_portion") @db.Decimal(12, 2)
+
+  // Status
+  status              RentPaymentStatus @default(PAID)
+  isRefund            Boolean           @default(false) @map("is_refund")
+
+  // Receipt
+  receiptNumber       String?           @map("receipt_number")
+  receiptUrl          String?           @map("receipt_url")
+
+  // Notes
+  notes               String?
+
+  // Audit
+  receivedById        String?           @map("received_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  lease               Lease             @relation(fields: [leaseId], references: [id], onDelete: Restrict)
+  rentSchedule        RentSchedule?     @relation(fields: [rentScheduleId], references: [id], onDelete: SetNull)
+
+  @@index([paymentCode])
+  @@index([tenantId])
+  @@index([leaseId])
+  @@index([rentScheduleId])
+  @@index([paymentDate])
+  @@index([status])
+  @@map("rent_payments")
+}
+
+// Property Expense
+model PropertyExpense {
+  id                  String            @id @default(cuid())
+  expenseCode         String            @unique @map("expense_code") // e.g., EXP-001
+
+  // Links
+  propertyId          String            @map("property_id")
+
+  // Expense Details
+  category            ExpenseCategory
+  description         String
+  vendor              String?
+
+  // Period
+  expenseDate         DateTime          @map("expense_date")
+  periodStart         DateTime?         @map("period_start")
+  periodEnd           DateTime?         @map("period_end")
+
+  // Financial
+  amount              Decimal           @map("amount") @db.Decimal(12, 2)
+  currency            String            @default("USD")
+  taxAmount           Decimal?          @map("tax_amount") @db.Decimal(10, 2)
+  totalAmount         Decimal           @map("total_amount") @db.Decimal(12, 2)
+
+  // Payment
+  isPaid              Boolean           @default(false) @map("is_paid")
+  paidDate            DateTime?         @map("paid_date")
+  paymentMethod       PaymentMethod?    @map("payment_method")
+  paymentReference    String?           @map("payment_reference")
+
+  // Recurrence
+  isRecurring         Boolean           @default(false) @map("is_recurring")
+  recurringFrequency  PaymentFrequency? @map("recurring_frequency")
+
+  // Documents
+  invoiceNumber       String?           @map("invoice_number")
+  invoiceUrl          String?           @map("invoice_url")
+  receiptUrl          String?           @map("receipt_url")
+
+  // Notes
+  notes               String?
+
+  // Budget
+  budgetCategory      String?           @map("budget_category")
+  isCapex             Boolean           @default(false) @map("is_capex") // Capital vs Operating expense
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([expenseCode])
+  @@index([propertyId])
+  @@index([category])
+  @@index([expenseDate])
+  @@index([isPaid])
+  @@map("property_expenses")
+}
+
+// Utility Bill
+model UtilityBill {
+  id                  String            @id @default(cuid())
+  billCode            String            @unique @map("bill_code") // e.g., UTIL-001
+
+  // Links
+  propertyId          String            @map("property_id")
+  unitId              String?           @map("unit_id")
+
+  // Utility Details
+  utilityType         UtilityType       @map("utility_type")
+  provider            String?
+  accountNumber       String?           @map("account_number")
+
+  // Period
+  billingPeriodStart  DateTime          @map("billing_period_start")
+  billingPeriodEnd    DateTime          @map("billing_period_end")
+  billDate            DateTime          @map("bill_date")
+  dueDate             DateTime          @map("due_date")
+
+  // Meter Readings
+  previousReading     Decimal?          @map("previous_reading") @db.Decimal(12, 2)
+  currentReading      Decimal?          @map("current_reading") @db.Decimal(12, 2)
+  consumption         Decimal?          @db.Decimal(12, 2) // currentReading - previousReading
+  consumptionUnit     String?           @map("consumption_unit") // kWh, cubic meters, etc.
+
+  // Financial
+  amount              Decimal           @map("amount") @db.Decimal(12, 2)
+  taxAmount           Decimal?          @map("tax_amount") @db.Decimal(10, 2)
+  totalAmount         Decimal           @map("total_amount") @db.Decimal(12, 2)
+  currency            String            @default("USD")
+
+  // Allocation
+  allocation          BillAllocation    @default(LANDLORD)
+  tenantSharePct      Decimal?          @map("tenant_share_pct") @db.Decimal(5, 2) // For SHARED
+
+  // Status
+  status              BillStatus        @default(PENDING)
+  paidDate            DateTime?         @map("paid_date")
+  paidAmount          Decimal?          @map("paid_amount") @db.Decimal(12, 2)
+  paymentReference    String?           @map("payment_reference")
+
+  // Documents
+  billUrl             String?           @map("bill_url")
+
+  // Notes
+  notes               String?
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit                PropertyUnit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([billCode])
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([utilityType])
+  @@index([billingPeriodStart])
+  @@index([status])
+  @@index([dueDate])
+  @@map("utility_bills")
+}
+
+// Property Maintenance Job (links to project management)
+model PropertyMaintenanceJob {
+  id                  String            @id @default(cuid())
+  jobCode             String            @unique @map("job_code") // e.g., MNT-001
+
+  // Links
+  propertyId          String            @map("property_id")
+  unitId              String?           @map("unit_id")
+  workOrderId         String?           @map("work_order_id") // Link to existing WorkOrder
+
+  // Job Details
+  title               String
+  description         String
+  category            ExpenseCategory
+  priority            MaintenancePriority @default(MEDIUM)
+
+  // Status
+  status              MaintenanceStatus @default(PENDING)
+
+  // Scheduling
+  reportedDate        DateTime          @map("reported_date")
+  scheduledDate       DateTime?         @map("scheduled_date")
+  startedDate         DateTime?         @map("started_date")
+  completedDate       DateTime?         @map("completed_date")
+
+  // Assignment
+  assignedTo          String?           @map("assigned_to") // Contractor name or internal
+  contractorId        String?           @map("contractor_id")
+
+  // Financial
+  estimatedCost       Decimal?          @map("estimated_cost") @db.Decimal(12, 2)
+  actualCost          Decimal?          @map("actual_cost") @db.Decimal(12, 2)
+  currency            String            @default("USD")
+  budgetCode          String?           @map("budget_code")
+
+  // Impact
+  affectsOccupancy    Boolean           @default(false) @map("affects_occupancy")
+  vacancyDaysImpact   Int?              @map("vacancy_days_impact")
+
+  // Documents
+  beforePhotosJson    Json?             @map("before_photos_json")
+  afterPhotosJson     Json?             @map("after_photos_json")
+  invoiceUrl          String?           @map("invoice_url")
+
+  // Tenant Reported
+  reportedByTenantId  String?           @map("reported_by_tenant_id")
+  tenantAccessRequired Boolean          @default(false) @map("tenant_access_required")
+
+  // Notes
+  notes               String?
+  resolutionNotes     String?           @map("resolution_notes")
+
+  // Audit
+  createdById         String?           @map("created_by_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit                PropertyUnit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([jobCode])
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledDate])
+  @@map("property_maintenance_jobs")
+}
+
+// Property KPI Snapshot (for historical tracking)
+model PropertyKPISnapshot {
+  id                  String            @id @default(cuid())
+  propertyId          String            @map("property_id")
+  snapshotDate        DateTime          @map("snapshot_date")
+  period              String            // YYYY-MM format
+
+  // Operational KPIs
+  occupancyRate       Decimal?          @map("occupancy_rate") @db.Decimal(5, 2) // %
+  vacancyRate         Decimal?          @map("vacancy_rate") @db.Decimal(5, 2) // %
+  totalUnits          Int?              @map("total_units")
+  occupiedUnits       Int?              @map("occupied_units")
+  vacantUnits         Int?              @map("vacant_units")
+  avgLeaseDuration    Decimal?          @map("avg_lease_duration") @db.Decimal(8, 2) // months
+  tenantTurnoverRate  Decimal?          @map("tenant_turnover_rate") @db.Decimal(5, 2) // %
+  activeLeases        Int?              @map("active_leases")
+  expiringLeases30    Int?              @map("expiring_leases_30") // Expiring in 30 days
+  expiringLeases60    Int?              @map("expiring_leases_60") // Expiring in 60 days
+  expiringLeases90    Int?              @map("expiring_leases_90") // Expiring in 90 days
+
+  // Financial KPIs
+  rentalIncome        Decimal?          @map("rental_income") @db.Decimal(14, 2)
+  rentCollected       Decimal?          @map("rent_collected") @db.Decimal(14, 2)
+  rentBilled          Decimal?          @map("rent_billed") @db.Decimal(14, 2)
+  collectionRate      Decimal?          @map("collection_rate") @db.Decimal(5, 2) // %
+  arrearsAmount       Decimal?          @map("arrears_amount") @db.Decimal(14, 2)
+  arrearsPercentage   Decimal?          @map("arrears_percentage") @db.Decimal(5, 2) // %
+
+  operatingExpenses   Decimal?          @map("operating_expenses") @db.Decimal(14, 2)
+  maintenanceCosts    Decimal?          @map("maintenance_costs") @db.Decimal(14, 2)
+  utilityCosts        Decimal?          @map("utility_costs") @db.Decimal(14, 2)
+
+  netOperatingIncome  Decimal?          @map("net_operating_income") @db.Decimal(14, 2) // NOI
+  grossYield          Decimal?          @map("gross_yield") @db.Decimal(5, 2) // %
+  netYield            Decimal?          @map("net_yield") @db.Decimal(5, 2) // %
+  cashFlow            Decimal?          @map("cash_flow") @db.Decimal(14, 2)
+
+  // Property Value
+  marketValue         Decimal?          @map("market_value") @db.Decimal(14, 2)
+  capRate             Decimal?          @map("cap_rate") @db.Decimal(5, 2) // Capitalization Rate %
+
+  // Health Status
+  healthStatus        PropertyHealthStatus? @map("health_status")
+
+  // Currency
+  currency            String            @default("USD")
+
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  property            Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, period])
+  @@index([propertyId])
+  @@index([snapshotDate])
+  @@index([period])
+  @@map("property_kpi_snapshots")
+}
